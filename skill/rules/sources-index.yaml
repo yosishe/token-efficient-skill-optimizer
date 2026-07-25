@@ -1,9 +1,9 @@
-note: In-skill source index. Generated from the project's output/research/sources.yaml; carries only what
+note: In-skill source index. Generated from the project's research/sources.yaml; carries only what
   the citation cross-check and Explain mode need. Full records (setup, findings, limitations) stay in
   the project file.
-generated_from: output/research/sources.yaml
+generated_from: research/sources.yaml
 tier: DEEP
-collected: '2026-07-24'
+collected: '2026-07-25'
 records:
 - id: S-A01
   title: 'LLMLingua: Compressing Prompts for Accelerated Inference of Large Language Models'
@@ -220,7 +220,10 @@ records:
   url: https://arxiv.org/abs/2506.08837
   source_type: preprint
   confidence: high
-# ---- ROUND 2, collected 2026-07-25 (research-2026-07-25/DOSSIER.md) ----
+# ---- ROUND 2, collected 2026-07-25 ----
+# This bundled index proves identifier parity and basic catalog metadata only.
+# Repository-mode provenance and retrieval digests live in research/sources.yaml;
+# rule-specific support locators live in rules.yaml source_claims.
 # Controlled enums for source_type / access_level / generalizes_across_models / verification.
 # Round-1 records above use free text for source_type; that flaw is disclosed in
 # research/README.md and is NOT retro-fixed here, because normalising it means re-deriving 42
@@ -382,3 +385,67 @@ records:
   url: https://www.usenix.org/conference/usenixsecurity24/presentation/liu-yupei
   source_type: peer-reviewed-conference
   confidence: high
+# ---- AUDITABLE ACCOUNTING AND CONTEXT SOURCES, collected 2026-07-25 ----
+- id: S-A11
+  title: 'Tokenizer Choice For LLM Training: Negligible or Crucial?'
+  url: https://aclanthology.org/2024.findings-naacl.247/
+  source_type: peer-reviewed
+  confidence: high
+  last_verified: '2026-07-25'
+  status: active
+- id: S-B11
+  title: LongMemEval
+  url: https://arxiv.org/abs/2410.10813
+  source_type: peer-reviewed
+  confidence: high
+  last_verified: '2026-07-25'
+  status: active
+- id: S-C11
+  title: Token counting (Anthropic official documentation)
+  url: https://platform.claude.com/docs/en/build-with-claude/token-counting
+  source_type: provider-doc
+  confidence: high
+  last_verified: '2026-07-25'
+  status: active
+- id: S-C12
+  title: Cache diagnostics (Anthropic official documentation)
+  url: https://platform.claude.com/docs/en/build-with-claude/cache-diagnostics
+  source_type: provider-doc
+  confidence: high
+  last_verified: '2026-07-25'
+  status: active
+- id: S-D13
+  title: Context editing (Anthropic official documentation)
+  url: https://platform.claude.com/docs/en/build-with-claude/context-editing
+  source_type: provider-doc
+  confidence: high
+  last_verified: '2026-07-25'
+  status: active
+- id: S-D14
+  title: Compaction (Anthropic official documentation)
+  url: https://platform.claude.com/docs/en/build-with-claude/compaction
+  source_type: provider-doc
+  confidence: high
+  last_verified: '2026-07-25'
+  status: active
+- id: S-D15
+  title: Memory tool (Anthropic official documentation)
+  url: https://platform.claude.com/docs/en/agents-and-tools/tool-use/memory-tool
+  source_type: provider-doc
+  confidence: high
+  last_verified: '2026-07-25'
+  status: active
+- id: S-D16
+  title: Agent Skills overview (Anthropic official documentation)
+  url: https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview
+  source_type: provider-doc
+  confidence: high
+  last_verified: '2026-07-25'
+  status: active
+- id: S-D17
+  title: Skill authoring best practices (Anthropic official documentation)
+  url: https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices
+  source_type: provider-doc
+  confidence: high
+  last_verified: '2026-07-25'
+  status: active

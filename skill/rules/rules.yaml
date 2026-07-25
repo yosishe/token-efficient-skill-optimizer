@@ -1,4 +1,4 @@
-# Optimization Rule Registry — token-efficient-skill-optimizer v1.0.0
+# Optimization Rule Registry — token-efficient-skill-optimizer v1.3.0
 #
 # Machine-readable source of truth. references/rules.md is GENERATED from this
 # file by scripts/render_rules.py — never edit the .md by hand.
@@ -43,10 +43,10 @@
 #   Where present, source_claims[<id>] states what that source actually underwrites for
 #   this rule, with a locator. A citation that RESOLVES is not a citation that SUPPORTS -
 #   three rules were found citing sources that said nothing about their claim.
-#   Coverage is partial: round-2 rules and corrected rules carry claims; the rest are
-#   backfill, tracked by the G-11 gate's coverage note rather than assumed complete.
+#   Coverage is enforced for every empirical rule. A claim remains bounded by its
+#   declared provenance and locator rather than inferred from source-ID resolution.
 
-version: "1.0.0"
+version: "1.3.0"
 sources_file: ../../research/sources.yaml
 
 rules:
@@ -61,8 +61,8 @@ rules:
     mechanism: Repeated static text is billed as input every time each copy loads; one copy + a pointer loads once.
     target: input
     applies_when: measure_tokens.py duplicates[] shows pairs with high shared-8gram counts of instructional text.
-    do_not_apply_when: The "duplicate" is deliberate per-context adaptation with meaningful differences, or safety text intentionally repeated for defense in depth (see R-S1).
-    expected_benefit: Proportional to duplicated volume; measured per-target by the harness.
+    do_not_apply_when: The "duplicate" is deliberate per-context adaptation with meaningful differences, or it is safety text whose edit effects are not separately evaluated (see R-S1).
+    expected_benefit: Proportional to duplicated volume; duplicate volume is an exact local structural scan, while token impact remains a local proxy estimate until observed.
     quality_risk: 1  # low - text is preserved once
     safety_risk: 0
     maintainability_risk: 0  # improves it - single source of truth
@@ -100,14 +100,13 @@ rules:
       why: >-
         This rule was Tier 1 - applied in EVERY profile including `conservative`, whose stated
         purpose is "accuracy-critical or regulated domain / little or no eval data" - on
-        `practitioner` evidence. Round 2 found that its only quantitative vendor support states a
-        98.7% reduction with no model, no benchmark, no methodology, no trial count, and never uses
-        the word "measured"; and that the other cited page contains no quantitative claim at all,
-        describing the mechanism as "trusting that Claude will read forms.md only when filling out
-        a form". Meanwhile this project's OWN measurement found relocated material read in 8 of 8
-        runs against a 74% break-even, turning a measured -17.2% trigger-path cut into +2.3% MORE
-        expensive per run. A rule whose benefit depends on an unmeasured behavioural rate does not
-        belong in the profile chosen when there is no eval data.
+        `practitioner` evidence. Round 2 found that its only quantitative vendor support omitted the
+        model, benchmark, methodology, and trial count, while the other cited page describes the
+        mechanism qualitatively. This project's archived v1.1 case study also found the relocated
+        material read on every relevant fixture path and modeled a net increase, but those historical
+        outputs predate schema v2 and do not qualify as current target evidence. A rule whose benefit
+        depends on an unmeasured behavioural rate does not belong in the profile chosen when there is
+        no eval data.
       what_changes_for_users: >-
         Under `conservative` this rule no longer fires automatically. Under `balanced` and
         `aggressive` it still fires, now gated by its validation_test like every other Tier-2 rule.
@@ -142,11 +141,10 @@ rules:
         your expected behavior", context as "a precious, finite resource". Does not quantify a
         disclosure saving.
     contradicting_evidence: >-
-      This project's own case study: a section moved verbatim out of `frontend-design` cut the
-      trigger path -17.2% and was then measured as read in 8 of 8 runs, against a break-even
-      computed in advance at 74%. At the observed rate the change made the skill +2.3% MORE
-      expensive per run and was reverted. n=8 on one skill with a disclosed workload skew, but it
-      is the only direct measurement anyone has, and it points the other way.
+      This project's archived v1.1 case study found a verbatim relocation read on every relevant
+      fixture path and modeled the change as net-more-expensive, so it was reverted. Those outputs
+      predate schema v2, lack claim-specific v2 evidence, and are retained only as a qualitative
+      warning rather than a current measured or estimated result.
     validation_test: >-
       Every moved block is reachable via a pointer with a read-condition; trigger-path walkthrough
       still covers the behavioral contract; AND a read-rate estimate is stated with the break-even
@@ -157,19 +155,19 @@ rules:
     name: read-conditions-on-pointers
     layer: skill-content
     tier: 1
-    description: Every references/ pointer carries an explicit "read only when X" condition.
-    mechanism: Without a condition the model reads everything (paying the full conditional tier) or nothing (losing capability); conditions make disclosure actually progressive.
+    description: Give each references/ pointer a direct, task-specific read condition unless the reference is required on every trigger.
+    mechanism: A clear condition improves discoverability and routing, but does not prove that a runtime or model will read or skip the file; actual reads and context occupancy must be observed.
     target: input
-    applies_when: Any reference pointer lacks when/only/if phrasing (harness flag).
-    do_not_apply_when: never - this rule is safe whenever references exist.
-    expected_benefit: Prevents worst-case full-tier loads; enables R-02 to actually save.
-    quality_risk: 0
+    applies_when: A direct reference pointer lacks enough task context for an agent to decide when the file is relevant (advisory harness flag).
+    do_not_apply_when: The reference is required on every trigger, the runtime uses a different routing contract, or adding a narrow condition would hide a necessary obligation.
+    expected_benefit: Can reduce unnecessary reads on compatible runtimes and make needed references easier to discover; savings and read behavior remain runtime- and workload-dependent.
+    quality_risk: 1
     safety_risk: 0
     maintainability_risk: 0
     portability_risk: 0
     evidence_confidence: practitioner
-    priority: {frequency: 3, applicability: 3, savings: 2, confidence: 0.5, risk_penalty: 0, score: 9.0}
-    sources: [S-D10]
+    priority: {frequency: 3, applicability: 3, savings: 2, confidence: 0.5, risk_penalty: 1, score: 8.0}
+    sources: [S-D10, S-D16, S-D17]
     claims_provenance: round-2-primary-read
     source_claims:
       S-D10: >-
@@ -177,27 +175,34 @@ rules:
         entered on the model''s own judgement - which is exactly why a pointer without a read-condition
         is underspecified. Page opened 2026-07-25: it contains NO quantitative claim of any kind, so it
         supports the MECHANISM of this rule and no effect size whatsoever.
+      S-D16: >-
+        Defines Skill progressive disclosure: metadata is available for discovery, SKILL.md loads when
+        relevant, and bundled resources are opened as needed. It supports conditional discoverability,
+        not a guaranteed read rate or token saving.
+      S-D17: >-
+        Advises authors to link supporting files directly from SKILL.md and state clearly when they
+        should be read. This supports the routing contract and no quantitative effect size.
     contradicting_evidence: none known
-    validation_test: Harness flag "pointer has no read-condition" is clear after change.
+    validation_test: Advisory flag clears, direct discoverability remains, and walkthroughs confirm required references are still requested on their applicable paths.
     rollback: Trivial (text-only edit).
 
   - id: R-04
     name: scripts-over-generation
     layer: skill-content
     tier: 1
-    description: Move >15-line embedded code blocks into scripts/ that execute instead of being read+regenerated.
-    mechanism: A bundled script executes at ~zero context cost and is deterministic; embedded code is billed as input on load and again as output when the model retypes it.
+    description: Move long deterministic operations into scripts/ when the runtime can execute them without first reading their source.
+    mechanism: Executed script source can stay outside model context, but the invocation and script output still consume context; if the model reads the source, that source also enters context.
     target: [input, output]
     applies_when: Body/references embed long code the model is expected to run or reproduce.
     do_not_apply_when: The code is a SHORT illustrative pattern the model must adapt (not run verbatim), or the runtime cannot execute scripts.
-    expected_benefit: Removes the block from input on every trigger AND from output on every use.
+    expected_benefit: Avoids repeatedly loading or regenerating executable source while retaining explicit accounting for tool invocation and bounded script output.
     quality_risk: 1
     safety_risk: 0
     maintainability_risk: 0  # scripts are testable
     portability_risk: 1  # runtime must support execution
     evidence_confidence: practitioner
     priority: {frequency: 2, applicability: 2, savings: 3, confidence: 0.5, risk_penalty: 2, score: 4.0}
-    sources: [S-D10]
+    sources: [S-D10, S-D16]
     claims_provenance: round-2-primary-read
     source_claims:
       S-D10: >-
@@ -207,8 +212,12 @@ rules:
         uncited. NOTE the round-2 finding: the nearest academic work (CodeAct) measures the FORMAT OF
         THE ACTION a model emits at inference, not where code lives at authoring time - no paper tests
         this rule''s actual claim.
-    contradicting_evidence: none known
-    validation_test: Script runs green standalone; skill text points to it with a usage line.
+      S-D16: >-
+        The official Skill architecture describes executable scripts as bundled resources that can run
+        without loading their source into context. It does not make invocation or output free, and does
+        not establish a workload-level saving.
+    contradicting_evidence: Script output and any source the model reads remain context-bearing; execution is not zero-token.
+    validation_test: Script runs standalone; the skill points to it with a usage line; measure invocation/output and verify the model need not read the source.
     rollback: Re-inline the block.
 
   - id: R-05
@@ -216,18 +225,18 @@ rules:
     layer: provider-api
     tier: 1
     description: Order content stable-first/volatile-last and serialize deterministically so the skill sits inside a cacheable prompt prefix.
-    mechanism: Provider prompt caching is a byte-level prefix match; cache reads bill at ~0.1x input. Any timestamp/random id/unsorted serialization upstream invalidates everything after it.
+    mechanism: On supported runtimes a byte-stable request prefix can receive a lower cache-read price; writes, uncached suffixes, TTL expiry, model minimums, and invalidation retain separate economics, and cached tokens still occupy context.
     target: cost  # not logical token count - billed tokens
     applies_when: The skill or its host system interpolates volatile values (dates, ids) early, serializes non-deterministically, or varies tool sets per request.
-    do_not_apply_when: Content is genuinely per-request unique from byte 0 (nothing to cache).
-    expected_benefit: Up to ~90% input-cost reduction on cache hits (provider-published multipliers, snapshot 2026-07-24); 5-min-TTL write breaks even after one read.
+    do_not_apply_when: Content is unique from byte 0, the exact provider/model/runtime lacks verified support, or prefix size/layout and hit evidence are unavailable.
+    expected_benefit: Cache-read pricing can reduce the cached portion's billed input cost; whole-run savings are cache-, prefix-, TTL-, and workload-dependent and never a context-token reduction.
     quality_risk: 0
     safety_risk: 0
     maintainability_risk: 1
     portability_risk: 1  # multipliers/TTLs are provider-specific; mechanism is general
     evidence_confidence: provider
     priority: {frequency: 2, applicability: 3, savings: 3, confidence: 1.0, risk_penalty: 2, score: 16.0}
-    sources: [S-C01, S-C02, S-C03, S-C04, S-C07, S-C08]
+    sources: [S-C01, S-C02, S-C03, S-C04, S-C12, S-C07, S-C08]
     claims_provenance: round-2-primary-read
     source_claims:
       S-C01: >-
@@ -254,8 +263,12 @@ rules:
         Same caution. ''Up to 6.4x higher throughput'' is SERVING THROUGHPUT, a best case across
         workloads, not a token or cost reduction. Cited for the mechanism that prefix sharing is a real
         runtime optimization, which is what makes prefix stability worth designing for.
-    contradicting_evidence: none known
-    validation_test: Rendered prompt bytes identical across two runs; cache_read_input_tokens > 0 on second call when live-verified (else labeled projected).
+      S-C12: >-
+        The official cache-diagnostics guide distinguishes cache writes, reads, misses, minimum-prefix
+        behavior, and invalidation causes. It supports inspecting actual cache buckets instead of
+        applying a blanket discount; it does not reduce context occupancy.
+    contradicting_evidence: Non-prefix cache runtimes exist; provider semantics and model thresholds change, so stable-prefix ordering is runtime-conditioned rather than universal.
+    validation_test: Record exact provider/model/API revision, stable request-prefix bytes, model minimum, TTL, writes/reads/misses, and observed cache usage; otherwise report projected or unavailable.
     rollback: Reorder is reversible; no content is removed.
 
   - id: R-06
@@ -263,11 +276,11 @@ rules:
     layer: skill-content
     tier: 1
     description: Give the skill a concrete output contract - banned content classes, verbosity modes with budgets, and a defined deliverable shape - instead of "be concise".
-    mechanism: Output tokens cost 3-6x input on snapshot pricing; prompted length limits cut verbosity while maintaining accuracy, and draft-style output can match quality at a fraction of tokens.
+    mechanism: Published provider tables show model-specific output/input price spreads [reported] S-C02 pricing table; prompted length limits can cut verbosity while maintaining accuracy, and draft-style output can match quality at a fraction of tokens in the cited studies.
     target: output
     applies_when: Skill requests outputs without shape/length constraints, or uses vague brevity language.
     do_not_apply_when: The task class genuinely requires long-form output - then budget BY task class rather than capping globally.
-    expected_benefit: Paper-reported reasoning-token reductions up to ~92% in the best case (S-D03, their setups); treat as upper bound, project conservatively.
+    expected_benefit: The paper reports reasoning-token reductions up to ~92% in its best case [reported] S-D03 abstract and results; this is an upper bound from its setup, not a target projection.
     quality_risk: 1  # over-tight budgets can under-think hard tasks
     safety_risk: 0
     maintainability_risk: 0
@@ -304,7 +317,7 @@ rules:
     target: [model_calls, tool_calls, output]
     applies_when: Skill invokes search/tools/self-review without stop or bound language.
     do_not_apply_when: The loop already has a domain-mandated bound (e.g., compliance requires exhaustive scan) - keep the mandated bound.
-    expected_benefit: Removes worst-case unbounded spend; S-D05 reports ~43% compute reduction with BETTER outcomes when overthinking is curbed (their setup).
+    expected_benefit: Removes worst-case unbounded spend; the study reports ~43% compute reduction with better outcomes in its setup [reported] S-D05 abstract and results.
     quality_risk: 1
     safety_risk: 0
     maintainability_risk: 0
@@ -336,7 +349,7 @@ rules:
     target: [tool_result_tokens, input]
     applies_when: Skill passes raw tool/search/file output onward, or sub-agents return full transcripts.
     do_not_apply_when: Downstream steps need verbatim content (exact quotes, diffs, legal text) - filter selection, not fidelity.
-    expected_benefit: RECOMP compressed retrieved docs to as low as ~6% of tokens with minimal loss (S-B08, their benchmarks); provider guidance uses ~1-2k-token sub-agent summaries.
+    expected_benefit: RECOMP reports compressing retrieved documents to as low as ~6% of their tokens with minimal loss in its benchmarks [reported] S-B08 abstract and results; actual target savings remain workload-specific.
     quality_risk: 1
     safety_risk: 0
     maintainability_risk: 1
@@ -444,19 +457,19 @@ rules:
     name: history-summarization
     layer: orchestration
     tier: 2
-    description: Summarize conversation history past a threshold, preserving commitments, constraints, open decisions, and user corrections verbatim.
-    mechanism: Multi-turn accumulation degrades quality (~39% multi-turn vs single-turn) AND bills the whole history every turn; a faithful summary cuts both.
+    description: Compact long history only with typed retention and source links that preserve obligations, constraints, commitments, unresolved work, corrections, temporal updates, and side effects.
+    mechanism: Focused context can reduce repeated input, but compaction is lossy and runtime-dependent; durable memory and just-in-time retrieval can keep recoverable material outside active context without pretending deletion is lossless.
     target: input
     applies_when: Long-running agents/skills that resend full history each turn.
-    do_not_apply_when: Sessions are short; or the runtime already compacts server-side (double-summarization loses more).
-    expected_benefit: History-length dependent; quality can IMPROVE (focused prompts beat full history on LongMemEval - S-B03).
+    do_not_apply_when: Sessions are short; the runtime already compacts server-side; source recovery is unavailable; or retention probes cannot preserve identifiers, numbers, negations, exceptions, and current state.
+    expected_benefit: History-length dependent and unproven for the target until evaluated; may reduce active context while retaining recoverability.
     quality_risk: 2  # summary can drop commitments - hence the preserve-list
     safety_risk: 1
     maintainability_risk: 1
     portability_risk: 1
     evidence_confidence: moderate
     priority: {frequency: 2, applicability: 2, savings: 3, confidence: 0.8, risk_penalty: 4, score: 5.6}
-    sources: [S-B05, S-B03, S-D09]
+    sources: [S-B05, S-B03, S-B11, S-D09, S-D13, S-D14, S-D15]
     claims_provenance: round-1-corpus-record
     source_claims:
       S-B05: >-
@@ -472,8 +485,24 @@ rules:
         Defines the practice: compaction as ''taking a conversation nearing the context window limit,
         summarizing its contents, and reinitiating a new context window with the summary''. Page opened
         2026-07-25. Prescriptive, unmeasured.
-    contradicting_evidence: none known
-    validation_test: Post-summary probe - commitments/constraints/decisions from early turns still answerable.
+      S-B11: >-
+        LongMemEval separates information extraction, multi-session reasoning, temporal reasoning,
+        knowledge updates, and abstention. It supports testing retained state by class rather than
+        treating a shorter context as inherently faithful.
+      S-D13: >-
+        The official context-editing contract is an explicit, model/runtime-gated mechanism for clearing
+        configured tool-result context. It supports capability gating and typed editing, not arbitrary
+        semantic deletion or a universal saving.
+      S-D14: >-
+        The official compaction contract summarizes prior context when configured thresholds are reached.
+        It establishes a runtime capability whose summary must still be evaluated; it does not establish
+        that every task preserves obligations or state.
+      S-D15: >-
+        The memory-tool contract provides persistent, client-managed storage across conversations. It
+        supports source-recoverable state outside active context but does not make retrieval automatic,
+        lossless, or token-free.
+    contradicting_evidence: Aggressive compaction can discard subtle critical context, and multi-turn failures can arise from early assumptions rather than length alone.
+    validation_test: Retention, temporal-update, multi-session, provenance, and abstention probes pass; failure produces a no-op or restores source-linked originals.
     rollback: Disable summarization flag; resend full history.
 
   - id: R-12
@@ -485,7 +514,7 @@ rules:
     target: [input, retrieved]
     applies_when: Skill loads corpus/context beyond what the query needs.
     do_not_apply_when: "Pruning would be query-blind (S-B06: hurts faithfulness); or content is legally/contractually required in context."
-    expected_benefit: Token cut plus measured quality gains in the cited setups (up to +21.4% with 4x fewer tokens - S-B07).
+    expected_benefit: LongLLMLingua reports up to +21.4% with 4x fewer tokens in its cited setup [reported] S-B07 abstract; this does not establish a target effect.
     quality_risk: 2
     safety_risk: 1
     maintainability_risk: 1
@@ -525,7 +554,7 @@ rules:
     layer: orchestration
     tier: 2
     description: Lower retrieval top-k to what the task uses, deduplicate retrieved chunks, default to fixed-size chunking, compress retrieved docs before insertion.
-    mechanism: Every retrieved token is input; most top-k tails are unread; semantic chunking costs compute without consistent gains; compression to ~6% retains accuracy in cited benchmarks.
+    mechanism: Every retrieved token is input; most top-k tails are unread; semantic chunking costs compute without consistent gains. RECOMP reports compression to ~6% in its benchmarks [reported] S-B08 abstract and results.
     target: retrieved
     applies_when: Skill/workflow controls its own retrieval parameters.
     do_not_apply_when: Recall-critical tasks where a missed document is a hard failure - reduce k only with a recall check.
@@ -590,11 +619,11 @@ rules:
     layer: orchestration
     tier: 2
     description: Route simple/mechanical subtasks to cheaper models; escalate hard or high-risk subtasks to stronger ones; cascades with a quality gate.
-    mechanism: Per-token prices differ 5-25x across a provider's lineup (snapshot 2026-07-24); routing captures the spread when quality is verifiably acceptable.
+    mechanism: Published per-token prices differ across a provider's lineup [reported] S-C02 pricing table; routing can capture that spread only when quality is verifiably acceptable.
     target: cost
     applies_when: The workflow has separable subtasks with measurable quality criteria.
     do_not_apply_when: No quality gate is possible; or safety-relevant judgments (never route safety checks down).
-    expected_benefit: Cited - up to 98% best-case cascade savings (S-C05), >2x routing (S-C06), >50% self-verification escalation (S-C10) - all their benchmarks; project conservatively.
+    expected_benefit: The cited studies report up to 98% best-case cascade savings, >2x routing improvements, and >50% selective self-verification escalation in their own benchmarks [reported] S-C05 experiments; S-C06 results; S-C10 results. None is a target projection.
     quality_risk: 3
     safety_risk: 1
     maintainability_risk: 2
@@ -659,11 +688,11 @@ rules:
     layer: orchestration
     tier: 2
     description: Plan and batch independent tool calls instead of serial call-observe-call loops; combine only where separation is not load-bearing.
-    mechanism: Serial loops re-bill context between calls and add latency; planned/parallel execution cut cost 6.7x and improved accuracy in the cited system.
+    mechanism: Serial loops re-bill context between calls and add latency; LLMCompiler reports a 6.7x cost reduction and improved accuracy in its system [reported] S-D06 abstract and evaluation.
     target: [tool_calls, model_calls, latency]
     applies_when: Skill orchestrates multiple independent tool calls.
     do_not_apply_when: Later calls depend on earlier results, or separation exists for reliability/permission gating - keep those separate.
-    expected_benefit: Cited up to 3.7x latency / 6.7x cost in LLMCompiler's benchmarks; project conservatively per target.
+    expected_benefit: LLMCompiler reports up to 3.7x lower latency and 6.7x lower cost in its benchmarks [reported] S-D06 abstract and evaluation; multi-agent or parallel execution is not assumed token-efficient on another workload.
     quality_risk: 1
     safety_risk: 1  # do not batch permission-gated calls past their gates
     maintainability_risk: 1
@@ -759,11 +788,11 @@ rules:
     layer: orchestration
     tier: 2
     description: Cap sub-agent delegation depth and require sub-agents to return bounded summaries, not transcripts; use multi-agent only for parallelizable work.
-    mechanism: Multi-agent runs cost ~15x chat tokens; token spend explains ~80% of outcome variance - depth and return-size caps keep the multiplier only where parallelism pays.
+    mechanism: Multi-agent systems use separate contexts and can greatly increase aggregate tokens; depth and return-size caps reserve that cost for independent parallel work whose expected value justifies it.
     target: [model_calls, input]
     applies_when: Skill spawns sub-agents/delegated model calls.
     do_not_apply_when: The task is genuinely parallelizable research where breadth beats depth (S-D07's win case).
-    expected_benefit: Bounded worst-case; prevents the 15x class of blowups on non-parallelizable tasks.
+    expected_benefit: Bounded worst-case and explicit aggregate accounting; no default claim that delegation saves tokens.
     quality_risk: 1
     safety_risk: 0
     maintainability_risk: 0
@@ -794,19 +823,19 @@ rules:
     name: automated-prompt-compression
     layer: mixed
     tier: 3
-    description: Apply LLMLingua-class extractive, query-aware compression to bulk context at <=5x ratio, with an information-preservation check on entities/grounding.
-    mechanism: Token-classification compressors drop low-information tokens; query-aware variants can preserve or improve accuracy at 2-5x.
+    description: Experiment with extractive, query-aware compression on bulk context only when an evaluation can test multiple ratios and retention classes.
+    mechanism: Learned compressors can reduce input on evaluated tasks, but no universal safe ratio transfers across models, languages, formats, or workloads.
     target: input
     applies_when: Large prose context blocks; an eval exists; Aggressive profile explicitly selected.
     do_not_apply_when: Safety/constraint text (R-S1); legal/verbatim content; no eval available; instructions (compress knowledge, never directives).
-    expected_benefit: 2-5x on compressed blocks (cited sweet spot); ~10x is the empirical degradation ceiling - never target it by default.
+    expected_benefit: Workload-specific and unknown until measured; published ratios are experimental settings, not optimizer defaults.
     quality_risk: 3  # silent entity/grounding loss is documented
     safety_risk: 2  # instruction-dropping and guardrail erosion documented in preprints
     maintainability_risk: 2  # compressed text is hard to review
     portability_risk: 1
     evidence_confidence: strong  # for the ratio-quality curve; safety risk is experimental-tier
     priority: {frequency: 1, applicability: 2, savings: 3, confidence: 1.0, risk_penalty: 7, score: -1.0}
-    sources: [S-A01, S-A02, S-A03, S-A06, S-A07, S-A08]
+    sources: [S-A01, S-A02, S-A03, S-A06, S-A07, S-A08, S-A11]
     claims_provenance: round-1-corpus-record
     source_claims:
       S-A01: >-
@@ -833,8 +862,12 @@ rules:
         accuracy alone: some SOTA compressors fail to preserve key details, and granularity control
         recovered up to +23% downstream performance, +8 BERTScore in grounding, and 2.7x more entities
         preserved (abstract).
-    contradicting_evidence: S-A05 (extreme ratios lose 27-38% capability); S-A09/S-A10 (safety erosion, preprint).
-    validation_test: Information-preservation check (entities, citations, constraints survive) + task eval at the chosen ratio; per-level constraint-compliance check.
+      S-A11: >-
+        Tokenizer Choice shows that tokenizer selection materially changes efficiency and language
+        behavior. It supports measuring the target model and language directly; it does not establish
+        any portable compression ratio.
+    contradicting_evidence: Token minimization does not itself maximize quality; high ratios lose entities, grounding, constraints, and capability in setting-dependent ways.
+    validation_test: Sweep ratios and gate on obligation/entity/state preservation, safety constraints, paired task non-inferiority, and target-model/language token counts.
     rollback: Serve the uncompressed originals (always retained).
 
   - id: R-22
@@ -842,7 +875,7 @@ rules:
     layer: model-training
     tier: 3
     description: Gist/soft-token compression of recurring instructions. Recorded for completeness - DEFAULT DO-NOT-APPLY.
-    mechanism: Instructions distilled into trained soft tokens (up to 26x); but tokens are model-specific artifacts requiring training access.
+    mechanism: Gist-token work reports instruction distillation up to 26x in its trained setup [reported] S-A04 abstract and evaluation; the artifacts are model-specific and require training access.
     target: input
     applies_when: Practically never for portable skills - requires per-model training and serving control.
     do_not_apply_when: Any portable/markdown skill (i.e., this tool's normal targets); any multi-model deployment.
@@ -869,22 +902,22 @@ rules:
     rollback: n/a.
 
   - id: R-23
-    name: hard-history-truncation
+    name: typed-history-retention
     layer: orchestration
     tier: 3
-    description: Drop oldest turns beyond a window without summarizing. Cheaper than R-11 but lossy; Aggressive only, with a preserved-commitments floor.
-    mechanism: Directly caps history cost; unlike R-11 spends no tokens summarizing.
+    description: Propose removal only for typed ephemeral observations already superseded or recoverable; never delete content solely because it is oldest.
+    mechanism: Age is not importance. Persistent commitments, safety constraints, temporal corrections, and unresolved work may be old but remain load-bearing.
     target: input
-    applies_when: History is long, old turns demonstrably unused, and R-11's summarization cost is itself material.
-    do_not_apply_when: Commitments/constraints appear in old turns (check first); compliance requires full history.
-    expected_benefit: Window-size cap on history cost.
+    applies_when: History is long and typed lifecycle evidence identifies stale, redundant, source-recoverable ephemeral state.
+    do_not_apply_when: Retention class is unknown; source recovery is unavailable; content carries an obligation, commitment, safety constraint, unresolved task, provenance, or current temporal state.
+    expected_benefit: Workload-specific removal of stale state; no universal history-window saving.
     quality_risk: 3
     safety_risk: 1
     maintainability_risk: 0
     portability_risk: 0
     evidence_confidence: practitioner
     priority: {frequency: 1, applicability: 2, savings: 2, confidence: 0.5, risk_penalty: 4, score: -2.0}
-    sources: [S-B05, S-B03]
+    sources: [S-B05, S-B03, S-B11, S-D09, S-D13]
     claims_provenance: round-1-corpus-record
     source_claims:
       S-B05: >-
@@ -896,9 +929,19 @@ rules:
         Supports that a shorter focused context can outperform a longer one, which is what makes
         truncation viable at all; it does not establish that unsummarized truncation is safe, which is
         why this rule is tier 3.
-    contradicting_evidence: S-B05 - models don't recover from lost early context; hence the commitments floor.
-    validation_test: Probe for early-turn commitments after truncation; fail -> fall back to R-11.
-    rollback: Restore full history resend.
+      S-B11: >-
+        LongMemEval requires temporal updates, cross-session reasoning, and abstention. Those categories
+        motivate retaining current facts and provenance instead of dropping state solely by age.
+      S-D09: >-
+        The context-engineering guidance treats context as finite and emphasizes preserving the smallest
+        high-signal set needed for the task. It supports deliberate retention, not oldest-first deletion.
+      S-D13: >-
+        Context editing is an explicit provider feature with configured triggers and clearable content
+        types. It supports capability-gated typed removal and no claim that arbitrary old text is safe
+        to delete.
+    contradicting_evidence: Long-term memory tasks require temporal updates, multi-session reasoning, and abstention; age-only truncation can erase the needed fact.
+    validation_test: Dry-run retention classification plus commitment, temporal-update, provenance, and abstention probes; unknown or failed probes produce no deletion.
+    rollback: Restore source-linked originals; runtime transformation is out of scope unless separately supported and verified.
 
   # ============ TIER S — safety meta-rules, always on ============
 
@@ -910,12 +953,13 @@ rules:
     mechanism: >-
       Editing safety text produces large, model-dependent, UNPREDICTABLE swings in refusal
       behaviour, and there is no way to know in advance which side of the swing a given target is
-      on. Measured directly: hand-shortening the LLaMA-2 safety prompt raised compliance with
+      on. One study reports that hand-shortening the LLaMA-2 safety prompt raised compliance with
       harmful queries from 20% to 55% on one model and 12% to 29% on another (S-R26) - and on two
       other models in the SAME table the safety prompt bought zero percentage points on harmful
       queries while raising false refusal on HARMLESS queries from 4% to 21%. Deleting a safety
       instruction roughly tripled unsafe responses (21% -> 7.9% when present), and adding one cost
-      false abstention (0.4% -> 2.3%) (S-R27). The cost of a dropped guardrail is unbounded relative
+      false abstention (0.4% -> 2.3%) (S-R27). [reported] S-R26 Table 1; S-R27 Secs 4.1-4.2.
+      The cost of a dropped guardrail is unbounded relative
       to its token cost, and the cost of an over-refusing skill is a quality regression that a
       safety-only metric would score as an improvement.
     rationale_correction_2026-07-25: >-
@@ -983,6 +1027,7 @@ rules:
       ASR, including instructional prevention and data-prompt isolation, the two that amount to
       exactly this instruction (S-R30). Channel separation is what works: 96% -> 0% on manual
       injections at near-zero utility cost, though still 56-58% under GCG (S-R29 / StruQ line).
+      [reported] S-R31 Table 7a; S-R30 abstract and Sec 5.2; S-R29 Sec 4.3.
       So this rule is sound to the exact extent that the optimizer's CONTROL FLOW never executes
       target content - never as a consequence of the model having been told not to.
     rationale_correction_2026-07-25: >-
@@ -1079,19 +1124,20 @@ rules:
     layer: reporting
     tier: S
     description: >-
-      Every quantitative claim carries one of five labels - measured, estimated,
-      projected, cache-dependent, or behavior-dependent. Measured claims carry a
-      data pointer. Cache-dependent savings are a billing effect on a cache hit,
+      Every quantitative claim carries one of six labels - measured, estimated,
+      projected, cache-dependent, behavior-dependent, or reported. Measured means
+      completed observed usage with claim-specific evidence; reported means a
+      traceable third-party result with a source id. Provider preflight counts
+      and local proxies are estimated. Cache-dependent savings are a billing
+      effect on a cache hit,
       not a token reduction, and are never summed with measured figures;
       behavior-dependent savings are realized only if the assumed path is taken.
       Failed or reverted optimizations are reported, never hidden.
     mechanism: >-
-      Estimates dressed as measurements corrupt every downstream decision; the
-      validator (validate_report.py) enforces this mechanically. The two extra
-      categories were adopted from the GPT/Codex reference implementation
-      (2026-07-25): three labels could not express a saving that exists only on
-      a cache hit or only if the model takes the assumed path, so such figures
-      were previously forced into "estimated" and lost their contingency.
+      Estimates dressed as measurements corrupt every downstream decision. The
+      validator resolves the exact report claim, run hashes, metric semantics,
+      provider/model identity, and evidence class instead of accepting any
+      unrelated harness file.
     target: [reporting, safety]
     applies_when: always.
     do_not_apply_when: never.
@@ -1113,8 +1159,8 @@ rules:
       empirical finding, and its own expected_benefit already read "n/a - constraint". Forcing every
       rule to name a source made the registry assert an evidential relationship that did not exist.
       Fixed by declaring rationale_type: constraint rather than by hunting for a citation to attach.
-    contradicting_evidence: none known
-    validation_test: validate_report.py passes on every emitted report.
+    contradicting_evidence: Provider estimators may differ from billed usage and may include non-billed optimization tokens; exactness is not established.
+    validation_test: validate_report.py resolves each quantitative claim's required source or typed evidence pointer, recomputes machine claims, and rejects fixture/mock evidence presented as live.
     rollback: n/a.
 
   # ============ ROUND 2 (2026-07-25) — added from research-2026-07-25/DOSSIER.md §13 ============
@@ -1127,9 +1173,9 @@ rules:
     tier: 1
     description: Treat relocation, reordering, whitespace normalisation and heading changes as behavioural interventions requiring validation - not as cosmetic changes exempt from testing.
     mechanism: >-
-      Semantics-preserving edits are not behaviour-preserving. 24% of SINGLE atomic formatting
+      Semantics-preserving edits are not behaviour-preserving. The studies report that 24% of SINGLE atomic formatting
       changes move accuracy by >=5 points with wording held identical, and adding one space flipped
-      500+ predictions on a classification suite. A "verbatim move" is not exempt: the studies'
+      500+ predictions on a classification suite [reported] S-R01 Sec 4.3 and Fig. 8; S-R03 Sec 3.1 and Fig. 2. A "verbatim move" is not exempt: the studies'
       perturbations also preserve wording exactly.
     target: input
     applies_when: Any Apply run that relocates, reorders or renormalises text - i.e. almost every Apply run.
@@ -1148,9 +1194,9 @@ rules:
       S-R03: 'Adding one leading/trailing space produced over 500 prediction changes on ChatGPT (Sec 3.1, Fig. 2). Churn, not necessarily net accuracy loss - the paper is careful about this, and Llama-2 was unaffected because that stack strips input.'
       S-R02: 'Paraphrasing an instruction inverted the induced model leaderboard in 15 of 25 tasks (negative Kendall tau, Sec 4.2); instruction effect significant in 21 of 25 (Friedman).'
     contradicting_evidence: >-
-      S-R04 finds much of the measured sensitivity is an artifact of rigid answer matching: SD
+      S-R04 reports that much of the measured sensitivity is an artifact of rigid answer matching: SD
       collapses 0.28 -> 0.005 and rank correlation rises 0.30 -> 0.92 under semantics-aware scoring
-      (Sec 3.2). The conflict is real and unresolved for skill files, which neither side studies.
+      [reported] S-R04 Sec 3.2. The conflict is real and unresolved for skill files, which neither side studies.
       This rule is therefore justified as PRECAUTION UNDER DISAGREEMENT, not as settled science.
     validation_test: Benchmark mode runs the sham-optimized negative controls; a cosmetic-only change must show no measurable difference, or the harness is measuring noise.
     rollback: Downgrade to advisory if sham controls and semantics-aware scoring show no relocation effect across >=5 packages.
@@ -1337,7 +1383,7 @@ rules:
     target: cost
     applies_when: The workflow selects examples per query AND the provider bills cache reads below input.
     do_not_apply_when: No caching available, or the prompt is unique from byte 0 anyway.
-    expected_benefit: Avoids a cost increase caused by an optimization. Cited as roughly 2x cheaper at 50 shots and 10x at 200 versus uncached similarity selection. [cache-dependent]
+    expected_benefit: Avoids a cost increase caused by an optimization. The paper reports roughly 2x lower modeled cost at 50 shots and 10x at 200 versus uncached similarity selection in its setup [reported] S-R10, Sec. 4.3; this is not a projected saving for the target.
     quality_risk: 1
     safety_risk: 0
     maintainability_risk: 1
@@ -1361,7 +1407,7 @@ rules:
     mechanism: >-
       Providers refuse to cache a prefix shorter than a per-model minimum and return NO ERROR when
       they do. An optimizer that successfully shrinks a prompt past that line turns caching off, and
-      since cache reads bill at 0.1x input, the token reduction can be swamped by the lost discount.
+      since published cache-read rates can be a fraction of input [reported] S-C01 cache pricing; S-C03 prompt-caching availability, the token reduction can be swamped by the lost discount.
       This is a failure the tool can cause BY SUCCEEDING at its stated goal.
     target: cost
     applies_when: The target sits inside a cached prefix and a reduction would cross the model's minimum.
@@ -1388,8 +1434,8 @@ rules:
     tier: 1
     description: Stamp every token figure with the model and tokenizer it was measured with, and refuse before/after comparisons that cross a tokenizer boundary.
     mechanism: >-
-      A tokenizer change moves counts for the SAME TEXT by roughly 30% within a single vendor's own
-      model line. A before/after measured across such a boundary is void, and an absolute token
+      Anthropic reports that a tokenizer change can move counts for the SAME TEXT by roughly 30%
+      within its own model line [reported] S-C02 tokenizer note. A before/after measured across such a boundary is void, and an absolute token
       claim that does not name its tokenizer cannot be checked.
     target: reporting
     applies_when: always, for any token figure.
@@ -1413,12 +1459,13 @@ rules:
     name: model-the-output-side-or-declare-it-unscored
     layer: reporting
     tier: 1
-    description: Either price output tokens from measured evaluation transcripts, or have every output-targeting rule declare itself unscored. Never let a dollar figure silently cover only the input side.
+    description: Price inclusive output tokens from disjoint observed usage, or return typed unavailability. Never let a dollar figure silently omit the output side or trust adapter-supplied cost.
     mechanism: >-
-      Output bills at roughly 5-6x input on current published rates, while the cost model covers the
-      input side only. That is honest as far as it goes, but the registry ranks an OUTPUT-side rule
-      highest of all non-safety rules, so the highest-ranked rule is the one the cost figure cannot
-      express. A reader sees a dollar number and assumes it is the bill.
+      Published model rows show output/input price ratios around 5-6x for the cited examples
+      [reported] S-C02 and S-C04 pricing tables. Calculation v2 can price
+      inclusive output when the run supplies disjoint observed buckets and an effective-dated exact
+      model profile; otherwise it returns typed unavailability. This prevents input-only arithmetic
+      or an arbitrary adapter number from masquerading as the whole bill.
     target: [reporting, cost]
     applies_when: Any cost figure emitted for a target whose rules touch output length or reasoning budget.
     do_not_apply_when: Input-only optimizations with no output-contract change - then the input-side figure IS the change.
@@ -1438,5 +1485,5 @@ rules:
       Output-token deltas cannot be measured without live runs, so the declare-unscored branch will
       often be the operative one. That is still an improvement on a dollar figure that silently
       omits the larger half.
-    validation_test: A cost report for a target with an output-contract change must either include measured output tokens or carry an explicit "output side not modeled" line.
+    validation_test: A cost report for a target with an output-contract change must either recompute inclusive output from disjoint observed usage and a matching price profile or carry a typed unavailable reason.
     rollback: n/a - a reporting constraint.

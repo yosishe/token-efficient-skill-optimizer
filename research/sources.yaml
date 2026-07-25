@@ -1,7 +1,15 @@
 meta:
   project: token-efficient-skill-optimizer
   tier: DEEP
-  date_collected: '2026-07-24'
+  date_collected: '2026-07-25'
+  provenance_schema: 2
+  provenance_note: Provenance-required v1.2 records carry a versioned URL, locator, status, supersession state, and the SHA-256 of exact decompressed response bytes observed during retrieval. Living Anthropic HTML is explicitly marked as a point-in-time dynamic snapshot.
+  round2_provenance_defaults: &round2_provenance
+    provenance_required: true
+    last_verified: '2026-07-25'
+    status: active
+    superseded_by: null
+    provenance_status: The upstream dossier path was not shipped; this record is independently bound to the observed primary response, while rule-specific support locators remain in skill/rules/rules.yaml source_claims.
   verification_protocol: Each record was fetched by a research subagent from its primary page (arXiv abs
     / DOI / official provider or engineering page) with title+author match required before recording;
     the orchestrator then ran structural integrity checks over all records and re-fetched a per-cluster
@@ -40,6 +48,14 @@ records:
   generalizes_across_models: partial
   confidence: high
   verification_status: verified-primary
+  provenance_required: true
+  versioned_url: https://arxiv.org/abs/2310.05736v2
+  version_scope: stable-versioned-publication-snapshot
+  last_verified: '2026-07-25'
+  status: active
+  superseded_by: null
+  section_locator: arXiv v2 abstract; method, evaluation datasets, and compression result
+  retrieval_digest: {algorithm: sha256, value: a086d070b3ae5faf5f8aa803350dd4ad2b15bc89583e73433c68430450feace3, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T15:32:58Z', byte_length: 41507, stability: stable-versioned-page}
 - id: S-A02
   title: 'LongLLMLingua: Accelerating and Enhancing LLMs in Long Context Scenarios via Prompt Compression'
   authors: Huiqiang Jiang et al. (Microsoft)
@@ -68,6 +84,14 @@ records:
   generalizes_across_models: partial
   confidence: high
   verification_status: verified-primary
+  provenance_required: true
+  versioned_url: https://arxiv.org/abs/2310.06839v2
+  version_scope: stable-versioned-publication-snapshot
+  last_verified: '2026-07-25'
+  status: active
+  superseded_by: null
+  section_locator: arXiv v2 abstract; NaturalQuestions, LooGLE, compression, cost, and latency results
+  retrieval_digest: {algorithm: sha256, value: ca7f418e6ad80cf43006eb4792a52372d93284a6527638d3df63df8bf97ea96c, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T15:32:59Z', byte_length: 42538, stability: stable-versioned-page}
 - id: S-A03
   title: 'LLMLingua-2: Data Distillation for Efficient and Faithful Task-Agnostic Prompt Compression'
   authors: Zhuoshi Pan et al. (Tsinghua + Microsoft)
@@ -93,11 +117,19 @@ records:
   limitations: Practical ratios are moderate (2x-5x), well below LLMLingua's 20x claims; extractive-only
     — cannot abstract/reword; training data distilled from one teacher LLM.
   evidence_nature: causal
-  relevance: Best current default for compressing reusable skill text offline (task-agnostic, faithful,
-    cheap); its 2x-5x sweet spot is a realistic compression-budget ceiling for optimization rules.
+  relevance: Informs extractive-compression hypotheses and ratio-sweep fixtures. Its 2x-5x
+    experimental settings are not a universal safe range, default, or ceiling for skill optimization.
   generalizes_across_models: true
   confidence: high
   verification_status: verified-primary
+  provenance_required: true
+  versioned_url: https://arxiv.org/abs/2403.12968v2
+  version_scope: stable-versioned-publication-snapshot
+  last_verified: '2026-07-25'
+  status: active
+  superseded_by: null
+  section_locator: arXiv v2 abstract; evaluation results and latency comparison
+  retrieval_digest: {algorithm: sha256, value: 2547d31b2fc2479c7025f7ad620809a0a5f0dbdf1c7c6248f7de8d763400a980, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T13:44:58Z', byte_length: 45567, stability: stable-versioned-page}
 - id: S-A04
   title: Learning to Compress Prompts with Gist Tokens
   authors: Jesse Mu, Xiang Lisa Li, Noah Goodman (Stanford)
@@ -125,6 +157,14 @@ records:
   generalizes_across_models: false
   confidence: high
   verification_status: verified-primary
+  provenance_required: true
+  versioned_url: https://arxiv.org/abs/2304.08467v3
+  version_scope: stable-versioned-publication-snapshot
+  last_verified: '2026-07-25'
+  status: active
+  superseded_by: null
+  section_locator: arXiv v3 abstract; gist-token method, compression, FLOPs, and latency results
+  retrieval_digest: {algorithm: sha256, value: c9cdf2b64df9a185ce51f3aad238d4d0cd5f56fe7ea20287a664e175b79fb39b, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T15:33:00Z', byte_length: 41053, stability: stable-versioned-page}
 - id: S-A05
   title: '500xCompressor: Generalized Prompt Compression for Large Language Models'
   authors: Zongqian Li, Yixuan Su, Nigel Collier (University of Cambridge)
@@ -153,6 +193,14 @@ records:
   generalizes_across_models: partial
   confidence: high
   verification_status: verified-primary
+  provenance_required: true
+  versioned_url: https://arxiv.org/abs/2408.03094v1
+  version_scope: stable-versioned-publication-snapshot
+  last_verified: '2026-07-25'
+  status: active
+  superseded_by: null
+  section_locator: arXiv v1 abstract; compression range, parameter overhead, and capability-retention result
+  retrieval_digest: {algorithm: sha256, value: 0faa8edf74f919f21bd32d17aa2d0cc966ae818eda4a62cffcfbb738e5274c63, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T15:33:01Z', byte_length: 42245, stability: stable-versioned-page}
 - id: S-A06
   title: 'Prompt Compression for Large Language Models: A Survey'
   authors: Zongqian Li, Yinhong Liu, Yixuan Su, Nigel Collier (University of Cambridge)
@@ -181,6 +229,14 @@ records:
   generalizes_across_models: true
   confidence: high
   verification_status: verified-primary
+  provenance_required: true
+  versioned_url: https://arxiv.org/abs/2410.12388v2
+  version_scope: stable-versioned-publication-snapshot
+  last_verified: '2026-07-25'
+  status: active
+  superseded_by: null
+  section_locator: arXiv v2 abstract; hard-versus-soft compression taxonomy and surveyed research directions
+  retrieval_digest: {algorithm: sha256, value: b27ed6424d6f4e39b852fb2ed5f51aa959cdaf660f7a966f3879d8bd0bfe4957, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T15:33:03Z', byte_length: 41531, stability: stable-versioned-page}
 - id: S-A07
   title: Characterizing Prompt Compression Methods for Long Context Inference
   authors: Siddharth Jha, Lutfi Eren Erdogan, Sehoon Kim, Kurt Keutzer, Amir Gholami (UC Berkeley)
@@ -208,6 +264,14 @@ records:
   generalizes_across_models: partial
   confidence: medium
   verification_status: verified-primary
+  provenance_required: true
+  versioned_url: https://arxiv.org/abs/2407.08892v1
+  version_scope: stable-versioned-publication-snapshot
+  last_verified: '2026-07-25'
+  status: active
+  superseded_by: null
+  section_locator: arXiv v1 abstract; method comparison and extractive-compression result
+  retrieval_digest: {algorithm: sha256, value: 4aea38debe831fdaefcc27fd02b7c382d0ec2f9071386f3f823f4224c4de2e98, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T15:33:04Z', byte_length: 41101, stability: stable-versioned-page}
 - id: S-A08
   title: Understanding and Improving Information Preservation in Prompt Compression for LLMs
   authors: Weronika Łajewska et al. (AWS AI Labs collaboration)
@@ -237,6 +301,14 @@ records:
   generalizes_across_models: partial
   confidence: high
   verification_status: verified-primary
+  provenance_required: true
+  versioned_url: https://arxiv.org/abs/2503.19114v2
+  version_scope: stable-versioned-publication-snapshot
+  last_verified: '2026-07-25'
+  status: active
+  superseded_by: null
+  section_locator: arXiv v2 abstract; evaluation dimensions, information-preservation findings, and proposed method
+  retrieval_digest: {algorithm: sha256, value: 537171eaaab2d08ac15d57e712073f98d3a7ea7540944a949038bf4ba5a1825e, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T15:33:05Z', byte_length: 44221, stability: stable-versioned-page}
 - id: S-A09
   title: 'When Compression Becomes an Attack Surface: Black-Box Attacks on Prompt-Compressed LLM Agents
     (formerly ''CompressionAttack'')'
@@ -269,6 +341,14 @@ records:
   generalizes_across_models: partial
   confidence: medium
   verification_status: verified-primary
+  provenance_required: true
+  versioned_url: https://arxiv.org/abs/2510.22963v4
+  version_scope: stable-versioned-publication-snapshot
+  last_verified: '2026-07-25'
+  status: active
+  superseded_by: null
+  section_locator: arXiv v4 abstract; attack setting, evaluated compressors, and reported attack outcomes
+  retrieval_digest: {algorithm: sha256, value: 886426b2354157f857a08ef56d177220118e41c75efe4c3e82a00d565c15004b, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T15:33:06Z', byte_length: 42653, stability: stable-versioned-page}
 - id: S-A10
   title: 'Separating Constraint Compliance from Semantic Accuracy: A Novel Benchmark for Evaluating Instruction-Following
     Under Compression'
@@ -301,6 +381,14 @@ records:
   generalizes_across_models: partial
   confidence: low
   verification_status: verified-primary
+  provenance_required: true
+  versioned_url: https://arxiv.org/abs/2512.17920v1
+  version_scope: stable-versioned-publication-snapshot
+  last_verified: '2026-07-25'
+  status: active
+  superseded_by: null
+  section_locator: arXiv v1 abstract; benchmark design, compression levels, and constraint-compliance results
+  retrieval_digest: {algorithm: sha256, value: cb305694bb6b488fc485579248639b0c4fc28194e7003e87913a58b32f790f41, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T15:33:07Z', byte_length: 43261, stability: stable-versioned-page}
 - id: S-B01
   title: 'Lost in the Middle: How Language Models Use Long Contexts'
   authors: Nelson F. Liu, Kevin Lin, John Hewitt, Ashwin Paranjape, Michele Bevilacqua, Fabio Petroni,
@@ -353,6 +441,14 @@ records:
     long-context variants (2023-era models; effect replicated by later studies)
   confidence: high
   verification_status: verified-primary
+  provenance_required: true
+  versioned_url: https://arxiv.org/abs/2307.03172v3
+  version_scope: stable-versioned-publication-snapshot
+  last_verified: '2026-07-25'
+  status: active
+  superseded_by: null
+  section_locator: arXiv v3 abstract page; quantitative_results separately locates full-text evidence at Figure 5 and sections 2.3 and 4.2
+  retrieval_digest: {algorithm: sha256, value: d880f98e70c73efa5a67f40f25c8f24485cb763f604e713a28001b589cd6751c, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T15:33:07Z', byte_length: 42259, stability: stable-versioned-page}
 - id: S-B02
   title: 'NoLiMa: Long-Context Evaluation Beyond Literal Matching'
   authors: Ali Modarressi, Hanieh Deilamsalehy, Franck Dernoncourt, Trung Bui, Ryan A. Rossi, Seunghyun
@@ -399,6 +495,14 @@ records:
     32K
   confidence: high
   verification_status: verified-primary
+  provenance_required: true
+  versioned_url: https://arxiv.org/abs/2502.05167v3
+  version_scope: stable-versioned-publication-snapshot
+  last_verified: '2026-07-25'
+  status: active
+  superseded_by: null
+  section_locator: arXiv v3 abstract; benchmark design, model count, context length, and degradation results
+  retrieval_digest: {algorithm: sha256, value: 07e0e0e54cfda828fe2e6642f8dfcf253d7b8992c82be17e4c5fb3e36d9cbf0d, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T15:33:08Z', byte_length: 44021, stability: stable-versioned-page}
 - id: S-B03
   title: 'Context Rot: How Increasing Input Tokens Impacts LLM Performance'
   authors: Kelly Hong, Anton Troynikov, Jeff Huber (Chroma)
@@ -450,6 +554,14 @@ records:
     Claude most sensitive to full-history prompts on LongMemEval)
   confidence: medium
   verification_status: verified-primary
+  provenance_required: true
+  versioned_url: https://www.trychroma.com/research/context-rot
+  version_scope: living-research-page-snapshot-at-last-verified
+  last_verified: '2026-07-25'
+  status: active
+  superseded_by: null
+  section_locator: Needle-Question Similarity; Impact of Distractors; LongMemEval; Repeated Words; Models Tested
+  retrieval_digest: {algorithm: sha256, value: 5ab1914bc42319a8882d72224641769d1b2aead438dc9a9fc7bc2268cdd43293, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T15:33:09Z', byte_length: 280839, stability: dynamic-html-point-in-time}
 - id: S-B04
   title: Context Length Alone Hurts LLM Performance Despite Perfect Retrieval
   authors: Yufeng Du, Minyang Tian, Srikanth Ronanki, Subendhu Rongali, Sravan Bodapati, Aram Galstyan,
@@ -496,6 +608,14 @@ records:
   generalizes_across_models: partial — 5 models, consistent direction but very wide magnitude range (13.9%–85%)
   confidence: high
   verification_status: verified-primary
+  provenance_required: true
+  versioned_url: https://arxiv.org/abs/2510.05381v1
+  version_scope: stable-versioned-publication-snapshot
+  last_verified: '2026-07-25'
+  status: active
+  superseded_by: null
+  section_locator: arXiv v1 abstract; controlled-length setup, degradation range, and mitigation result
+  retrieval_digest: {algorithm: sha256, value: b552d878f5ea2733199db0eab653a71c148aa4727fc45fc81b98bc3f7bc778e1, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T15:33:10Z', byte_length: 44759, stability: stable-versioned-page}
 - id: S-B05
   title: LLMs Get Lost In Multi-Turn Conversation
   authors: Philippe Laban, Hiroaki Hayashi, Yingbo Zhou, Jennifer Neville (Microsoft Research / Salesforce)
@@ -543,6 +663,14 @@ records:
     39%)
   confidence: medium
   verification_status: verified-primary
+  provenance_required: true
+  versioned_url: https://arxiv.org/abs/2505.06120v1
+  version_scope: stable-versioned-publication-snapshot
+  last_verified: '2026-07-25'
+  status: active
+  superseded_by: null
+  section_locator: arXiv v1 abstract; experiment scale and single-turn versus multi-turn result
+  retrieval_digest: {algorithm: sha256, value: c159f07f95905ca9370dafc24e19b744b06230eda31e439384eb827e21d9866d, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T13:44:58Z', byte_length: 41824, stability: stable-versioned-page}
 - id: S-B06
   title: Compressing Context to Enhance Inference Efficiency of Large Language Models (Selective Context)
   authors: Yucheng Li, Bo Dong, Chenghua Lin, Frank Guerin
@@ -588,6 +716,14 @@ records:
     2023 model set; savings replicate, quality cost may vary
   confidence: medium
   verification_status: verified-primary
+  provenance_required: true
+  versioned_url: https://arxiv.org/abs/2310.06201v1
+  version_scope: stable-versioned-publication-snapshot
+  last_verified: '2026-07-25'
+  status: active
+  superseded_by: null
+  section_locator: arXiv v1 abstract; context reduction, memory, inference-time, BERTScore, and faithfulness results
+  retrieval_digest: {algorithm: sha256, value: c9edf2d102183a321b48a40052eca7ca20b1eacf12a129b050432655df7bfd33, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T15:33:11Z', byte_length: 42201, stability: stable-versioned-page}
 - id: S-B07
   title: 'LongLLMLingua: Accelerating and Enhancing LLMs in Long Context Scenarios via Prompt Compression'
   authors: Huiqiang Jiang, Qianhui Wu, Xufang Luo, Dongsheng Li, Chin-Yew Lin, Yuqing Yang, Lili Qiu (Microsoft)
@@ -635,6 +771,14 @@ records:
     are GPT-3.5-Turbo-centric and depend on the auxiliary compressor
   confidence: high
   verification_status: verified-primary
+  provenance_required: true
+  versioned_url: https://arxiv.org/abs/2310.06839v2
+  version_scope: stable-versioned-publication-snapshot
+  last_verified: '2026-07-25'
+  status: active
+  superseded_by: null
+  section_locator: arXiv v2 abstract; NaturalQuestions, LooGLE, compression, cost, and latency results
+  retrieval_digest: {algorithm: sha256, value: ca7f418e6ad80cf43006eb4792a52372d93284a6527638d3df63df8bf97ea96c, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T15:33:12Z', byte_length: 42538, stability: stable-versioned-page}
 - id: S-B08
   title: 'RECOMP: Improving Retrieval-Augmented LMs with Compression and Selective Augmentation'
   authors: Fangyuan Xu, Weijia Shi, Eunsol Choi (UT Austin / UW)
@@ -683,6 +827,14 @@ records:
     for specific target models/tasks
   confidence: medium
   verification_status: verified-primary
+  provenance_required: true
+  versioned_url: https://arxiv.org/abs/2310.04408v1
+  version_scope: stable-versioned-publication-snapshot
+  last_verified: '2026-07-25'
+  status: active
+  superseded_by: null
+  section_locator: arXiv v1 abstract; extractive and abstractive compressors, selective augmentation, and task results
+  retrieval_digest: {algorithm: sha256, value: a96702f7ed510d3238b230440198f432d33d0c7a7a1e0c7f4e5f1db07b75dfb1, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T15:33:13Z', byte_length: 42560, stability: stable-versioned-page}
 - id: S-B09
   title: 'The Power of Noise: Redefining Retrieval for RAG Systems'
   authors: Florin Cuconasu, Giovanni Trappolini, Federico Siciliano, Simone Filice, Cesare Campagnano,
@@ -731,6 +883,14 @@ records:
     the random-noise BENEFIT is setting-dependent per follow-up work
   confidence: medium
   verification_status: verified-primary
+  provenance_required: true
+  versioned_url: https://arxiv.org/abs/2401.14887v4
+  version_scope: stable-versioned-publication-snapshot
+  last_verified: '2026-07-25'
+  status: active
+  superseded_by: null
+  section_locator: arXiv v4 abstract; counterfactual noise experiments and retrieval findings
+  retrieval_digest: {algorithm: sha256, value: 573155d68eac5a8af707c2ed403ae746e022fd35e08fb0f2f09453df0cf0e181, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T15:33:14Z', byte_length: 45439, stability: stable-versioned-page}
 - id: S-B10
   title: Is Semantic Chunking Worth the Computational Cost?
   authors: Renyi Qu, Ruixuan Tu, Forrest Sheng Bao
@@ -776,6 +936,14 @@ records:
     largely independent of the generator model
   confidence: medium
   verification_status: verified-primary
+  provenance_required: true
+  versioned_url: https://arxiv.org/abs/2410.13070v1
+  version_scope: stable-versioned-publication-snapshot
+  last_verified: '2026-07-25'
+  status: active
+  superseded_by: null
+  section_locator: arXiv v1 abstract; three-task comparison and conclusion on semantic-chunking cost
+  retrieval_digest: {algorithm: sha256, value: 7c55fe9ba51003ded09a2b663f57eff0e37130bc1da7bffb8ebeb1ea85780775, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T15:33:15Z', byte_length: 39907, stability: stable-versioned-page}
 - id: S-C01
   title: Prompt caching (Anthropic official documentation)
   authors: Anthropic
@@ -819,6 +987,14 @@ records:
     invalidation behavior are model-specific.
   confidence: high
   verification_status: verified-primary
+  provenance_required: true
+  versioned_url: https://platform.claude.com/docs/en/build-with-claude/prompt-caching
+  version_scope: living-documentation-snapshot-at-last-verified
+  last_verified: '2026-07-25'
+  status: active
+  superseded_by: null
+  section_locator: Cache lifetime; pricing; cache limitations; tracking cache performance
+  retrieval_digest: {algorithm: sha256, value: b5d8d70c9dde7e5e475b7f1cb0465481881c719b6e0b0a39b11923f2ea30e2ab, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T13:40:51Z', byte_length: 2235482, stability: dynamic-html-point-in-time}
 - id: S-C02
   title: Pricing (Anthropic official pricing page)
   authors: Anthropic
@@ -827,7 +1003,7 @@ records:
   url: https://platform.claude.com/docs/en/about-claude/pricing
   arxiv_id: null
   doi: null
-  date_accessed: '2026-07-24'
+  date_accessed: '2026-07-25'
   access_method: provider-doc
   source_type: provider-doc
   research_question: What are the current per-model input/output/cache-write/cache-read rates for Claude
@@ -861,6 +1037,14 @@ records:
   generalizes_across_models: Anthropic-only; cross-provider comparison requires S-C04.
   confidence: high
   verification_status: verified-primary
+  provenance_required: true
+  versioned_url: https://platform.claude.com/docs/en/about-claude/pricing
+  version_scope: living-documentation-snapshot-at-last-verified
+  last_verified: '2026-07-25'
+  status: active
+  superseded_by: null
+  section_locator: Model pricing; inference geography; prompt caching; batch processing
+  retrieval_digest: {algorithm: sha256, value: 2b3e65d1f6496ee624124a8de6a08835a486cf2c6f63a95846c220b25048c675, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T13:54:26Z', byte_length: 1032232, stability: dynamic-html-point-in-time}
 - id: S-C03
   title: Prompt caching (OpenAI official documentation — automatic prompt caching)
   authors: OpenAI
@@ -900,6 +1084,14 @@ records:
     families.
   confidence: high
   verification_status: verified-primary
+  provenance_required: true
+  versioned_url: https://developers.openai.com/api/docs/guides/prompt-caching
+  version_scope: living-documentation-snapshot-at-last-verified
+  last_verified: '2026-07-25'
+  status: active
+  superseded_by: null
+  section_locator: Prompt caching; Prompt cache breakpoints; Prompt cache retention; What can be cached
+  retrieval_digest: {algorithm: sha256, value: 5f035f96c18bc6d867088a51590c95e2b0f931c19c84fe7200e01e658106b985, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T15:33:15Z', byte_length: 385315, stability: dynamic-html-point-in-time}
 - id: S-C04
   title: Pricing (OpenAI official API pricing page)
   authors: OpenAI
@@ -933,6 +1125,14 @@ records:
   generalizes_across_models: OpenAI-only; cached-input = 0.1x input holds across all listed models.
   confidence: high
   verification_status: verified-primary
+  provenance_required: true
+  versioned_url: https://developers.openai.com/api/docs/pricing
+  version_scope: living-documentation-snapshot-at-last-verified
+  last_verified: '2026-07-25'
+  status: active
+  superseded_by: null
+  section_locator: Pricing; Flagship models pricing table; Batch API pricing table
+  retrieval_digest: {algorithm: sha256, value: 7ddabc495fcc709f155fa5e63adaba37a28e7a6c3d8f167be42dbfc9c0837712, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T15:33:15Z', byte_length: 584035, stability: dynamic-html-point-in-time}
 - id: S-C05
   title: 'FrugalGPT: How to Use Large Language Models While Reducing Cost and Improving Performance'
   authors: Lingjiao Chen, Matei Zaharia, James Zou
@@ -968,6 +1168,14 @@ records:
     and task difficulty mix.
   confidence: high
   verification_status: verified-primary
+  provenance_required: true
+  versioned_url: https://arxiv.org/abs/2305.05176v1
+  version_scope: stable-versioned-publication-snapshot
+  last_verified: '2026-07-25'
+  status: active
+  superseded_by: null
+  section_locator: arXiv v1 abstract; cascade framework, benchmark scope, cost, and accuracy results
+  retrieval_digest: {algorithm: sha256, value: 55b20a455207326c1d0a6acf18aa49a92fbfe5da96c28643db1a305274a80896, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T15:33:16Z', byte_length: 42670, stability: stable-versioned-page}
 - id: S-C06
   title: 'RouteLLM: Learning to Route LLMs with Preference Data'
   authors: Isaac Ong, Amjad Almahairi, Vincent Wu, Wei-Lin Chiang, Tianhao Wu, Joseph E. Gonzalez, M Waleed
@@ -1003,6 +1211,14 @@ records:
     generalization evidence in this cluster.
   confidence: high
   verification_status: verified-primary
+  provenance_required: true
+  versioned_url: https://arxiv.org/abs/2406.18665v4
+  version_scope: stable-versioned-publication-snapshot
+  last_verified: '2026-07-25'
+  status: active
+  superseded_by: null
+  section_locator: arXiv v4 abstract; preference-data routing, transfer setting, and cost result
+  retrieval_digest: {algorithm: sha256, value: 8e59de4bf9fd6853ed78801792b18e854ce58e3ff7548bb46d2d63825c78280c, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T15:33:17Z', byte_length: 43479, stability: stable-versioned-page}
 - id: S-C07
   title: 'Prompt Cache: Modular Attention Reuse for Low-Latency Inference'
   authors: In Gim, Guojun Chen, Seung-seob Lee, Nikhil Sarda, Anurag Khandelwal, Lin Zhong
@@ -1038,6 +1254,14 @@ records:
     are setup-specific.
   confidence: high
   verification_status: verified-primary
+  provenance_required: true
+  versioned_url: https://arxiv.org/abs/2311.04934v2
+  version_scope: stable-versioned-publication-snapshot
+  last_verified: '2026-07-25'
+  status: active
+  superseded_by: null
+  section_locator: arXiv v2 abstract; modular attention reuse and GPU/CPU latency results
+  retrieval_digest: {algorithm: sha256, value: 1ab4273b4f43d478eb90a96001c9b38653439c2b236c45b5d03024cf0ec8874d, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T15:33:18Z', byte_length: 42648, stability: stable-versioned-page}
 - id: S-C08
   title: 'SGLang: Efficient Execution of Structured Language Model Programs (RadixAttention)'
   authors: Lianmin Zheng, Liangsheng Yin, Zhiqiang Xie, Chuyue Sun, Jeff Huang, Cody Hao Yu, Shiyi Cao,
@@ -1073,6 +1297,14 @@ records:
   generalizes_across_models: Runtime-level technique, model-agnostic within transformer serving.
   confidence: high
   verification_status: verified-primary
+  provenance_required: true
+  versioned_url: https://arxiv.org/abs/2312.07104v2
+  version_scope: stable-versioned-publication-snapshot
+  last_verified: '2026-07-25'
+  status: active
+  superseded_by: null
+  section_locator: arXiv v2 abstract; RadixAttention, evaluated workloads, and throughput result
+  retrieval_digest: {algorithm: sha256, value: dacf653ffe7b98b2c30c4be5191174197a0759b38ac182fcb8b79593ade9359a, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T15:33:19Z', byte_length: 42987, stability: stable-versioned-page}
 - id: S-C09
   title: 'GPTCache: An Open-Source Semantic Cache for LLM Applications Enabling Faster Answers and Cost
     Savings'
@@ -1107,6 +1339,14 @@ records:
   generalizes_across_models: Provider-agnostic by construction (sits in front of any LLM API).
   confidence: medium
   verification_status: verified-primary
+  provenance_required: true
+  versioned_url: https://aclanthology.org/2023.nlposs-1.24/
+  version_scope: stable-versioned-publication-snapshot
+  last_verified: '2026-07-25'
+  status: active
+  superseded_by: null
+  section_locator: ACL Anthology abstract; semantic-cache architecture, reported speedup, and cost-savings result
+  retrieval_digest: {algorithm: sha256, value: 07855fec96a6cad9827eca455a5fe15ee6e462a9a8083504bba6a06de4eaa5b4, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T15:33:20Z', byte_length: 41289, stability: stable-publication-page}
 - id: S-C10
   title: 'AutoMix: Automatically Mixing Language Models'
   authors: Pranjal Aggarwal, Aman Madaan, Ankit Anand, Srividya Pranavi Potharaju, Swaroop Mishra, Pei
@@ -1142,6 +1382,14 @@ records:
   generalizes_across_models: Demonstrated across five model families; mechanism is model-agnostic.
   confidence: high
   verification_status: verified-primary
+  provenance_required: true
+  versioned_url: https://arxiv.org/abs/2310.12963v5
+  version_scope: stable-versioned-publication-snapshot
+  last_verified: '2026-07-25'
+  status: active
+  superseded_by: null
+  section_locator: arXiv v5 abstract; self-verification cascade and benchmark cost-quality results
+  retrieval_digest: {algorithm: sha256, value: 14731572a0d4446d3ac3b5e751a394e94b87c98f574e74417adc71d4055660cf, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T15:33:20Z', byte_length: 43354, stability: stable-versioned-page}
 - id: S-D01
   title: 'Concise Thoughts: Impact of Output Length on LLM Reasoning and Cost'
   authors: Sania Nayab, Giulio Rossolini, Marco Simoni, Andrea Saracino, Giorgio Buttazzo, Nicolamaria
@@ -1175,6 +1423,14 @@ records:
     tradeoff is model-dependent
   confidence: medium
   verification_status: verified-primary
+  provenance_required: true
+  versioned_url: https://arxiv.org/abs/2407.19825v2
+  version_scope: stable-versioned-publication-snapshot
+  last_verified: '2026-07-25'
+  status: active
+  superseded_by: null
+  section_locator: arXiv v2 abstract; output-length intervention, reasoning performance, and cost result
+  retrieval_digest: {algorithm: sha256, value: 0278bf917c0e32c48324f3e55e26add961688a86c16be8bd9be367d288adb832, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T15:33:21Z', byte_length: 41843, stability: stable-versioned-page}
 - id: S-D02
   title: Token-Budget-Aware LLM Reasoning
   authors: Tingxu Han, Zhenting Wang, Chunrong Fang, Shiyu Zhao, Shiqing Ma, Zhenyu Chen
@@ -1205,6 +1461,14 @@ records:
   generalizes_across_models: partial — evaluated on multiple LLMs; optimal budgets are model- and task-specific
   confidence: medium
   verification_status: verified-primary
+  provenance_required: true
+  versioned_url: https://arxiv.org/abs/2412.18547v5
+  version_scope: stable-versioned-publication-snapshot
+  last_verified: '2026-07-25'
+  status: active
+  superseded_by: null
+  section_locator: arXiv v5 abstract; token-budget method and benchmark efficiency results
+  retrieval_digest: {algorithm: sha256, value: 4efa9261169bc3dc4cede0ea46802093a00d740e9dbb68502473cceccc48b62f, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T15:33:23Z', byte_length: 41256, stability: stable-versioned-page}
 - id: S-D03
   title: 'Chain of Draft: Thinking Faster by Writing Less'
   authors: Silei Xu, Wenhao Xie, Lingxiao Zhao, Pengcheng He
@@ -1234,6 +1498,14 @@ records:
     per-model breakdown not verified at abstract level
   confidence: medium
   verification_status: verified-primary
+  provenance_required: true
+  versioned_url: https://arxiv.org/abs/2502.18600v2
+  version_scope: stable-versioned-publication-snapshot
+  last_verified: '2026-07-25'
+  status: active
+  superseded_by: null
+  section_locator: arXiv v2 abstract; Chain of Draft method, token reduction, latency, cost, and accuracy results
+  retrieval_digest: {algorithm: sha256, value: 8c43fa5db94e6d41b96cb59ecaa2f780cedf79538fad8669dbab814f585bbe93, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T15:33:24Z', byte_length: 40979, stability: stable-versioned-page}
 - id: S-D04
   title: Let Me Speak Freely? A Study on the Impact of Format Restrictions on Performance of Large Language
     Models
@@ -1267,6 +1539,14 @@ records:
     task-dependent magnitude
   confidence: medium
   verification_status: verified-primary
+  provenance_required: true
+  versioned_url: https://arxiv.org/abs/2408.02442v3
+  version_scope: stable-versioned-publication-snapshot
+  last_verified: '2026-07-25'
+  status: active
+  superseded_by: null
+  section_locator: arXiv v3 abstract; format-restriction comparison and reasoning-performance finding
+  retrieval_digest: {algorithm: sha256, value: 2e3ce07946d3f247cd76f09a59ba13bd56669bbc1e7136dbe48109a0423ee292, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T15:33:25Z', byte_length: 41573, stability: stable-versioned-page}
 - id: S-D05
   title: 'The Danger of Overthinking: Examining the Reasoning-Action Dilemma in Agentic Tasks'
   authors: Alejandro Cuadron, Dacheng Li, Wenjie Ma, Xingyao Wang, Yichuan Wang, Siyuan Zhuang, Shu Liu,
@@ -1301,6 +1581,14 @@ records:
     models overthink less
   confidence: high
   verification_status: verified-primary
+  provenance_required: true
+  versioned_url: https://arxiv.org/abs/2502.08235v1
+  version_scope: stable-versioned-publication-snapshot
+  last_verified: '2026-07-25'
+  status: active
+  superseded_by: null
+  section_locator: arXiv v1 abstract; trajectory count, overthinking analysis, performance, and cost results
+  retrieval_digest: {algorithm: sha256, value: 393148c86d674cfcbbba414dc93c3df5ecf158d629cf36b3dace5c7ce16ac430, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T15:33:27Z', byte_length: 44449, stability: stable-versioned-page}
 - id: S-D06
   title: An LLM Compiler for Parallel Function Calling
   authors: Sehoon Kim, Suhong Moon, Ryan Tabrizi, Nicholas Lee, Michael W. Mahoney, Kurt Keutzer, Amir
@@ -1332,6 +1620,14 @@ records:
   generalizes_across_models: yes — demonstrated on both open-source and closed-source models
   confidence: high
   verification_status: verified-primary
+  provenance_required: true
+  versioned_url: https://arxiv.org/abs/2312.04511v3
+  version_scope: stable-versioned-publication-snapshot
+  last_verified: '2026-07-25'
+  status: active
+  superseded_by: null
+  section_locator: arXiv v3 abstract; compiler architecture and latency, cost, and accuracy results
+  retrieval_digest: {algorithm: sha256, value: 005c3a9624c3f07ef8aab43f5df41582f91e70de7e488b70c115753b3b55988c, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T15:33:28Z', byte_length: 43295, stability: stable-versioned-page}
 - id: S-D07
   title: How we built our multi-agent research system
   authors: Anthropic (engineering blog)
@@ -1367,6 +1663,14 @@ records:
     effort-scaling principle plausibly general
   confidence: high
   verification_status: verified-primary
+  provenance_required: true
+  versioned_url: https://www.anthropic.com/engineering/multi-agent-research-system
+  version_scope: living-engineering-page-snapshot-at-last-verified
+  last_verified: '2026-07-25'
+  status: active
+  superseded_by: null
+  section_locator: Benefits of a multi-agent system; Architecture overview for Research; Prompt engineering and evaluations for research agents
+  retrieval_digest: {algorithm: sha256, value: 92ae00bcb1c71b58d1a0d77a2f3c2d76f818b7ead14c4440bec4a2ed82e06e20, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T15:33:28Z', byte_length: 180038, stability: dynamic-html-point-in-time}
 - id: S-D08
   title: Building effective agents
   authors: Erik Schluntz and Barry Zhang (Anthropic)
@@ -1397,6 +1701,14 @@ records:
   generalizes_across_models: partial — written for Claude but framework is provider-agnostic
   confidence: high
   verification_status: verified-primary
+  provenance_required: true
+  versioned_url: https://www.anthropic.com/engineering/building-effective-agents
+  version_scope: living-engineering-page-snapshot-at-last-verified
+  last_verified: '2026-07-25'
+  status: active
+  superseded_by: null
+  section_locator: When (and when not) to use agents; Building blocks, workflows, and agents; Combining and customizing these patterns
+  retrieval_digest: {algorithm: sha256, value: 28de96c960be24644b507c3172c3ae53b156601d9708c49fcfbefa71ecf8a6b0, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T15:33:29Z', byte_length: 185170, stability: dynamic-html-point-in-time}
 - id: S-D09
   title: Effective context engineering for AI agents
   authors: Anthropic (engineering blog)
@@ -1428,6 +1740,14 @@ records:
     practices tuned to Claude
   confidence: high
   verification_status: verified-primary
+  provenance_required: true
+  versioned_url: https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents
+  version_scope: living-engineering-page-snapshot-at-last-verified
+  last_verified: '2026-07-25'
+  status: active
+  superseded_by: null
+  section_locator: Context engineering; long-horizon tasks; compaction; structured note-taking; sub-agents
+  retrieval_digest: {algorithm: sha256, value: 20a16a08335dfaefb40849d8d5f96a26ab04741e8e9914a2bd7368185b7427c1, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T13:40:51Z', byte_length: 175844, stability: dynamic-html-point-in-time}
 - id: S-D10
   title: Equipping agents for the real world with Agent Skills
   authors: Anthropic (engineering blog)
@@ -1458,6 +1778,14 @@ records:
   generalizes_across_models: partial — progressive-disclosure pattern is general; the mechanism is Claude's
   confidence: high
   verification_status: verified-primary
+  provenance_required: true
+  versioned_url: https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills
+  version_scope: living-engineering-page-snapshot-at-last-verified
+  last_verified: '2026-07-25'
+  status: active
+  superseded_by: null
+  section_locator: The anatomy of a skill; Skills and the context window; Skills and code execution; Security considerations when using Skills
+  retrieval_digest: {algorithm: sha256, value: 559311e237dcd5b2ceaa04f62ae254b402383cbbca78f2283c4c860f867cc66d, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T15:33:29Z', byte_length: 150288, stability: dynamic-html-point-in-time}
 - id: S-D11
   title: 'Not what you''ve signed up for: Compromising Real-World LLM-Integrated Applications with Indirect
     Prompt Injection'
@@ -1490,6 +1818,14 @@ records:
     multiple LLM applications
   confidence: high
   verification_status: verified-primary
+  provenance_required: true
+  versioned_url: https://arxiv.org/abs/2302.12173v2
+  version_scope: stable-versioned-publication-snapshot
+  last_verified: '2026-07-25'
+  status: active
+  superseded_by: null
+  section_locator: arXiv v2 abstract; indirect-prompt-injection threat model, demonstrations, and attack taxonomy
+  retrieval_digest: {algorithm: sha256, value: 4f1d56c16eac8b47684c0971f3013bdfdad04947eb65f5b8ed54a85da34bb9e6, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T15:33:31Z', byte_length: 44641, stability: stable-versioned-page}
 - id: S-D12
   title: Design Patterns for Securing LLM Agents against Prompt Injections
   authors: Luca Beurer-Kellner, Beat Buesser, Ana-Maria Creţu, Edoardo Debenedetti, Daniel Dobos, Daniel
@@ -1522,6 +1858,14 @@ records:
   generalizes_across_models: yes — architectural patterns are model-agnostic by construction
   confidence: high
   verification_status: verified-primary
+  provenance_required: true
+  versioned_url: https://arxiv.org/abs/2506.08837v3
+  version_scope: stable-versioned-publication-snapshot
+  last_verified: '2026-07-25'
+  status: active
+  superseded_by: null
+  section_locator: arXiv v3 abstract; security design patterns, threat-model framing, and utility tradeoffs
+  retrieval_digest: {algorithm: sha256, value: 04201a2035089ebaaf589ee731dcec9b80bc95df5bf882780f09a48e6265b731, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T15:33:31Z', byte_length: 42809, stability: stable-versioned-page}
 # ---- ROUND 2, collected 2026-07-25 (research-2026-07-25/DOSSIER.md) ----
 # Controlled enums for source_type / access_level / generalizes_across_models / verification.
 # Round-1 records above use free text for source_type; that flaw is disclosed in
@@ -1530,6 +1874,11 @@ records:
 # Known round-1 defect, recorded not silently fixed: S-A02 and S-B07 are the SAME work
 # (LongLLMLingua, arXiv 2310.06839), so round 1 holds 41 distinct works under 42 ids.
 - id: S-R01
+  <<: *round2_provenance
+  versioned_url: https://arxiv.org/abs/2310.11324v2
+  version_scope: stable-versioned-publication-snapshot
+  section_locator: Primary publication page; rule-specific support locators are recorded in skill/rules/rules.yaml source_claims.
+  retrieval_digest: {algorithm: sha256, value: fa914097dcb6de4ef3125a16e4f091df5b1fe11814f96cd76aa3138980690dee, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T14:55:23Z', byte_length: 44903, stability: stable-publication-page-snapshot}
   title: 'Quantifying Language Models'' Sensitivity to Spurious Features in Prompt Design'
   venue: 'ICLR 2024'
   year: 2024
@@ -1545,6 +1894,11 @@ records:
   provenance: 'research-2026-07-25/DOSSIER.md (P01) - full record incl. method, results with
     locators, limitations, and what it does NOT establish lives there.'
 - id: S-R02
+  <<: *round2_provenance
+  versioned_url: https://aclanthology.org/2024.tacl-1.52/
+  version_scope: stable-versioned-publication-snapshot
+  section_locator: Primary publication page; rule-specific support locators are recorded in skill/rules/rules.yaml source_claims.
+  retrieval_digest: {algorithm: sha256, value: d3d33cbf5371f2caeef9d08211ac0b54ec92393887a297833f62f11b2b3070f4, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T14:55:23Z', byte_length: 38310, stability: stable-publication-page-snapshot}
   title: 'State of What Art? A Call for Multi-Prompt LLM Evaluation'
   venue: 'TACL 12, 933-949'
   year: 2024
@@ -1560,6 +1914,11 @@ records:
   provenance: 'research-2026-07-25/DOSSIER.md (P02) - full record incl. method, results with
     locators, limitations, and what it does NOT establish lives there.'
 - id: S-R03
+  <<: *round2_provenance
+  versioned_url: https://aclanthology.org/2024.findings-acl.275/
+  version_scope: stable-versioned-publication-snapshot
+  section_locator: Primary publication page; rule-specific support locators are recorded in skill/rules/rules.yaml source_claims.
+  retrieval_digest: {algorithm: sha256, value: f6fa09c836fa3aec168cd9248ef24a599234aa8e3f29a5f47db10df48bc1592b, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T14:55:23Z', byte_length: 39419, stability: stable-publication-page-snapshot}
   title: 'The Butterfly Effect of Altering Prompts'
   venue: 'Findings of ACL 2024, 4629-4651'
   year: 2024
@@ -1575,6 +1934,11 @@ records:
   provenance: 'research-2026-07-25/DOSSIER.md (P03) - full record incl. method, results with
     locators, limitations, and what it does NOT establish lives there.'
 - id: S-R04
+  <<: *round2_provenance
+  versioned_url: https://arxiv.org/abs/2509.01790v1
+  version_scope: stable-versioned-publication-snapshot
+  section_locator: Primary publication page; rule-specific support locators are recorded in skill/rules/rules.yaml source_claims.
+  retrieval_digest: {algorithm: sha256, value: 5252ac4fab9734461d7432bc9e07450d4f5f12e703c69906aa8e96a6a2061c4a, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T14:55:23Z', byte_length: 42686, stability: stable-publication-page-snapshot}
   title: 'Flaw or Artifact? Rethinking Prompt Sensitivity in Evaluating LLMs'
   venue: 'EMNLP 2025 Main (venue via arXiv comments)'
   year: 2025
@@ -1590,6 +1954,11 @@ records:
   provenance: 'research-2026-07-25/DOSSIER.md (P04) - full record incl. method, results with
     locators, limitations, and what it does NOT establish lives there.'
 - id: S-R05
+  <<: *round2_provenance
+  versioned_url: https://aclanthology.org/2024.acl-long.818/
+  version_scope: stable-versioned-publication-snapshot
+  section_locator: Primary publication page; rule-specific support locators are recorded in skill/rules/rules.yaml source_claims.
+  retrieval_digest: {algorithm: sha256, value: c334fc88407663fb610bf4e628bfe68d996b7bad722c3c7b8b318e6bcc581b86, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T14:55:23Z', byte_length: 40705, stability: stable-publication-page-snapshot}
   title: 'Same Task, More Tokens'
   venue: 'ACL 2024 Long, 15339-15353'
   year: 2024
@@ -1605,6 +1974,11 @@ records:
   provenance: 'research-2026-07-25/DOSSIER.md (P05) - full record incl. method, results with
     locators, limitations, and what it does NOT establish lives there.'
 - id: S-R06
+  <<: *round2_provenance
+  versioned_url: https://aclanthology.org/2022.emnlp-main.759/
+  version_scope: stable-versioned-publication-snapshot
+  section_locator: Primary publication page; rule-specific support locators are recorded in skill/rules/rules.yaml source_claims.
+  retrieval_digest: {algorithm: sha256, value: 18e8db56c5ebd0641b42651697630e7c1956920836b5dbdf54184f7664f8398b, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T14:55:23Z', byte_length: 42485, stability: stable-publication-page-snapshot}
   title: 'Rethinking the Role of Demonstrations'
   venue: 'EMNLP 2022, 11048-11064'
   year: 2022
@@ -1620,6 +1994,11 @@ records:
   provenance: 'research-2026-07-25/DOSSIER.md (P06) - full record incl. method, results with
     locators, limitations, and what it does NOT establish lives there.'
 - id: S-R07
+  <<: *round2_provenance
+  versioned_url: https://aclanthology.org/2022.deelio-1.10/
+  version_scope: stable-versioned-publication-snapshot
+  section_locator: Primary publication page; catalog-only record not currently cited by a rule.
+  retrieval_digest: {algorithm: sha256, value: 29bcd22dfbb0a68af75b061a6f341d930a0b3e388f5d04157a464d7afb1976ee, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T14:55:23Z', byte_length: 44285, stability: stable-publication-page-snapshot}
   title: 'What Makes Good In-Context Examples for GPT-3?'
   venue: 'DeeLIO 2022 @ ACL, 100-114'
   year: 2022
@@ -1635,6 +2014,11 @@ records:
   provenance: 'research-2026-07-25/DOSSIER.md (P07) - full record incl. method, results with
     locators, limitations, and what it does NOT establish lives there.'
 - id: S-R08
+  <<: *round2_provenance
+  versioned_url: https://arxiv.org/abs/2404.11018v3
+  version_scope: stable-versioned-publication-snapshot
+  section_locator: Primary publication page; rule-specific support locators are recorded in skill/rules/rules.yaml source_claims.
+  retrieval_digest: {algorithm: sha256, value: 35609fc47891a267136a87e0b975f6cbc09aed81cd9fa2c7ee7428dd282c70a0, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T14:55:23Z', byte_length: 44955, stability: stable-publication-page-snapshot}
   title: 'Many-Shot In-Context Learning'
   venue: 'NeurIPS 2024 (Spotlight)'
   year: 2024
@@ -1650,6 +2034,11 @@ records:
   provenance: 'research-2026-07-25/DOSSIER.md (P08) - full record incl. method, results with
     locators, limitations, and what it does NOT establish lives there.'
 - id: S-R09
+  <<: *round2_provenance
+  versioned_url: https://aclanthology.org/2025.findings-emnlp.729/
+  version_scope: stable-versioned-publication-snapshot
+  section_locator: Primary publication page; rule-specific support locators are recorded in skill/rules/rules.yaml source_claims.
+  retrieval_digest: {algorithm: sha256, value: 136acc2be57dc19888a1a5528140773d5ab93a22713232ac24c7c38ae5528927, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T14:55:23Z', byte_length: 45153, stability: stable-publication-page-snapshot}
   title: 'Revisiting Chain-of-Thought Prompting: Zero-shot Can Be Stronger than Few-shot'
   venue: 'Findings of EMNLP 2025, 13533-13554'
   year: 2025
@@ -1665,6 +2054,11 @@ records:
   provenance: 'research-2026-07-25/DOSSIER.md (P09) - full record incl. method, results with
     locators, limitations, and what it does NOT establish lives there.'
 - id: S-R10
+  <<: *round2_provenance
+  versioned_url: https://arxiv.org/abs/2507.16217v2
+  version_scope: stable-versioned-publication-snapshot
+  section_locator: Primary publication page; rule-specific support locators are recorded in skill/rules/rules.yaml source_claims.
+  retrieval_digest: {algorithm: sha256, value: c7d292c399c24ea610c3d6c7bf617f5e8a2688601fa53c644249803cce008b24, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T14:55:23Z', byte_length: 43632, stability: stable-publication-page-snapshot}
   title: 'Towards Compute-Optimal Many-Shot In-Context Learning'
   venue: 'COLM 2025 (venue via arXiv comments)'
   year: 2025
@@ -1680,6 +2074,11 @@ records:
   provenance: 'research-2026-07-25/DOSSIER.md (P10) - full record incl. method, results with
     locators, limitations, and what it does NOT establish lives there.'
 - id: S-R11
+  <<: *round2_provenance
+  versioned_url: https://proceedings.mlr.press/v235/wang24h.html
+  version_scope: stable-versioned-publication-snapshot
+  section_locator: Primary publication page; catalog-only record not currently cited by a rule.
+  retrieval_digest: {algorithm: sha256, value: fa17c71f59cdebdc98b8e35ef3a70d0308467df8500ebffc2a0144c1e2d891e9, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T14:55:23Z', byte_length: 17383, stability: stable-publication-page-snapshot}
   title: 'Executable Code Actions Elicit Better LLM Agents'
   venue: 'ICML 2024, PMLR 235, 50208-50232'
   year: 2024
@@ -1695,6 +2094,11 @@ records:
   provenance: 'research-2026-07-25/DOSSIER.md (P11) - full record incl. method, results with
     locators, limitations, and what it does NOT establish lives there.'
 - id: S-R12
+  <<: *round2_provenance
+  versioned_url: https://arxiv.org/abs/2411.07781v1
+  version_scope: stable-versioned-publication-snapshot
+  section_locator: Primary publication page; catalog-only record not currently cited by a rule.
+  retrieval_digest: {algorithm: sha256, value: 6c4b37c5b5da0312a012c1732f67b30c4e5b88ede286a281573c538a985447a7, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T14:55:23Z', byte_length: 44179, stability: stable-publication-page-snapshot}
   title: 'RedCode: Risky Code Execution and Generation Benchmark for Code Agents'
   venue: 'NeurIPS 2024 Datasets and Benchmarks'
   year: 2024
@@ -1710,6 +2114,11 @@ records:
   provenance: 'research-2026-07-25/DOSSIER.md (P12) - full record incl. method, results with
     locators, limitations, and what it does NOT establish lives there.'
 - id: S-R13
+  <<: *round2_provenance
+  versioned_url: https://arxiv.org/abs/2410.05983v1
+  version_scope: stable-versioned-publication-snapshot
+  section_locator: Primary publication page; catalog-only record not currently cited by a rule.
+  retrieval_digest: {algorithm: sha256, value: a80bc3dc32d9c87d9a1c4cb70825078fd87fb23add4b35b4178946f0cef61b5e, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T14:55:23Z', byte_length: 42782, stability: stable-publication-page-snapshot}
   title: 'Long-Context LLMs Meet RAG'
   venue: 'ICLR 2025 (venue via DBLP indexing)'
   year: 2025
@@ -1725,6 +2134,11 @@ records:
   provenance: 'research-2026-07-25/DOSSIER.md (P13) - full record incl. method, results with
     locators, limitations, and what it does NOT establish lives there.'
 - id: S-R14
+  <<: *round2_provenance
+  versioned_url: https://arxiv.org/abs/2501.10868v3
+  version_scope: stable-versioned-publication-snapshot
+  section_locator: Primary publication page; catalog-only record not currently cited by a rule.
+  retrieval_digest: {algorithm: sha256, value: d336524fb1b4ed67df67a66b2cfb84fbe172c7254b296a1c43099dbabc6ba80e, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T14:55:23Z', byte_length: 44897, stability: stable-publication-page-snapshot}
   title: 'JSONSchemaBench: A Rigorous Benchmark of Structured Outputs for Language Models'
   venue: 'none found (DBLP and PMLR searched)'
   year: 2025
@@ -1740,6 +2154,11 @@ records:
   provenance: 'research-2026-07-25/DOSSIER.md (P14) - full record incl. method, results with
     locators, limitations, and what it does NOT establish lives there.'
 - id: S-R15
+  <<: *round2_provenance
+  versioned_url: https://aclanthology.org/2024.emnlp-industry.91/
+  version_scope: stable-versioned-publication-snapshot
+  section_locator: Primary publication page; catalog-only record not currently cited by a rule.
+  retrieval_digest: {algorithm: sha256, value: c1889fe44ccceca6667aa862aa8bc3bf9d6effe016341f88e97f5664f500fb52, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T14:55:23Z', byte_length: 40816, stability: stable-publication-page-snapshot}
   title: 'Let Me Speak Freely? A Study On The Impact Of Format Restrictions'
   venue: 'EMNLP 2024 Industry Track, 1218-1236'
   year: 2024
@@ -1755,6 +2174,11 @@ records:
   provenance: 'research-2026-07-25/DOSSIER.md (P15) - full record incl. method, results with
     locators, limitations, and what it does NOT establish lives there.'
 - id: S-R16
+  <<: *round2_provenance
+  versioned_url: https://aclanthology.org/2022.naacl-main.191/
+  version_scope: stable-versioned-publication-snapshot
+  section_locator: Primary publication page; catalog-only record not currently cited by a rule.
+  retrieval_digest: {algorithm: sha256, value: db6c65fefb1423debc07a69a95f964490c44beb49cee787de684569c4a1df9e0, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T14:55:23Z', byte_length: 40667, stability: stable-publication-page-snapshot}
   title: 'Learning To Retrieve Prompts for In-Context Learning'
   venue: 'NAACL-HLT 2022, 2655-2671'
   year: 2022
@@ -1770,6 +2194,11 @@ records:
   provenance: 'research-2026-07-25/DOSSIER.md (P16) - full record incl. method, results with
     locators, limitations, and what it does NOT establish lives there.'
 - id: S-R17
+  <<: *round2_provenance
+  versioned_url: https://arxiv.org/abs/2502.09061v4
+  version_scope: stable-versioned-publication-snapshot
+  section_locator: Primary publication page; catalog-only record not currently cited by a rule.
+  retrieval_digest: {algorithm: sha256, value: ce85830c5b89b112e7472bf62dc9f451c1c6877ecdac99bf3448e7d09c908b7f, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T14:55:23Z', byte_length: 43239, stability: stable-publication-page-snapshot}
   title: 'CRANE: Reasoning with constrained LLM generation'
   venue: 'ICML 2025 (venue via arXiv comments)'
   year: 2025
@@ -1785,6 +2214,11 @@ records:
   provenance: 'research-2026-07-25/DOSSIER.md (P17) - full record incl. method, results with
     locators, limitations, and what it does NOT establish lives there.'
 - id: S-R18
+  <<: *round2_provenance
+  versioned_url: https://arxiv.org/abs/2407.03978v3
+  version_scope: stable-versioned-publication-snapshot
+  section_locator: Primary publication page; rule-specific support locators are recorded in skill/rules/rules.yaml source_claims.
+  retrieval_digest: {algorithm: sha256, value: 026755c9e8e03e4c86202cde9cf1be74c3d4064288267b38d8ce23a14ba03cfb, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T14:55:23Z', byte_length: 44485, stability: stable-publication-page-snapshot}
   title: 'Benchmarking Complex Instruction-Following with Multiple Constraints Composition'
   venue: 'NeurIPS 2024 Datasets and Benchmarks'
   year: 2024
@@ -1800,6 +2234,11 @@ records:
   provenance: 'research-2026-07-25/DOSSIER.md (P18) - full record incl. method, results with
     locators, limitations, and what it does NOT establish lives there.'
 - id: S-R19
+  <<: *round2_provenance
+  versioned_url: https://aclanthology.org/2020.emnlp-main.745/
+  version_scope: stable-versioned-publication-snapshot
+  section_locator: Primary publication page; rule-specific support locators are recorded in skill/rules/rules.yaml source_claims.
+  retrieval_digest: {algorithm: sha256, value: cbad19c3585c139788a5ed18b36a51dc5400853e28d254c807da2ff7e8258414, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T14:55:23Z', byte_length: 43432, stability: stable-publication-page-snapshot}
   title: 'With Little Power Comes Great Responsibility'
   venue: 'EMNLP 2020, 9263-9274'
   year: 2020
@@ -1815,6 +2254,11 @@ records:
   provenance: 'research-2026-07-25/DOSSIER.md (P19) - full record incl. method, results with
     locators, limitations, and what it does NOT establish lives there.'
 - id: S-R20
+  <<: *round2_provenance
+  versioned_url: https://aclanthology.org/P18-1128/
+  version_scope: stable-versioned-publication-snapshot
+  section_locator: Primary publication page; rule-specific support locators are recorded in skill/rules/rules.yaml source_claims.
+  retrieval_digest: {algorithm: sha256, value: 51a0d13ebab7661cc13b06fb74e628c9d648d20258f6037028cfd09929420b52, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T14:55:23Z', byte_length: 41319, stability: stable-publication-page-snapshot}
   title: 'The Hitchhiker''s Guide to Testing Statistical Significance in NLP'
   venue: 'ACL 2018 Long, 1383-1392'
   year: 2018
@@ -1830,6 +2274,11 @@ records:
   provenance: 'research-2026-07-25/DOSSIER.md (P20) - full record incl. method, results with
     locators, limitations, and what it does NOT establish lives there.'
 - id: S-R21
+  <<: *round2_provenance
+  versioned_url: https://proceedings.neurips.cc/paper_files/paper/2023/hash/91f18a1287b398d378ef22505bf41832-Abstract-Datasets_and_Benchmarks.html
+  version_scope: stable-versioned-publication-snapshot
+  section_locator: Primary publication page; rule-specific support locators are recorded in skill/rules/rules.yaml source_claims.
+  retrieval_digest: {algorithm: sha256, value: d1ac9fbcacdfde6944982c1d84d85535983c54014418abeea9f9ef69746f28fc, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T14:55:23Z', byte_length: 10436, stability: stable-publication-page-snapshot}
   title: 'Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena'
   venue: 'NeurIPS 2023 Datasets and Benchmarks'
   year: 2023
@@ -1845,6 +2294,11 @@ records:
   provenance: 'research-2026-07-25/DOSSIER.md (P21) - full record incl. method, results with
     locators, limitations, and what it does NOT establish lives there.'
 - id: S-R22
+  <<: *round2_provenance
+  versioned_url: https://aclanthology.org/2024.acl-long.511/
+  version_scope: stable-versioned-publication-snapshot
+  section_locator: Primary publication page; rule-specific support locators are recorded in skill/rules/rules.yaml source_claims.
+  retrieval_digest: {algorithm: sha256, value: 409735b27e27d897ba2f6b4bef5fa3bd87e01d9f5771353498ec861aac98b670, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T14:55:23Z', byte_length: 43599, stability: stable-publication-page-snapshot}
   title: 'Large Language Models are not Fair Evaluators'
   venue: 'ACL 2024 Long, 9440-9450'
   year: 2024
@@ -1860,6 +2314,11 @@ records:
   provenance: 'research-2026-07-25/DOSSIER.md (P22) - full record incl. method, results with
     locators, limitations, and what it does NOT establish lives there.'
 - id: S-R23
+  <<: *round2_provenance
+  versioned_url: https://aclanthology.org/2025.acl-short.20/
+  version_scope: stable-versioned-publication-snapshot
+  section_locator: Primary publication page; rule-specific support locators are recorded in skill/rules/rules.yaml source_claims.
+  retrieval_digest: {algorithm: sha256, value: b80ae65b36e0ad9bb389b4e41d0264180871696fc91966930d6bb7659fb589e8, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T14:55:23Z', byte_length: 50987, stability: stable-publication-page-snapshot}
   title: 'LLMs instead of Human Judges? A Large Scale Empirical Study across 20 NLP Evaluation Tasks'
   venue: 'ACL 2025 Short, 238-255'
   year: 2025
@@ -1875,6 +2334,11 @@ records:
   provenance: 'research-2026-07-25/DOSSIER.md (P23) - full record incl. method, results with
     locators, limitations, and what it does NOT establish lives there.'
 - id: S-R24
+  <<: *round2_provenance
+  versioned_url: https://arxiv.org/abs/2504.07086v2
+  version_scope: stable-versioned-publication-snapshot
+  section_locator: Primary publication page; rule-specific support locators are recorded in skill/rules/rules.yaml source_claims.
+  retrieval_digest: {algorithm: sha256, value: 8e3e30dad8b57718ec7da4029548f5514b92f71bb52b76d173d5dc0056319293, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T14:55:23Z', byte_length: 43636, stability: stable-publication-page-snapshot}
   title: 'A Sober Look at Progress in Language Model Reasoning'
   venue: 'COLM 2025 (venue via arXiv comments)'
   year: 2025
@@ -1890,6 +2354,11 @@ records:
   provenance: 'research-2026-07-25/DOSSIER.md (P24) - full record incl. method, results with
     locators, limitations, and what it does NOT establish lives there.'
 - id: S-R25
+  <<: *round2_provenance
+  versioned_url: https://proceedings.neurips.cc/paper_files/paper/2024/hash/7f1f0218e45f5414c79c0679633e47bc-Abstract-Conference.html
+  version_scope: stable-versioned-publication-snapshot
+  section_locator: Primary publication page; rule-specific support locators are recorded in skill/rules/rules.yaml source_claims.
+  retrieval_digest: {algorithm: sha256, value: 8c202f283e902646470d8734524bc7401824a43c732614881f2809151e2f90c7, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T14:55:23Z', byte_length: 9583, stability: stable-publication-page-snapshot}
   title: 'LLM Evaluators Recognize and Favor Their Own Generations'
   venue: 'NeurIPS 2024 Main'
   year: 2024
@@ -1905,6 +2374,11 @@ records:
   provenance: 'research-2026-07-25/DOSSIER.md (P25) - full record incl. method, results with
     locators, limitations, and what it does NOT establish lives there.'
 - id: S-R26
+  <<: *round2_provenance
+  versioned_url: https://proceedings.mlr.press/v235/zheng24n.html
+  version_scope: stable-versioned-publication-snapshot
+  section_locator: Primary publication page; rule-specific support locators are recorded in skill/rules/rules.yaml source_claims.
+  retrieval_digest: {algorithm: sha256, value: 2c04c70c95484913bebe946a1183797cef451e3440fde401cb98587ceb4174fd, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T14:55:23Z', byte_length: 16878, stability: stable-publication-page-snapshot}
   title: 'On Prompt-Driven Safeguarding for Large Language Models'
   venue: 'ICML 2024, PMLR 235, 61593-61613'
   year: 2024
@@ -1920,6 +2394,11 @@ records:
   provenance: 'research-2026-07-25/DOSSIER.md (P26) - full record incl. method, results with
     locators, limitations, and what it does NOT establish lives there.'
 - id: S-R27
+  <<: *round2_provenance
+  versioned_url: https://aclanthology.org/2024.findings-acl.776/
+  version_scope: stable-versioned-publication-snapshot
+  section_locator: Primary publication page; rule-specific support locators are recorded in skill/rules/rules.yaml source_claims.
+  retrieval_digest: {algorithm: sha256, value: a1a9ec1ce79923e03d8f708a745cd929ca0d30c1b0a2e22a46308c0f6bf17312, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T14:55:23Z', byte_length: 41487, stability: stable-publication-page-snapshot}
   title: 'The Art of Defending'
   venue: 'Findings of ACL 2024, 13111-13128'
   year: 2024
@@ -1935,6 +2414,11 @@ records:
   provenance: 'research-2026-07-25/DOSSIER.md (P27) - full record incl. method, results with
     locators, limitations, and what it does NOT establish lives there.'
 - id: S-R28
+  <<: *round2_provenance
+  versioned_url: https://arxiv.org/abs/2310.03693v1
+  version_scope: stable-versioned-publication-snapshot
+  section_locator: Primary publication page; rule-specific support locators are recorded in skill/rules/rules.yaml source_claims.
+  retrieval_digest: {algorithm: sha256, value: 81c4b5ac329bac87d4ffd5268ac865dbb20fd0fb4bd60b626d2ee8107117498f, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T14:55:23Z', byte_length: 43754, stability: stable-publication-page-snapshot}
   title: 'Fine-tuning Aligned Language Models Compromises Safety, Even When Users Do Not Intend To!'
   venue: 'ICLR 2024 (Oral)'
   year: 2024
@@ -1950,6 +2434,11 @@ records:
   provenance: 'research-2026-07-25/DOSSIER.md (P28) - full record incl. method, results with
     locators, limitations, and what it does NOT establish lives there.'
 - id: S-R29
+  <<: *round2_provenance
+  versioned_url: https://proceedings.neurips.cc/paper_files/paper/2024/hash/97091a5177d8dc64b1da8bf3e1f6fb54-Abstract-Datasets_and_Benchmarks_Track.html
+  version_scope: stable-versioned-publication-snapshot
+  section_locator: Primary publication page; rule-specific support locators are recorded in skill/rules/rules.yaml source_claims.
+  retrieval_digest: {algorithm: sha256, value: 3c74989f00206e8a4e8838b9ded23b8b92c713ddb277cfebf6ddb65d12b0a2b2, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T14:55:23Z', byte_length: 10118, stability: stable-publication-page-snapshot}
   title: 'AgentDojo'
   venue: 'NeurIPS 2024 Datasets and Benchmarks'
   year: 2024
@@ -1965,6 +2454,11 @@ records:
   provenance: 'research-2026-07-25/DOSSIER.md (P29) - full record incl. method, results with
     locators, limitations, and what it does NOT establish lives there.'
 - id: S-R30
+  <<: *round2_provenance
+  versioned_url: https://aclanthology.org/2025.findings-naacl.395/
+  version_scope: stable-versioned-publication-snapshot
+  section_locator: Primary publication page; rule-specific support locators are recorded in skill/rules/rules.yaml source_claims.
+  retrieval_digest: {algorithm: sha256, value: 3d4b96aebf30b7e1e54251c2aff6454632607a9912934a23e65a5204b5ac42bb, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T14:55:23Z', byte_length: 39685, stability: stable-publication-page-snapshot}
   title: 'Adaptive Attacks Break Defenses Against Indirect Prompt Injection Attacks on LLM Agents'
   venue: 'Findings of NAACL 2025, 7116-7132'
   year: 2025
@@ -1980,6 +2474,11 @@ records:
   provenance: 'research-2026-07-25/DOSSIER.md (P30) - full record incl. method, results with
     locators, limitations, and what it does NOT establish lives there.'
 - id: S-R31
+  <<: *round2_provenance
+  versioned_url: https://www.usenix.org/conference/usenixsecurity24/presentation/liu-yupei
+  version_scope: stable-versioned-publication-snapshot
+  section_locator: Primary publication page; rule-specific support locators are recorded in skill/rules/rules.yaml source_claims.
+  retrieval_digest: {algorithm: sha256, value: a67ec004229c65aecb247dee69b40349223ac1c6ea668de78caf674641001c58, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T14:55:23Z', byte_length: 39108, stability: stable-publication-page-snapshot}
   title: 'Formalizing and Benchmarking Prompt Injection Attacks and Defenses'
   venue: 'USENIX Security 24, 1831-1847'
   year: 2024
@@ -1995,6 +2494,253 @@ records:
   provenance: 'research-2026-07-25/DOSSIER.md (P31) - full record incl. method, results with
     locators, limitations, and what it does NOT establish lives there.'
 
+# ---- AUDITABLE ACCOUNTING AND CONTEXT SOURCES, collected 2026-07-25 ----
+- id: S-A11
+  title: 'Tokenizer Choice For LLM Training: Negligible or Crucial?'
+  authors: Mehdi Ali et al.
+  venue: Findings of NAACL 2024
+  year: 2024
+  url: https://aclanthology.org/2024.findings-naacl.247/
+  doi: 10.18653/v1/2024.findings-naacl.247
+  date_accessed: '2026-07-25'
+  access_method: primary-paper-page
+  source_type: peer-reviewed
+  research_question: Does tokenizer choice materially change efficiency and downstream behavior across languages?
+  setup: Controlled comparison of 24 models trained with different tokenizers across selected languages and tasks.
+  main_findings: Tokenizer choice materially changes token efficiency and downstream results; common fertility and parity proxies do not consistently predict quality.
+  quantitative_results: See the paper tables; no cross-provider conversion factor is reported.
+  limitations: Training-time controlled study on selected model sizes and languages; not a hosted-API calibration for Claude.
+  evidence_nature: causal
+  relevance: Rejects universal cross-tokenizer multipliers and supports per-model, per-language measurement with proxy-error reporting.
+  generalizes_across_models: partial
+  confidence: high
+  verification_status: verified-primary
+  provenance_required: true
+  versioned_url: https://aclanthology.org/2024.findings-naacl.247/
+  version_scope: stable-versioned-publication-snapshot
+  last_verified: '2026-07-25'
+  status: active
+  superseded_by: null
+  section_locator: Abstract; experimental results and tokenizer-efficiency discussion
+  retrieval_digest: {algorithm: sha256, value: b33452160671cbaff486f4fb0f445edb8856b4414285183b8aaeacb588942240, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T13:44:58Z', byte_length: 52695, stability: stable-publication-page}
+- id: S-B11
+  title: LongMemEval
+  authors: Xiaowu Wu et al.
+  venue: ICLR 2025
+  year: 2025
+  url: https://arxiv.org/abs/2410.10813
+  arxiv_id: '2410.10813'
+  doi: 10.48550/arXiv.2410.10813
+  date_accessed: '2026-07-25'
+  access_method: primary-paper-page-v2
+  source_type: peer-reviewed
+  research_question: Which capabilities must long-term conversational memory preserve and evaluate?
+  setup: Curated long-history assistant benchmark spanning information extraction, multi-session reasoning, temporal reasoning, knowledge updates, and abstention.
+  main_findings: Memory quality requires more than retrieval; temporal updates, cross-session evidence, and abstention need explicit evaluation.
+  quantitative_results: Benchmark-specific results are retained in the paper; no universal truncation or summarization threshold follows.
+  limitations: Curated QA histories rather than arbitrary production agents.
+  evidence_nature: empirical
+  relevance: Supports typed retention, temporal supersession, provenance, multi-session, and abstention fixtures; contradicts age-only deletion.
+  generalizes_across_models: partial
+  confidence: high
+  verification_status: verified-primary
+  provenance_required: true
+  versioned_url: https://arxiv.org/abs/2410.10813v2
+  version_scope: stable-versioned-publication-snapshot
+  last_verified: '2026-07-25'
+  status: active
+  superseded_by: null
+  section_locator: arXiv v2 abstract; benchmark abilities and evaluation setup
+  retrieval_digest: {algorithm: sha256, value: 8637c73b520a11091ebfc075630bf47fdc8736da1c49b53b7343af58698ebfbc, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T13:44:58Z', byte_length: 43902, stability: stable-versioned-page}
+- id: S-C11
+  title: Token counting (Anthropic official documentation)
+  authors: Anthropic
+  venue: Claude Developer Platform documentation
+  year: 2026
+  url: https://platform.claude.com/docs/en/build-with-claude/token-counting
+  date_accessed: '2026-07-25'
+  access_method: official-live-documentation
+  source_type: provider-doc
+  research_question: What does Anthropic's token-count endpoint accept and what epistemic status does it provide?
+  setup: Official API documentation for structured request token estimation.
+  main_findings: The endpoint accepts the request envelope including system, tools, messages, images, and PDFs; its result is an estimate that can differ from message usage.
+  quantitative_results: No universal local-tokenizer conversion factor is provided; target models should be counted directly.
+  limitations: Living provider documentation and model-specific behavior can change.
+  evidence_nature: authoritative-api-contract
+  relevance: Requires request-shaped preflight estimation and prohibits calling the result exact, observed, or billed usage.
+  generalizes_across_models: Anthropic-only; model-specific
+  confidence: high
+  verification_status: verified-primary
+  provenance_required: true
+  versioned_url: https://platform.claude.com/docs/en/build-with-claude/token-counting
+  version_scope: living-documentation-snapshot-at-last-verified
+  last_verified: '2026-07-25'
+  status: active
+  superseded_by: null
+  section_locator: How to count message tokens; supported models; token-counting caveats
+  retrieval_digest: {algorithm: sha256, value: 0fb5fc1a1f75bc263205b66a0e228090a3f4f8297d2e681b7bc52e4ea6f311ee, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T13:40:51Z', byte_length: 1326826, stability: dynamic-html-point-in-time}
+- id: S-C12
+  title: Cache diagnostics (Anthropic official documentation)
+  authors: Anthropic
+  venue: Claude Developer Platform documentation
+  year: 2026
+  url: https://platform.claude.com/docs/en/build-with-claude/cache-diagnostics
+  date_accessed: '2026-07-25'
+  access_method: official-live-documentation
+  source_type: provider-doc
+  research_question: How can cache misses and request-prefix divergence be verified?
+  setup: Official public-beta diagnostics documentation.
+  main_findings: Cache reuse depends on an identical request beginning and can be invalidated by model, tools, system, or message divergence; diagnostics and usage fields verify rather than assume hits.
+  quantitative_results: Cache-missed magnitude is diagnostic, not a billable token category.
+  limitations: Public-beta surface and field semantics may change.
+  evidence_nature: authoritative-api-contract
+  relevance: Supports fail-closed cache accounting, exact runtime/model gating, and observed hit verification.
+  generalizes_across_models: Anthropic-only
+  confidence: high
+  verification_status: verified-primary
+  provenance_required: true
+  versioned_url: https://platform.claude.com/docs/en/build-with-claude/cache-diagnostics
+  version_scope: living-documentation-snapshot-at-last-verified
+  last_verified: '2026-07-25'
+  status: active
+  superseded_by: null
+  section_locator: How cache diagnostics works; divergence fields; usage interpretation
+  retrieval_digest: {algorithm: sha256, value: 6c26d30a476dce2a8e40a1bc9175a7464c4c87dac8af49fd83903d8325cad890, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T13:40:51Z', byte_length: 1345606, stability: dynamic-html-point-in-time}
+- id: S-D13
+  title: Context editing (Anthropic official documentation)
+  authors: Anthropic
+  venue: Claude Developer Platform documentation
+  year: 2026
+  url: https://platform.claude.com/docs/en/build-with-claude/context-editing
+  date_accessed: '2026-07-25'
+  access_method: official-live-documentation
+  source_type: provider-doc
+  research_question: How can stale tool results be removed from long-running Claude contexts?
+  setup: Official documentation for server-managed context editing.
+  main_findings: Tool-result clearing can reduce active context but can invalidate prompt caching; clearing thresholds should make the trade worthwhile.
+  quantitative_results: No workload-independent saving is promised.
+  limitations: Runtime feature status and model support are version-sensitive.
+  evidence_nature: authoritative-api-contract
+  relevance: Requires feature gating, cache-aware tradeoffs, and no claim that context editing is universally beneficial.
+  generalizes_across_models: Anthropic-only; feature-gated
+  confidence: high
+  verification_status: verified-primary
+  provenance_required: true
+  versioned_url: https://platform.claude.com/docs/en/build-with-claude/context-editing
+  version_scope: living-documentation-snapshot-at-last-verified
+  last_verified: '2026-07-25'
+  status: active
+  superseded_by: null
+  section_locator: Tool-result clearing; cache interaction; clear-at-least behavior
+  retrieval_digest: {algorithm: sha256, value: efcab73638bf3088db8e4bb6b7b7fe0008c63653841bf494f9c72df6af64f072, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T13:40:52Z', byte_length: 2038052, stability: dynamic-html-point-in-time}
+- id: S-D14
+  title: Compaction (Anthropic official documentation)
+  authors: Anthropic
+  venue: Claude Developer Platform documentation
+  year: 2026
+  url: https://platform.claude.com/docs/en/build-with-claude/compaction
+  date_accessed: '2026-07-25'
+  access_method: official-live-documentation
+  source_type: provider-doc
+  research_question: How does server-side compaction replace older context and report usage?
+  setup: Official documentation for server-side compaction and per-iteration usage.
+  main_findings: Compaction summarizes and replaces older context; iteration usage must not be double-counted with duplicate top-level fields.
+  quantitative_results: No lossless-compaction guarantee is provided.
+  limitations: Beta behavior and usage shape can change.
+  evidence_nature: authoritative-api-contract
+  relevance: Supports iteration precedence, source-linked retention tests, and explicit compaction uncertainty.
+  generalizes_across_models: Anthropic-only; feature-gated
+  confidence: high
+  verification_status: verified-primary
+  provenance_required: true
+  versioned_url: https://platform.claude.com/docs/en/build-with-claude/compaction
+  version_scope: living-documentation-snapshot-at-last-verified
+  last_verified: '2026-07-25'
+  status: active
+  superseded_by: null
+  section_locator: Compaction behavior; usage accounting; migration guidance
+  retrieval_digest: {algorithm: sha256, value: c302ca7a6f7b83793531d80dbfcc4569cf66b3e62836ffcfc1489cd93ff4d6e6, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T13:40:51Z', byte_length: 2384719, stability: dynamic-html-point-in-time}
+- id: S-D15
+  title: Memory tool (Anthropic official documentation)
+  authors: Anthropic
+  venue: Claude Developer Platform documentation
+  year: 2026
+  url: https://platform.claude.com/docs/en/agents-and-tools/tool-use/memory-tool
+  date_accessed: '2026-07-25'
+  access_method: official-live-documentation
+  source_type: provider-doc
+  research_question: How can Claude retrieve durable information without keeping it all in active context?
+  setup: Official client-side persistent-memory tool documentation.
+  main_findings: Durable memory can be read just in time instead of being fully retained in active context; persistence remains application-controlled.
+  quantitative_results: No universal memory-quality or token-saving guarantee is provided.
+  limitations: Application-managed storage, retention, and evaluation remain necessary.
+  evidence_nature: authoritative-api-contract
+  relevance: Supports recoverable just-in-time memory guidance without implementing a memory engine in this optimizer.
+  generalizes_across_models: Anthropic tool surface
+  confidence: high
+  verification_status: verified-primary
+  provenance_required: true
+  versioned_url: https://platform.claude.com/docs/en/agents-and-tools/tool-use/memory-tool
+  version_scope: living-documentation-snapshot-at-last-verified
+  last_verified: '2026-07-25'
+  status: active
+  superseded_by: null
+  section_locator: Memory operations; persistence model; context-management guidance
+  retrieval_digest: {algorithm: sha256, value: 65e3804a087e937be223ceec1522871bee19fa0f47404a13ea060cce853c9708, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T13:40:52Z', byte_length: 1345728, stability: dynamic-html-point-in-time}
+- id: S-D16
+  title: Agent Skills overview (Anthropic official documentation)
+  authors: Anthropic
+  venue: Claude Developer Platform documentation
+  year: 2026
+  url: https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview
+  date_accessed: '2026-07-25'
+  access_method: official-live-documentation
+  source_type: provider-doc
+  research_question: Which parts of an Agent Skill enter context and when?
+  setup: Official Agent Skills architecture documentation.
+  main_findings: Metadata is preloaded, SKILL.md is loaded when triggered, references are read on demand, and script source can stay outside context when executed while its output enters context.
+  quantitative_results: Approximate architectural budgets, not exact billing constants.
+  limitations: Product/runtime behavior is versioned and may differ across surfaces.
+  evidence_nature: authoritative-product-contract
+  relevance: Corrects script-zero-cost overclaims and grounds progressive-disclosure accounting.
+  generalizes_across_models: Anthropic Skill surfaces
+  confidence: high
+  verification_status: verified-primary
+  provenance_required: true
+  versioned_url: https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview
+  version_scope: living-documentation-snapshot-at-last-verified
+  last_verified: '2026-07-25'
+  status: active
+  superseded_by: null
+  section_locator: How Skills work; three disclosure levels; Skills architecture
+  retrieval_digest: {algorithm: sha256, value: 779cc52b410fc972c83ba3a37560daf6ca8b88875beae76aa8ee50d708b8ae7b, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T13:40:52Z', byte_length: 934714, stability: dynamic-html-point-in-time}
+- id: S-D17
+  title: Skill authoring best practices (Anthropic official documentation)
+  authors: Anthropic
+  venue: Claude Developer Platform documentation
+  year: 2026
+  url: https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices
+  date_accessed: '2026-07-25'
+  access_method: official-live-documentation
+  source_type: provider-doc
+  research_question: Which structural practices keep Agent Skills concise and discoverable?
+  setup: Official authoring guidance.
+  main_findings: Keep SKILL.md under 500 body lines and approximately 5k tokens, link references directly one level deep, and add a table of contents to references longer than 100 lines.
+  quantitative_results: Recommendations are separate boundaries, not an equation between lines and tokens.
+  limitations: Best-practice guidance rather than a platform-validity schema; offline token proxies remain estimates.
+  evidence_nature: authoritative-product-guidance
+  relevance: Grounds advisory structural checks and their exact boundary semantics.
+  generalizes_across_models: Anthropic Skill surfaces
+  confidence: high
+  verification_status: verified-primary
+  provenance_required: true
+  versioned_url: https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices
+  version_scope: living-documentation-snapshot-at-last-verified
+  last_verified: '2026-07-25'
+  status: active
+  superseded_by: null
+  section_locator: Concise is key; progressive disclosure; avoid nested references; token budgets
+  retrieval_digest: {algorithm: sha256, value: 5f665983bff10f5da7125a0c8e1f69b72377c5e79eb5b49d5cadb792a194d893, status: captured, response_encoding: decompressed, observed_at: '2026-07-25T13:40:52Z', byte_length: 1368224, stability: dynamic-html-point-in-time}
 cluster_syntheses:
   cluster-A-compression-safety: 'Consensus: moderate, extractive/task-aware compression (roughly 2x-5x
     task-agnostic [S-A03], up to ~10x extractive [S-A07], ~20x claimed in the best case [S-A01]) preserves
@@ -2008,9 +2754,10 @@ cluster_syntheses:
     extractive; (c) whether degradation is semantic or instructional — S-A10 says constraint-dropping
     dominates (2.9x) and is non-monotonic, which no other source models.
 
-    Candidate rule R1 — Budget cap: default skill-text compression to extractive methods at <=5x, hard
-    ceiling ~10x; beyond that require explicit accuracy sign-off. Support: S-A01, S-A03, S-A07. Risk:
-    S-A05''s measured 27-38% loss at extreme ratios; S-A08''s silent information loss.
+    Candidate rule R1 — Ratio sweep, not a universal cap: treat compression ratio as an experimental
+    variable and accept only settings that preserve obligations, entities, grounding, safety constraints,
+    and paired task non-inferiority. Support: S-A01, S-A03, S-A07, S-A08, S-A11. Risk: tokenizer/model/
+    language transfer is not guaranteed and high ratios can silently lose capability.
 
     Candidate rule R2 — Protect instructions and safety text: never compress constraints/safety instructions
     in the same budget as content; keep them verbatim (or restore post-compression) and never co-compress
@@ -2049,9 +2796,9 @@ cluster_syntheses:
     can hallucinate — exempt safety-critical instructions from pruning. R3 — filter hard negatives (high
     embedding-similarity, non-answering chunks) rather than deduplicating by similarity alone, and add
     NOTHING when retrieval is uninformative (S-B09, S-B08, S-B03). R4 — for multi-turn skills, periodically
-    consolidate the conversation into one restated fully-specified spec instead of growing raw history
-    (S-B05: -39% multi-turn; S-B03 LongMemEval focused>full); risk: summarization is lossy and models
-    don''t recover from a wrong compacted premise (S-B05) — keep an escape hatch to the raw log.
+    consolidate conversation state with typed retention, provenance, and source recovery instead of
+    growing raw history (S-B05; S-B11); risk: summarization is lossy and models do not recover from a
+    wrong compacted premise — keep an escape hatch to the raw log and abstain when retention is uncertain.
 
     '
   cluster-C-caching-routing-pricing: 'Consensus: both major providers now price cache reads at 0.1x input

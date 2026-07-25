@@ -10,14 +10,14 @@ cheap to assert and cheap to break silently. A rule can cite a source id that
 was never researched; a release gate that says "never regress safety" is one
 `true` away from meaning nothing; a test id copy-pasted from cases.jsonl into
 holdout.jsonl turns the holdout split into training data and quietly inflates
-every score. None of those show up in a diff review. All ten checks below are
+every score. None of those show up in a diff review. All eleven checks below are
 mechanical answers to "what could rot here without anyone noticing".
 
 Adapted from the GPT/Codex reference implementation of the same skill
 (work/gpt-reference/.../scripts/validate_package.py), rewritten against OUR
 schema: rules/rules.yaml with 19 flat fields per rule, a nested `priority` map,
 tier "S" for safety meta-rules, and S-<cluster><nn> source ids resolving in
-output/research/sources.yaml.
+research/sources.yaml.
 
 RELATIONSHIP TO render_rules.py
 render_rules.py is the AUTHORING tool: it regenerates references/rules.md and
@@ -30,7 +30,7 @@ into --json. So the overlap is deliberate and narrow (checks 3+4); everything
 else here - paths, gate booleans, test splits, secrets, versions - is new.
 Renderer green + validator green is the ship condition.
 
-CHECKS (all ten run even if an earlier one fails, so one run shows every problem)
+CHECKS (all run even if an earlier one fails, so one run shows every problem)
   C01 required-paths       every file the skill's documented workflow loads
   C02 rule-schema          >=20 rules, all 19 fields non-empty, unique ids,
                            tier in {1,2,3,S}, 4 risk dims as ints 0-3,
@@ -56,6 +56,8 @@ CHECKS (all ten run even if an earlier one fails, so one run shows every problem
                            private-key armor, anywhere in the tree
   C09 version-consistency  VERSION vs a version declared in default-settings.yaml
   C10 pricing-snapshot     provider-cost-profiles.yaml carries snapshot.snapshot_date
+  C11 skill-best-practice  advisory body line/token budgets, direct references,
+                           and tables of contents for long reference files
 
 HOW C08 TELLS A REAL KEY FROM A TEST FIXTURE THAT TALKS ABOUT KEYS
 tests/ deliberately contains injection and safety fixtures full of adversarial
@@ -116,10 +118,17 @@ REQUIRED_PATHS = [
     "references/measurement.md", "references/refresh-protocol.md",
     "references/research-digest.md", "references/rules.md", "references/safety.md",
     "scripts/cost_model.py", "scripts/live_eval_adapter.py",
-    "scripts/measure_tokens.py", "scripts/render_rules.py",
+    "scripts/artifact_io.py",
+    "scripts/eval_report.py", "scripts/eval_runner.py",
+    "scripts/measure_tokens.py", "scripts/parse_unittest.py",
+    "scripts/render_rules.py",
     "scripts/run_tests.py", "scripts/validate_report.py",
     "scripts/validate_package.py",
+    "requirements-lock.txt",
     "tests/cases.jsonl", "tests/holdout.jsonl",
+    "tests/v2-test-manifest.json",
+    "tests/test_v2.py", "tests/offline_guard/run_ci_checks.sh",
+    "tests/offline_guard/sitecustomize.py",
 ]
 
 # ---------------------------------------------------------------- C02 rule schema
@@ -254,37 +263,40 @@ def read_jsonl(path):
     return rows, errors
 
 
+def declared_sources_path(root):
+    """Resolve rules.yaml:sources_file relative to the registry itself."""
+    registry_path = root / "rules" / "rules.yaml"
+    try:
+        registry = load_yaml(registry_path) or {}
+    except Exception:  # C02 reports the malformed registry
+        return None
+    declared = registry.get("sources_file")
+    if not isinstance(declared, str) or not declared.strip():
+        return None
+    return (registry_path.parent / declared).resolve()
+
+
 def resolve_sources(root, explicit):
     """Locate the source catalog, anchored on ROOT so the validator works on a
     copied or relocated tree (CI checkout, installed skill, mutation test).
 
-    The in-skill rules/sources-index.yaml wins when present: it is what actually
-    SHIPS, so it is what a citation must resolve against in a user's install.
-    The fuller project catalog is used as the upstream cross-check (see C04)."""
+    Repository mode verifies the real upstream catalog declared by rules.yaml.
+    A standalone installed copy falls back to the bundled source index and
+    explicitly reports that its upstream catalog was unavailable."""
     if explicit:
         return Path(explicit).resolve()
-    candidates = [
-        root / "rules" / "sources-index.yaml",                          # ships with the skill
-        root / "references" / "sources.yaml",
-        root.parent.parent / "output" / "research" / "sources.yaml",    # PROJ/candidate/skill
-        root.parent / "output" / "research" / "sources.yaml",
-        SKILL_DEFAULT.parent.parent / "output" / "research" / "sources.yaml",
-    ]
+    declared = declared_sources_path(root)
+    candidates = [declared, root / "rules" / "sources-index.yaml",
+                  root / "references" / "sources.yaml"]
     for candidate in candidates:
-        if candidate.is_file():
+        if candidate and candidate.is_file():
             return candidate.resolve()
-    return candidates[-1]
+    return (declared or candidates[1]).resolve()
 
 
-def resolve_upstream_sources(root, sources_path):
-    """The project research catalog, when the resolved catalog was the shipped
-    index. Lets C04 prove the shipped index never invented a record."""
-    for candidate in (root.parent.parent / "output" / "research" / "sources.yaml",
-                      root.parent / "output" / "research" / "sources.yaml",
-                      SKILL_DEFAULT.parent.parent / "output" / "research" / "sources.yaml"):
-        if candidate.is_file() and candidate.resolve() != Path(sources_path).resolve():
-            return candidate.resolve()
-    return None
+def resolve_upstream_sources(root):
+    candidate = declared_sources_path(root)
+    return candidate if candidate and candidate.is_file() else None
 
 
 class Report:
@@ -451,7 +463,7 @@ def read_source_ids(path):
     return [r.get("id") for r in records if isinstance(r, dict)], len(records)
 
 
-def check_citations(rules, sources_path, upstream_path, rep):
+def check_citations(rules, sources_path, upstream_path, bundled_path, rep):
     """C03 anti-fabrication + C04 source-id sanity, sharing one parse."""
     cite_violations, source_violations = [], []
     known, record_count = set(), 0
@@ -464,6 +476,8 @@ def check_citations(rules, sources_path, upstream_path, rep):
         return
     catalog = Path(sources_path).name
     try:
+        source_doc = load_yaml(sources_path) or {}
+        source_records = source_doc.get("records") or []
         ids, record_count = read_source_ids(sources_path)
         for rid, count in Counter(ids).items():
             if count > 1:
@@ -472,26 +486,126 @@ def check_citations(rules, sources_path, upstream_path, rep):
         if blank:
             source_violations.append(f"{catalog}: {blank} record(s) without an `id`")
         known = {i for i in ids if i}
+        for record in source_records:
+            if not isinstance(record, dict):
+                continue
+            sid = record.get("id", "?")
+            repository_record = upstream_path is not None
+            if repository_record and record.get("provenance_required") is not True:
+                source_violations.append(
+                    f"{sid}: repository source must set provenance_required: true")
+            if (not repository_record
+                    and record.get("provenance_required") is not True):
+                continue
+            for field in (
+                    "versioned_url", "version_scope", "last_verified",
+                    "status", "superseded_by", "section_locator",
+                    "retrieval_digest"):
+                if field not in record:
+                    source_violations.append(f"{sid}: provenance field `{field}` missing")
+            versioned_url = record.get("versioned_url")
+            if not isinstance(versioned_url, str) or not re.fullmatch(
+                    r"https://\S+", versioned_url):
+                source_violations.append(
+                    f"{sid}: versioned_url must be a non-empty HTTPS URL")
+            if not re.fullmatch(r"\d{4}-\d{2}-\d{2}",
+                                str(record.get("last_verified", ""))):
+                source_violations.append(
+                    f"{sid}: last_verified must be an ISO date, got "
+                    f"{record.get('last_verified')!r}")
+            for field in ("version_scope", "section_locator"):
+                value = record.get(field)
+                if not isinstance(value, str) or not value.strip():
+                    source_violations.append(
+                        f"{sid}: provenance field `{field}` must be non-empty")
+            status = record.get("status")
+            if status not in {"active", "superseded", "retracted", "withdrawn"}:
+                source_violations.append(
+                    f"{sid}: unsupported source lifecycle status {status!r}")
+            superseded_by = record.get("superseded_by")
+            if status == "superseded":
+                if not isinstance(superseded_by, str) or not superseded_by.strip():
+                    source_violations.append(
+                        f"{sid}: superseded source needs a superseded_by locator")
+            elif superseded_by is not None:
+                source_violations.append(
+                    f"{sid}: superseded_by must be null unless status is superseded")
+            digest = record.get("retrieval_digest")
+            if isinstance(digest, dict):
+                if digest.get("algorithm") != "sha256":
+                    source_violations.append(f"{sid}: retrieval digest must use sha256")
+                digest_status = digest.get("status")
+                digest_value = digest.get("value")
+                if digest_status == "captured":
+                    if not re.fullmatch(r"[0-9a-f]{64}", str(digest_value or "")):
+                        source_violations.append(
+                            f"{sid}: captured retrieval digest is not 64 lowercase hex")
+                    if digest.get("response_encoding") != "decompressed":
+                        source_violations.append(
+                            f"{sid}: captured digest must describe decompressed bytes")
+                    if not re.fullmatch(
+                            r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z",
+                            str(digest.get("observed_at", ""))):
+                        source_violations.append(
+                            f"{sid}: captured digest needs an ISO UTC observed_at")
+                    byte_length = digest.get("byte_length")
+                    if (isinstance(byte_length, bool)
+                            or not isinstance(byte_length, int)
+                            or byte_length <= 0):
+                        source_violations.append(
+                            f"{sid}: captured digest needs a positive byte_length")
+                    stability = digest.get("stability")
+                    if not isinstance(stability, str) or not stability.strip():
+                        source_violations.append(
+                            f"{sid}: captured digest needs a stability classification")
+                elif digest_status == "not-captured":
+                    if digest_value is not None:
+                        source_violations.append(
+                            f"{sid}: not-captured retrieval digest must have null value")
+                    if repository_record:
+                        source_violations.append(
+                            f"{sid}: repository provenance digest must be captured")
+                else:
+                    source_violations.append(
+                        f"{sid}: retrieval digest status must be captured or not-captured")
+            elif "retrieval_digest" in record:
+                source_violations.append(f"{sid}: retrieval_digest must be a mapping")
+        rep.counts["provenance_records"] = sum(
+            1 for record in source_records
+            if isinstance(record, dict)
+            and record.get("provenance_required") is True)
     except Exception as exc:                       # noqa: BLE001
         message = f"{catalog} unreadable ({exc})"
         rep.add("C03", "citation-integrity", [message], "unverifiable")
         rep.add("C04", "source-id-sanity", [message], "unverifiable")
         return
 
-    # The shipped index must not invent records the research catalog never had -
-    # otherwise a fabricated citation could be made to "resolve" by editing the
-    # copy that ships. Only meaningful when both files are present.
+    # Repository mode requires exact upstream/bundled parity. A subset check
+    # would let the installed copy silently lose a valid source.
     if upstream_path:
-        try:
-            upstream_ids, _ = read_source_ids(upstream_path)
-            invented = sorted(known - {i for i in upstream_ids if i})
-            if invented:
+        if not bundled_path.is_file():
+            source_violations.append(
+                f"bundled source index missing in repository mode: "
+                f"{bundled_path}")
+        else:
+            try:
+                upstream_ids, _ = read_source_ids(upstream_path)
+                bundled_ids, _ = read_source_ids(bundled_path)
+                upstream_known = {i for i in upstream_ids if i}
+                bundled_known = {i for i in bundled_ids if i}
+                invented = sorted(bundled_known - upstream_known)
+                missing = sorted(upstream_known - bundled_known)
+                if invented:
+                    source_violations.append(
+                        f"{bundled_path.name} contains id(s) absent from the "
+                        f"upstream research catalog: {invented}")
+                if missing:
+                    source_violations.append(
+                        f"{bundled_path.name} is missing upstream source id(s): "
+                        f"{missing}")
+            except Exception as exc:               # noqa: BLE001
                 source_violations.append(
-                    f"{catalog} contains record id(s) absent from the upstream research "
-                    f"catalog {Path(upstream_path).name}: {invented}")
-        except Exception as exc:                   # noqa: BLE001
-            rep.note(f"upstream catalog {upstream_path} unreadable ({exc}); "
-                     f"shipped-index subset check skipped")
+                    f"repository source-index parity cannot be verified: {exc}")
 
     cited = set()
     for rule in rules:
@@ -527,6 +641,72 @@ def check_citations(rules, sources_path, upstream_path, rep):
     if not source_violations and known - cited:
         rep.note(f"{len(known - cited)} source record(s) are never cited by a rule "
                  f"(informational, not a failure)")
+
+
+def skill_body(text):
+    """Return SKILL.md body with YAML frontmatter removed."""
+    lines = text.splitlines()
+    if lines and lines[0].strip() == "---":
+        for index in range(1, len(lines)):
+            if lines[index].strip() == "---":
+                return "\n".join(lines[index + 1:])
+    return text
+
+
+def check_skill_best_practices(root, rep, strict=False):
+    """C11 — official Skill authoring recommendations, advisory by default."""
+    path = root / "SKILL.md"
+    try:
+        body = skill_body(path.read_text(encoding="utf-8"))
+    except OSError as exc:
+        rep.add("C11", "skill-best-practice", [f"SKILL.md unreadable ({exc})"],
+                "unverifiable")
+        return
+
+    line_count = len(body.splitlines())
+    # Transparent local proxy only: not a Claude count or compliance proof.
+    token_proxy = math.ceil(len(body) / 3.5)
+    findings = []
+    if line_count >= 500:
+        findings.append(f"SKILL.md body has {line_count} lines; guidance is under 500")
+    if token_proxy >= 5000:
+        findings.append(
+            f"SKILL.md body proxy estimate is {token_proxy} tokens; guidance is under "
+            "5000 model-counted tokens (offline proxy, not an exact Claude count)")
+
+    pointer_re = re.compile(r"references/[A-Za-z0-9_./-]+\.md")
+    direct = set(pointer_re.findall(body))
+    nested_only = set()
+    references = root / "references"
+    if references.is_dir():
+        for ref in references.rglob("*.md"):
+            try:
+                ref_text = ref.read_text(encoding="utf-8")
+            except OSError:
+                continue
+            nested_only.update(set(pointer_re.findall(ref_text)) - direct)
+            lines = ref_text.splitlines()
+            if len(lines) > 100 and not re.search(
+                    r"^#{1,3}\s+(?:Table of )?Contents\s*$", ref_text,
+                    re.MULTILINE | re.IGNORECASE):
+                findings.append(
+                    f"{ref.relative_to(root)} has {len(lines)} lines and no Contents heading")
+    for pointer in sorted(nested_only):
+        findings.append(
+            f"{pointer} is discoverable only through another reference; link it "
+            "directly from SKILL.md")
+
+    violations = findings if strict else []
+    if not strict:
+        for finding in findings:
+            rep.note(f"C11 advisory: {finding}")
+    rep.counts["skill_body_lines"] = line_count
+    rep.counts["skill_body_token_proxy_estimate"] = token_proxy
+    rep.counts["skill_best_practice_advisories"] = len(findings)
+    rep.add("C11", "skill-best-practice", violations,
+            f"body={line_count} lines, proxy≈{token_proxy} tokens, "
+            f"{len(findings)} advisory finding(s)"
+            + (" (strict)" if strict else ""))
 
 
 def check_tests(root, rep):
@@ -662,17 +842,31 @@ def check_profiles(root, rep):
 def check_secrets(root, rep):
     violations, scanned = [], 0
     for path in sorted(root.rglob("*")):
-        if not path.is_file() or path.is_symlink():
+        relative = path.relative_to(root)
+        if SKIP_DIRS & set(relative.parts):
             continue
-        if SKIP_DIRS & set(path.relative_to(root).parts):
+        if path.is_symlink():
+            violations.append(
+                f"{relative}: symlink cannot be inspected by the secret scan")
+            continue
+        if not path.is_file():
             continue
         try:
             if path.stat().st_size > MAX_SCAN_BYTES:
-                rep.note(f"skipped {path.relative_to(root)} from the secret scan (> 4 MB)")
+                violations.append(
+                    f"{relative}: file exceeds the {MAX_SCAN_BYTES}-byte "
+                    "secret-scan limit")
                 continue
             text = path.read_text(encoding="utf-8")
-        except (UnicodeDecodeError, OSError):
-            continue                                # binary or unreadable: nothing to leak in text
+        except UnicodeDecodeError:
+            violations.append(
+                f"{relative}: non-UTF-8 file cannot be inspected by the "
+                "secret scan")
+            continue
+        except OSError as exc:
+            violations.append(
+                f"{relative}: unreadable by the secret scan ({type(exc).__name__})")
+            continue
         scanned += 1
         for number, line in enumerate(text.splitlines(), 1):
             for label, pattern, tests in SECRET_RULES:
@@ -681,8 +875,8 @@ def check_secrets(root, rep):
                     if tests and body is not None and not looks_like_real_credential(body, tests):
                         continue                    # prose/placeholder, not a credential
                     violations.append(
-                        f"{path.relative_to(root)}:{number}: possible {label} "
-                        f"(matched {match.group(0)[:12]}...)")
+                        f"{relative}:{number}: possible {label} "
+                        "(matched value redacted)")
     rep.counts["files_scanned"] = scanned
     rep.add("C08", "secret-scan", violations, f"{scanned} text files scanned")
 
@@ -760,6 +954,11 @@ def main():
                         help="write a machine-readable result to this path")
     parser.add_argument("-q", "--quiet", action="store_true",
                         help="print the check table only, not every violation line")
+    parser.add_argument(
+        "--strict-best-practices",
+        action="store_true",
+        help="fail C11 advisory Skill authoring recommendations",
+    )
     args = parser.parse_args()
 
     root = Path(args.root).resolve()
@@ -771,21 +970,25 @@ def main():
         sys.exit(2)
 
     sources_path = resolve_sources(root, args.sources)
-    upstream_path = resolve_upstream_sources(root, sources_path)
+    upstream_path = resolve_upstream_sources(root)
+    bundled_path = (root / "rules" / "sources-index.yaml").resolve()
     rep = Report()
     rep.counts["sources_file"] = str(sources_path)
     rep.counts["upstream_sources_file"] = str(upstream_path) if upstream_path else None
+    rep.counts["source_verification_scope"] = (
+        "upstream_and_bundled" if upstream_path else "bundled_index_only")
 
     print(f"== validate_package: {root} ==")
     check_paths(root, rep)
     rules = check_rules(root, rep)
-    check_citations(rules, sources_path, upstream_path, rep)
+    check_citations(rules, sources_path, upstream_path, bundled_path, rep)
     check_tests(root, rep)
     check_gates(root, rep)
     check_profiles(root, rep)
     check_secrets(root, rep)
     check_version(root, rep)
     check_pricing(root, rep)
+    check_skill_best_practices(root, rep, strict=args.strict_best_practices)
 
     for check in rep.checks:
         print(f"  {check['status']}  {check['id']} {check['name']:<22} "

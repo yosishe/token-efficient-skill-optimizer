@@ -1,6 +1,6 @@
 # Research basis — considerations taken, not commandments issued
 
-[EVIDENCE.md](EVIDENCE.md) lists all 42 sources and which rule cites each one. This file answers
+[EVIDENCE.md](EVIDENCE.md) lists all 82 source records and which rule cites each one. This file answers
 the question that list cannot: **what did the paper actually find, in what setting, and what
 consideration did we take from it?**
 
@@ -15,15 +15,35 @@ A few things worth saying plainly before the list:
 - **These papers are evidence about mechanisms, not permission slips.** They establish that
   context length degrades retrieval, that near-miss content is harmful, that compressors drop
   entities. They do not establish that any particular edit to *your* skill is a good idea.
-- **Numbers reported below are the papers' own**, quoted as their findings. They are not
-  measurements of this tool and never carry a `[measured]` label, which in this repository means
-  "we ran it and here is the data file." Where one carries `[projected]`, that marks the
-  figure as the paper's own result whose transfer to your setting is exactly what is unproven.
+- **Numbers reported below are the papers' own**, quoted as their findings. They
+  are not measurements of this tool and never carry a `[measured]` label, which
+  in this repository means completed observed usage with claim-specific
+  recomputable evidence. Each is marked `[reported]` with its source id and a
+  section locator. Any transfer from that study to a target remains unproven.
 - **Where we used part of a paper and refused another part, it says so.** One entry below does
   exactly that.
 - **One of the most-used sources is not peer-reviewed**, and is published by a company that sells
   retrieval infrastructure. That is disclosed in its entry rather than left for someone to
   discover.
+
+## v1.3 research corrections
+
+The v1.3 extension adds two independent academic sources and seven current
+Anthropic contracts/guides. It changes executable rules only where the evidence
+supports a bounded correction:
+
+| evidence | correction adopted | claim deliberately refused |
+|---|---|---|
+| Tokenizer Choice (`S-A11`) | identify the tokenizer and language limitations on every local proxy | no cross-tokenizer Claude conversion factor |
+| LongMemEval (`S-B11`) and multi-turn loss (`S-B05`) | score typed retention, temporal supersession, provenance, and abstention | no oldest-first deletion or lossless-summary claim |
+| Anthropic token counting (`S-C11`) | count one complete structured request and classify the result as a provider preflight estimate | no output, billed-usage, cache-segmentation, or total-cost inference |
+| Anthropic prompt-cache diagnostics (`S-C12`) | require observed cache buckets and exact provider/model semantics | no blanket cache discount and no claim that cached tokens leave the context window |
+| Context editing, compaction, and memory (`S-D13`–`S-D15`) | add evaluator fixtures and capability-gated guidance | no automatic memory, deletion, retrieval, or compaction engine |
+| Agent Skills architecture and authoring (`S-D16`, `S-D17`) | count invocation/output context and add advisory structural boundaries | no claim that executed scripts have zero context cost or that the guidance is a validity schema |
+
+Official provider documentation governs API and billing behavior. Academic
+results shape hypotheses and test cases; they do not become universal savings
+claims.
 
 ---
 
@@ -40,6 +60,7 @@ structure. Performance degrades **non-uniformly** with input length *even on tri
 tasks*. Degradation accelerates when the needle and question are semantically dissimilar, and
 **even a single distractor** measurably reduces performance. Counter-intuitively, models did
 better on *shuffled* haystacks than on logically structured ones.
+`[reported] S-B03 “Overview of Experiments” and Results.`
 
 **The consideration we took.** "It fits in the context window" is not a reason to leave something
 there. The relevant question is not whether content fits but whether its presence degrades the
@@ -79,11 +100,12 @@ load-bearing sources in the registry are not academic.
 **Paper:** Laban, Hayashi, Zhou & Neville, *LLMs Get Lost In Multi-Turn Conversation*, arXiv
 preprint, 2025 — [link](https://arxiv.org/abs/2505.06120) · `S-B05`
 
-**What it found.** Over 200,000 simulated conversations comparing single-turn versus multi-turn
-delivery of *the same* instructions, across six generation tasks. Every model tested performed
-significantly worse when the instruction arrived in pieces — an average drop the authors report
-at **39%** — and the decomposition attributes it mostly to unreliability rather than lost
-aptitude. In the authors' phrasing, when a model takes a wrong turn it does not recover.
+**What it found.** Over 200,000 simulated conversations comparing single-turn
+versus multi-turn delivery of *the same* instructions, across six generation
+tasks. Every model tested performed significantly worse when the instruction
+arrived in pieces—an average drop the authors report at **39%**—and the
+decomposition attributes it mostly to unreliability rather than lost aptitude.
+`[reported] S-B05 abstract and §3 Results.`
 
 **The consideration we took.** A skill that states its instruction completely and up front is
 structurally advantaged over one that reveals it progressively through the conversation. This
@@ -91,9 +113,10 @@ sharpens what progressive disclosure means here: move *reference material* off t
 never the *instruction itself*. Splitting an instruction across a read boundary is not the same
 operation as moving an example.
 
-**What this does not license.** The study uses LLM-simulated users, not organic conversations, and
-it is a preprint. The 39% is an average across tasks with real spread. It supports a design
-preference, not a quantitative promise about your workload.
+**What this does not license.** The study uses LLM-simulated users, not organic
+conversations, and it is a preprint. The reported average has real spread across
+tasks. It supports a design preference, not a quantitative promise about your
+workload.
 
 ## 3. Near-misses hurt more than junk
 
@@ -111,8 +134,9 @@ conclusion is that retriever "relevance" is not aligned with what helps the gene
 similarity*, not by "least relevant." The content most likely to be quietly hurting is the content
 that looks most like it belongs. This shaped how R-12 and R-13 order what they propose cutting.
 
-**What we deliberately did not take.** The same paper reports that adding *random* irrelevant
-documents can improve accuracy by up to 35%. **No rule builds on this.** A later SIGIR follow-up
+**What we deliberately did not take.** The same paper reports that adding
+*random* irrelevant documents can improve accuracy by up to 35%.
+`[reported] S-B09 abstract and §5 Results.` **No rule builds on this.** A later SIGIR follow-up
 ("The Powerless Noise: How Experimental Settings Shape the Reported Power of Noise") reports the
 effect is setting-dependent, and the mechanism is unexplained. Using half a paper and refusing the
 other half is the honest response to a result that has not held up.
@@ -130,8 +154,9 @@ Compression for LLMs*, Findings of EMNLP 2025 — [link](https://arxiv.org/abs/2
 **What it found.** A holistic evaluation scoring compression on three axes — downstream task
 performance, grounding in the input, and information preservation such as entity retention. Some
 state-of-the-art compressors **fail to preserve key details**, capping performance on complex
-tasks. Controlling compression granularity recovered up to +23% downstream performance and
-**2.7× more entities preserved**.
+tasks. Controlling compression granularity recovered up to +23% downstream
+performance and **2.7× more entities preserved**.
+`[reported] S-A08 abstract.`
 
 **The consideration we took.** This is the paper that made R-S3 a safety-tier rule rather than a
 quality nicety. A compressed artifact that still passes its task check can have silently lost
@@ -149,26 +174,28 @@ existence of a preservation check; it does not tell you the safe compression rat
 **Paper:** Jiang et al., *LLMLingua: Compressing Prompts for Accelerated Inference of Large
 Language Models*, EMNLP 2023 — [link](https://arxiv.org/abs/2310.05736) · `S-A01`
 
-**What it found.** Coarse-to-fine, perplexity-guided token dropping reaches high compression while
-maintaining semantic integrity — the authors report up to **20×** — but only when a budget
-controller allocates compression **unequally**, protecting instructions and questions while
-compressing demonstrations harder.
+**What it found.** Coarse-to-fine, perplexity-guided token dropping reaches high
+compression while maintaining semantic integrity—the authors report up to
+**20×**—but only when a budget controller allocates compression **unequally**,
+protecting instructions and questions while compressing demonstrations harder.
+`[reported] S-A01 abstract.`
 
 **The consideration we took.** Uniform compression is the wrong default. Instructions, safety
 text, and output contracts are protected classes; examples and demonstrations are where a budget
 should be spent first. That asymmetry is built into how R-21 proposes changes, and it is the
 reason this tool never applies one ratio across a whole artifact.
 
-**What this does not license.** The 20× figure comes with a compressor LM aligned to the target
-model's distribution, evaluated against 2023-era GPT-3.5-class targets, and the abstract does not
-quantify the loss at that ratio. It is evidence for *unequal allocation as a principle*, not a
-target ratio for anyone to aim at.
+**What this does not license.** The reported maximum comes with a compressor LM
+aligned to the target model's distribution, evaluated against older target
+models, and the abstract does not quantify the loss at that ratio. It is
+evidence for *unequal allocation as a principle*, not a target ratio for anyone
+to aim at.
 
 ## 6. Output budgets work, and a naive cap is the failure mode
 
 **Rules shaped:** R-06, R-16
 
-**Paper:** Han et al., *Token-Budget-Aware LLM Reasoning*, arXiv preprint, 2024–25 —  <!-- no-claim -->
+**Paper:** Han et al., *Token-Budget-Aware LLM Reasoning*, arXiv preprint, 2024–25 —
 [link](https://arxiv.org/abs/2412.18547) · `S-D02`
 
 **What it found.** Controlled budget-injection experiments. Current LLM reasoning is
@@ -192,21 +219,24 @@ tokens.
 **Paper:** Cuadron et al., *The Danger of Overthinking: Examining the Reasoning-Action Dilemma in
 Agentic Tasks*, arXiv preprint, 2025 — [link](https://arxiv.org/abs/2502.08235) · `S-D05`
 
-**What it found.** Across 4,018 trajectories, higher "overthinking" scores correlate inversely
-with task performance; reasoning models overthink more than non-reasoning models. Selecting the
-lower-overthinking solution improved performance by roughly **30%** `[projected]` while cutting
-compute cost **43%** `[projected]`.
+**What it found.** Across 4,018 trajectories, higher "overthinking" scores
+correlate inversely with task performance; reasoning models overthink more than
+non-reasoning models. Selecting the lower-overthinking solution improved
+performance by roughly **30%** while cutting compute cost **43%**.
+`[reported] S-D05 abstract and §4 Results.`
 
 **The consideration we took.** In an agent loop, a long deliberation trace is a signal that
 something is wrong, not evidence of thoroughness. This is why R-07 treats a loop with no
 termination condition as a finding — "keep searching until you have found everything" is a defect,
 not diligence — and why the tool prefers acting and tool-calling over extended reasoning chains.
 
-**What this does not license.** The score-to-performance link is **correlational**. The 30%/43%
-result comes from *post-hoc selection among existing solutions*, not from training or prompting
-models to think less — so it does not establish that forcing shorter reasoning produces the same
-gain. Single domain (software engineering), and the pattern is strongest in reasoning-tuned models.
-It supports adding a stop condition; it does not support cutting reasoning generally.
+**What this does not license.** The score-to-performance link is
+**correlational**. The reported gains come from *post-hoc selection among
+existing solutions*, not from training or prompting models to think less—so
+they do not establish that forcing shorter reasoning produces the same gain.
+The study covers one domain, and the pattern is strongest in reasoning-tuned
+models. It supports adding a stop condition; it does not support cutting
+reasoning generally.
 
 ## 8. Injection resistance has to be structural
 

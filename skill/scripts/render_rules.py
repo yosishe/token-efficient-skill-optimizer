@@ -20,9 +20,11 @@ from pathlib import Path
 
 import yaml
 
+from artifact_io import atomic_write_text, reject_output_collisions
+
 HERE = Path(__file__).resolve().parent
 SKILL = HERE.parent
-PROJ = SKILL.parent.parent  # .../token-efficient-skill-optimizer
+REPO = SKILL.parent
 
 TIER_TITLES = {
     1: "Tier 1 — apply in every profile (high confidence, low risk)",
@@ -35,29 +37,69 @@ TIER_TITLES = {
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--rules", default=str(SKILL / "rules" / "rules.yaml"))
-    # Default to the IN-SKILL index so the citation gate works wherever the
-    # skill is installed. Before v1.1.0 this defaulted to a project path that
-    # does not exist under ~/.claude/skills/ - the check crashed with
-    # FileNotFoundError and gate G-09 was decorative in every installed copy.
-    # The project file is still accepted (and preferred when present) because
-    # it carries the full records; the index carries only ids/titles/urls.
-    in_skill = SKILL / "rules" / "sources-index.yaml"
-    project = PROJ / "output" / "research" / "sources.yaml"
-    ap.add_argument("--sources",
-                    default=str(project if project.exists() else in_skill))
+    ap.add_argument(
+        "--sources",
+        default=None,
+        help=("source catalog override; default resolves rules.yaml:sources_file "
+              "relative to the registry, then falls back to the bundled index"),
+    )
     ap.add_argument("--out-md", default=str(SKILL / "references" / "rules.md"))
     ap.add_argument("--out-matrix",
-                    default=str(PROJ / "output" / "research" / "evidence-matrix.md"))
+                    default=str(REPO / "research" / "evidence-matrix.md"))
     ap.add_argument("--check-only", action="store_true")
     args = ap.parse_args()
 
-    reg = yaml.safe_load(Path(args.rules).read_text(encoding="utf-8"))
+    rules_path = Path(args.rules).resolve()
+    reg = yaml.safe_load(rules_path.read_text(encoding="utf-8"))
+    declared = reg.get("sources_file")
+    declared_path = ((rules_path.parent / declared).resolve()
+                     if isinstance(declared, str) and declared.strip() else None)
+    bundled_path = (rules_path.parent / "sources-index.yaml").resolve()
+    sources_path = (Path(args.sources).resolve() if args.sources else
+                    declared_path if declared_path and declared_path.is_file() else
+                    bundled_path)
+    if not sources_path.is_file():
+        print(f"CROSS-CHECK FAIL: source catalog not found: {sources_path}")
+        sys.exit(1)
     rules = reg["rules"]
-    src = yaml.safe_load(Path(args.sources).read_text(encoding="utf-8"))
+    src = yaml.safe_load(sources_path.read_text(encoding="utf-8"))
     src_ids = {r["id"] for r in src["records"]}
     src_by_id = {r["id"]: r for r in src["records"]}
 
     errors = []
+    repository_mode = bool(declared_path and declared_path.is_file())
+    verification_scope = (
+        "upstream_and_bundled" if repository_mode
+        else "bundled_index_only")
+    if not args.check_only:
+        protected_inputs = [rules_path, sources_path]
+        if repository_mode:
+            protected_inputs.append(bundled_path)
+        try:
+            reject_output_collisions(
+                [args.out_md, args.out_matrix],
+                protected_inputs,
+                forbid_inside_dirs=True,
+            )
+        except ValueError as exc:
+            ap.error(str(exc))
+    if repository_mode:
+        if not bundled_path.is_file():
+            errors.append(
+                f"bundled source index not found: {bundled_path}")
+        else:
+            bundled = yaml.safe_load(
+                bundled_path.read_text(encoding="utf-8")) or {}
+            bundled_ids = {r.get("id") for r in bundled.get("records", [])
+                           if isinstance(r, dict) and r.get("id")}
+            missing = sorted(src_ids - bundled_ids)
+            invented = sorted(bundled_ids - src_ids)
+            if missing:
+                errors.append(
+                    f"bundled source index missing upstream ids: {missing}")
+            if invented:
+                errors.append(
+                    f"bundled source index invents ids absent upstream: {invented}")
     seen = set()
     for r in rules:
         rid = r.get("id", "?")
@@ -109,6 +151,7 @@ def main():
         sys.exit(1)
     print(f"CROSS-CHECK PASS: {len(rules)} rules, all evidence ids resolve, "
           f"all required fields present and well-typed")
+    print(f"source_verification_scope: {verification_scope}")
     if args.check_only:
         return
 
@@ -117,9 +160,17 @@ def main():
         "# Optimization Rules (generated from rules/rules.yaml — do not edit)",
         "",
         f"Registry version {reg['version']}. Evidence ids resolve in "
-        "`output/research/sources.yaml` (project) / `references/research-digest.md` "
+        "`research/sources.yaml` (repository) / `rules/sources-index.yaml` "
         "(installed copy). Priority score formula and tier semantics are documented "
         "in rules.yaml's header.",
+        f"Source verification scope at generation: `{verification_scope}`.",
+        "",
+        "## Contents",
+        "",
+        "- [Tier 1](#tier-1--apply-in-every-profile-high-confidence-low-risk)",
+        "- [Tier 2](#tier-2--balancedaggressive-each-application-test-gated)",
+        "- [Tier 3](#tier-3--aggressive-only-explicit-opt-in-mandatory-benchmark)",
+        "- [Safety meta-rules](#safety-meta-rules--always-on-constrain-all-other-rules)",
         "",
     ]
     for tier in (1, 2, 3, "S"):
@@ -151,10 +202,6 @@ def main():
                 f"- **Rollback:** {r['rollback']}",
                 "",
             ]
-    Path(args.out_md).parent.mkdir(parents=True, exist_ok=True)
-    Path(args.out_md).write_text("\n".join(lines), encoding="utf-8")
-    print(f"wrote {args.out_md}")
-
     # ---------------- evidence matrix ----------------
     m = ["# Evidence Matrix — rule × source (generated by render_rules.py)", "",
          "| Rule | Tier | Sources (id · short title · confidence class) |",
@@ -171,7 +218,10 @@ def main():
     uncited = sorted(src_ids - cited)
     m.append(", ".join(uncited) if uncited else "(none)")
     m.append("")
-    Path(args.out_matrix).write_text("\n".join(m), encoding="utf-8")
+
+    atomic_write_text(args.out_md, "\n".join(lines))
+    print(f"wrote {args.out_md}")
+    atomic_write_text(args.out_matrix, "\n".join(m))
     print(f"wrote {args.out_matrix}")
 
 
