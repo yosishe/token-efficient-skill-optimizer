@@ -182,3 +182,41 @@ fixed, all mutation-verified.
   nested-package-root logic). One new test — "an undeclared overlapping pair is
   still a duplication finding" — was **not** covered by the first 16 mutations and
   had never been seen to fail; `M17` was added to break it. Suite 75 → 88.
+
+## 1.1.3 — 2026-07-25
+
+Two gates that could pass while proving nothing. Found by contrast with an
+external review of an unrelated project, which named the first defect there.
+
+**The suite did not fail closed.** The aggregate was computed purely from the
+tests that happened to run — `len(RESULTS)`. Delete a test, rename it, or let
+an exception skip an entire block, and the suite printed a smaller "N/N passed"
+and exited 0. Verified rather than theorised: neutralising 21 assertions
+produced `== 67/67 passed ==` with exit code 0. A green result that cannot
+distinguish "everything passed" from "most of it never ran" is not a gate, and
+this package's entire claim is that its tests discriminate.
+
+- New `REQUIRED_TESTS` inventory: 18 name substrings covering the honesty gate,
+  registry and package integrity, the four behavioural splits and their
+  invariants, both historical near-miss regressions, the cost model, and the
+  eval harness. Any one missing fails the run and names itself.
+- Deliberately name substrings rather than a count floor. A count only catches
+  deletion; it cannot catch a mandatory test being renamed into something that
+  no longer asserts what it claimed.
+- **The first version of this guard was itself broken, and mutation testing
+  caught it.** It reported missing tests through `t()` — the same function the
+  mutation suppressed — so a run could print FAIL CLOSED and still exit 0. The
+  guard now reports and exits independently of `RESULTS`. A guard that depends
+  on the mechanism it polices is not a guard.
+- Mutation-verified three ways: suppress a subset of tests, rename a mandatory
+  test, suppress every test. All three now exit 1; the clean tree still exits 0
+  at 88/88.
+
+**`render_rules.py` checked presence, not validity.** All four risk fields were
+checked with `risk not in r`, so `quality_risk: banana` passed and the run
+printed "all required fields non-empty" — true, and useless. A risk score is a
+0-3 ordinal that gates which profile may apply a rule; a non-numeric value
+silently breaks that ordering instead of failing. Now type- and range-checked,
+and the success message says "present and well-typed" rather than overstating.
+`validate_package.py` already caught this case, but a gate should not depend on
+a different gate to be correct.

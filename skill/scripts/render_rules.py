@@ -7,7 +7,7 @@ The .md files are GENERATED - edit rules.yaml, then re-run this.
 Checks (fail -> exit 1):
   * every rule's sources[] ids exist in sources.yaml records
   * every rule has non-empty: rollback, validation_test, mechanism,
-    do_not_apply_when, and all four risk fields present
+    do_not_apply_when; all four risk fields present AND an integer 0-3
   * ids unique; tier in {1,2,3,'S'}
 
 Usage: render_rules.py [--rules rules.yaml] [--sources sources.yaml]
@@ -70,10 +70,18 @@ def main():
                       "do_not_apply_when", "description"):
             if not str(r.get(field, "")).strip():
                 errors.append(f"{rid}: empty {field}")
+        # Presence is not validity. This used to check `risk not in r` only, so
+        # `quality_risk: banana` passed here and the run printed "all required
+        # fields non-empty" - true, and useless. A risk score is a 0-3 ordinal
+        # that gates which profile may apply a rule; a non-numeric value silently
+        # breaks that ordering rather than failing. validate_package.py caught
+        # this one, but a gate should not rely on a different gate.
         for risk in ("quality_risk", "safety_risk", "maintainability_risk",
                      "portability_risk"):
             if risk not in r:
                 errors.append(f"{rid}: missing {risk}")
+            elif not (isinstance(r[risk], int) and 0 <= r[risk] <= 3):
+                errors.append(f"{rid}: {risk}={r[risk]!r} is not an integer 0-3")
         for s in r.get("sources", []):
             if s not in src_ids:
                 errors.append(f"{rid}: source {s} not in sources.yaml")
@@ -86,7 +94,7 @@ def main():
             print("  -", e)
         sys.exit(1)
     print(f"CROSS-CHECK PASS: {len(rules)} rules, all evidence ids resolve, "
-          f"all required fields non-empty")
+          f"all required fields present and well-typed")
     if args.check_only:
         return
 

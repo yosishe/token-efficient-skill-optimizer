@@ -745,9 +745,68 @@ def main():
       not unlisted,
       f"unreachable from the body: {', '.join(unlisted)}" if unlisted else "")
 
+    # ---- FAIL CLOSED (v1.1.3) ----------------------------------------------
+    # Until now the aggregate was computed purely from the tests that HAPPENED
+    # TO RUN: `len(RESULTS)`. Delete a test, rename it, or let an exception skip
+    # a whole block, and the suite prints a smaller "N/N passed" and exits 0.
+    # Verified, not theorised: neutralising 21 assertions produced
+    # "== 67/67 passed ==" with exit code 0. A green result that cannot tell the
+    # difference between "everything passed" and "most of it never ran" is not a
+    # gate, and this project's whole claim is that its tests discriminate.
+    #
+    # Found by contrast with an external review of an unrelated project, which
+    # named the same defect there: "the aggregate is calculated only from test
+    # objects that happen to exist, so missing tests do not fail the run."
+    #
+    # The inventory is deliberately a list of NAME SUBSTRINGS, not a count. A
+    # count floor only catches deletion; it cannot catch a mandatory test being
+    # renamed into something that no longer asserts what it claims. Renaming a
+    # covered behaviour must force a deliberate edit here.
+    REQUIRED_TESTS = (
+        # honesty gate - the core contract
+        "validator passes good fixture",
+        "validator fails bad fixture",
+        "taxonomy: an invented label is rejected",
+        "injection payload inside a fence does not trip the gate",
+        # registry + package integrity
+        "rule-registry cross-check",
+        "citation gate runs self-contained",
+        "sources-index.yaml complete",
+        "validate_package passes on the candidate",
+        # the four behavioural splits and their invariants
+        "safety + injection rows are all critical:true",
+        "injection split has >= 10 distinct named vectors",
+        "holdout ids disjoint from every other split",
+        "ids globally unique across all four splits",
+        # harness correctness, incl. the two historical near-misses
+        "measure_tokens deterministic",
+        "REGRESSION: generic 'references/' mention does not hide an orphan",
+        "REGRESSION: nested fixture packages are not flagged undiscoverable",
+        "every bundled file is named in SKILL.md (discoverable)",
+        # cost model + eval harness
+        "REGRESSION: a refused price row is never silently costed",
+        "bootstrap CI is null below 5 paired observations",
+    )
+    # This check must NOT route its own failures through t(). First attempt did,
+    # and mutation testing caught it immediately: suppressing t() for names
+    # containing "taxonomy" also suppressed the "REQUIRED TEST MISSING:
+    # taxonomy..." alarm, so the run printed FAIL CLOSED and still exited 0. A
+    # guard that depends on the mechanism it polices is not a guard. It now
+    # reports and exits independently of RESULTS.
+    names = [r[0] for r in RESULTS]
+    missing = [req for req in REQUIRED_TESTS
+               if not any(req in n for n in names)]
+
     fails = [x for x in RESULTS if not x[1]]
     print(f"== {len(RESULTS) - len(fails)}/{len(RESULTS)} passed ==")
-    sys.exit(1 if fails else 0)
+    if missing:
+        print(f"== FAIL CLOSED: {len(missing)} mandatory test(s) never ran ==")
+        for req in missing:
+            print(f"     MISSING: {req}")
+        print("   Deleted, renamed, or skipped by an earlier exception. Fix the"
+              " test, or edit REQUIRED_TESTS deliberately - do not delete an"
+              " entry to make the suite green.")
+    sys.exit(1 if (fails or missing) else 0)
 
 
 if __name__ == "__main__":
