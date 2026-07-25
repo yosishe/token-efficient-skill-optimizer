@@ -220,3 +220,165 @@ records:
   url: https://arxiv.org/abs/2506.08837
   source_type: preprint
   confidence: high
+# ---- ROUND 2, collected 2026-07-25 (research-2026-07-25/DOSSIER.md) ----
+# Controlled enums for source_type / access_level / generalizes_across_models / verification.
+# Round-1 records above use free text for source_type; that flaw is disclosed in
+# research/README.md and is NOT retro-fixed here, because normalising it means re-deriving 42
+# judgements from the pages actually read - a re-verification, not a relabelling.
+# Known round-1 defect, recorded not silently fixed: S-A02 and S-B07 are the SAME work
+# (LongLLMLingua, arXiv 2310.06839), so round 1 holds 41 distinct works under 42 ids.
+- id: S-R01
+  title: 'Quantifying Language Models'' Sensitivity to Spurious Features in Prompt Design'
+  url: https://arxiv.org/abs/2310.11324
+  source_type: peer-reviewed-conference
+  confidence: high
+- id: S-R02
+  title: 'State of What Art? A Call for Multi-Prompt LLM Evaluation'
+  url: https://aclanthology.org/2024.tacl-1.52/
+  source_type: peer-reviewed-journal
+  confidence: high
+- id: S-R03
+  title: 'The Butterfly Effect of Altering Prompts'
+  url: https://aclanthology.org/2024.findings-acl.275/
+  source_type: peer-reviewed-findings
+  confidence: high
+- id: S-R04
+  title: 'Flaw or Artifact? Rethinking Prompt Sensitivity in Evaluating LLMs'
+  url: https://arxiv.org/abs/2509.01790
+  source_type: peer-reviewed-conference
+  confidence: high
+- id: S-R05
+  title: 'Same Task, More Tokens'
+  url: https://aclanthology.org/2024.acl-long.818/
+  source_type: peer-reviewed-conference
+  confidence: high
+- id: S-R06
+  title: 'Rethinking the Role of Demonstrations'
+  url: https://aclanthology.org/2022.emnlp-main.759/
+  source_type: peer-reviewed-conference
+  confidence: high
+- id: S-R07
+  title: 'What Makes Good In-Context Examples for GPT-3?'
+  url: https://aclanthology.org/2022.deelio-1.10/
+  source_type: peer-reviewed-workshop
+  confidence: high
+- id: S-R08
+  title: 'Many-Shot In-Context Learning'
+  url: https://arxiv.org/abs/2404.11018
+  source_type: peer-reviewed-conference
+  confidence: high
+- id: S-R09
+  title: 'Revisiting Chain-of-Thought Prompting: Zero-shot Can Be Stronger than Few-shot'
+  url: https://aclanthology.org/2025.findings-emnlp.729/
+  source_type: peer-reviewed-findings
+  confidence: high
+- id: S-R10
+  title: 'Towards Compute-Optimal Many-Shot In-Context Learning'
+  url: https://arxiv.org/abs/2507.16217
+  source_type: peer-reviewed-conference
+  confidence: high
+- id: S-R11
+  title: 'Executable Code Actions Elicit Better LLM Agents'
+  url: https://proceedings.mlr.press/v235/wang24h.html
+  source_type: peer-reviewed-conference
+  confidence: high
+- id: S-R12
+  title: 'RedCode: Risky Code Execution and Generation Benchmark for Code Agents'
+  url: https://arxiv.org/abs/2411.07781
+  source_type: peer-reviewed-conference
+  confidence: high
+- id: S-R13
+  title: 'Long-Context LLMs Meet RAG'
+  url: https://arxiv.org/abs/2410.05983
+  source_type: peer-reviewed-conference
+  confidence: high
+- id: S-R14
+  title: 'JSONSchemaBench: A Rigorous Benchmark of Structured Outputs for Language Models'
+  url: https://arxiv.org/abs/2501.10868
+  source_type: preprint
+  confidence: medium
+- id: S-R15
+  title: 'Let Me Speak Freely? A Study On The Impact Of Format Restrictions'
+  url: https://aclanthology.org/2024.emnlp-industry.91/
+  source_type: peer-reviewed-conference
+  confidence: high
+- id: S-R16
+  title: 'Learning To Retrieve Prompts for In-Context Learning'
+  url: https://aclanthology.org/2022.naacl-main.191/
+  source_type: peer-reviewed-conference
+  confidence: high
+- id: S-R17
+  title: 'CRANE: Reasoning with constrained LLM generation'
+  url: https://arxiv.org/abs/2502.09061
+  source_type: peer-reviewed-conference
+  confidence: high
+- id: S-R18
+  title: 'Benchmarking Complex Instruction-Following with Multiple Constraints Composition'
+  url: https://arxiv.org/abs/2407.03978
+  source_type: peer-reviewed-conference
+  confidence: high
+- id: S-R19
+  title: 'With Little Power Comes Great Responsibility'
+  url: https://aclanthology.org/2020.emnlp-main.745/
+  source_type: peer-reviewed-conference
+  confidence: high
+- id: S-R20
+  title: 'The Hitchhiker''s Guide to Testing Statistical Significance in NLP'
+  url: https://aclanthology.org/P18-1128/
+  source_type: peer-reviewed-conference
+  confidence: high
+- id: S-R21
+  title: 'Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena'
+  url: https://proceedings.neurips.cc/paper_files/paper/2023/hash/91f18a1287b398d378ef22505bf41832-Abstract-Datasets_and_Benchmarks.html
+  source_type: peer-reviewed-conference
+  confidence: high
+- id: S-R22
+  title: 'Large Language Models are not Fair Evaluators'
+  url: https://aclanthology.org/2024.acl-long.511/
+  source_type: peer-reviewed-conference
+  confidence: high
+- id: S-R23
+  title: 'LLMs instead of Human Judges? A Large Scale Empirical Study across 20 NLP Evaluation Tasks'
+  url: https://aclanthology.org/2025.acl-short.20/
+  source_type: peer-reviewed-conference
+  confidence: high
+- id: S-R24
+  title: 'A Sober Look at Progress in Language Model Reasoning'
+  url: https://arxiv.org/abs/2504.07086
+  source_type: peer-reviewed-conference
+  confidence: high
+- id: S-R25
+  title: 'LLM Evaluators Recognize and Favor Their Own Generations'
+  url: https://proceedings.neurips.cc/paper_files/paper/2024/hash/7f1f0218e45f5414c79c0679633e47bc-Abstract-Conference.html
+  source_type: peer-reviewed-conference
+  confidence: high
+- id: S-R26
+  title: 'On Prompt-Driven Safeguarding for Large Language Models'
+  url: https://proceedings.mlr.press/v235/zheng24n.html
+  source_type: peer-reviewed-conference
+  confidence: high
+- id: S-R27
+  title: 'The Art of Defending'
+  url: https://aclanthology.org/2024.findings-acl.776/
+  source_type: peer-reviewed-findings
+  confidence: high
+- id: S-R28
+  title: 'Fine-tuning Aligned Language Models Compromises Safety, Even When Users Do Not Intend To!'
+  url: https://arxiv.org/abs/2310.03693
+  source_type: peer-reviewed-conference
+  confidence: high
+- id: S-R29
+  title: 'AgentDojo'
+  url: https://proceedings.neurips.cc/paper_files/paper/2024/hash/97091a5177d8dc64b1da8bf3e1f6fb54-Abstract-Datasets_and_Benchmarks_Track.html
+  source_type: peer-reviewed-conference
+  confidence: high
+- id: S-R30
+  title: 'Adaptive Attacks Break Defenses Against Indirect Prompt Injection Attacks on LLM Agents'
+  url: https://aclanthology.org/2025.findings-naacl.395/
+  source_type: peer-reviewed-findings
+  confidence: high
+- id: S-R31
+  title: 'Formalizing and Benchmarking Prompt Injection Attacks and Defenses'
+  url: https://www.usenix.org/conference/usenixsecurity24/presentation/liu-yupei
+  source_type: peer-reviewed-conference
+  confidence: high

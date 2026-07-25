@@ -1522,6 +1522,479 @@ records:
   generalizes_across_models: yes — architectural patterns are model-agnostic by construction
   confidence: high
   verification_status: verified-primary
+# ---- ROUND 2, collected 2026-07-25 (research-2026-07-25/DOSSIER.md) ----
+# Controlled enums for source_type / access_level / generalizes_across_models / verification.
+# Round-1 records above use free text for source_type; that flaw is disclosed in
+# research/README.md and is NOT retro-fixed here, because normalising it means re-deriving 42
+# judgements from the pages actually read - a re-verification, not a relabelling.
+# Known round-1 defect, recorded not silently fixed: S-A02 and S-B07 are the SAME work
+# (LongLLMLingua, arXiv 2310.06839), so round 1 holds 41 distinct works under 42 ids.
+- id: S-R01
+  title: 'Quantifying Language Models'' Sensitivity to Spurious Features in Prompt Design'
+  venue: 'ICLR 2024'
+  year: 2024
+  url: https://arxiv.org/abs/2310.11324
+  doi: '10.48550/arXiv.2310.11324'
+  arxiv_id: '2310.11324'
+  date_accessed: '2026-07-25'
+  source_type: peer-reviewed-conference
+  access_level: full-text
+  generalizes_across_models: partial
+  verification: author-verified
+  round: 2
+  provenance: 'research-2026-07-25/DOSSIER.md (P01) - full record incl. method, results with
+    locators, limitations, and what it does NOT establish lives there.'
+- id: S-R02
+  title: 'State of What Art? A Call for Multi-Prompt LLM Evaluation'
+  venue: 'TACL 12, 933-949'
+  year: 2024
+  url: https://aclanthology.org/2024.tacl-1.52/
+  doi: '10.1162/tacl_a_00681'
+  arxiv_id: '2401.00595'
+  date_accessed: '2026-07-25'
+  source_type: peer-reviewed-journal
+  access_level: full-text
+  generalizes_across_models: broad
+  verification: agent-verified
+  round: 2
+  provenance: 'research-2026-07-25/DOSSIER.md (P02) - full record incl. method, results with
+    locators, limitations, and what it does NOT establish lives there.'
+- id: S-R03
+  title: 'The Butterfly Effect of Altering Prompts'
+  venue: 'Findings of ACL 2024, 4629-4651'
+  year: 2024
+  url: https://aclanthology.org/2024.findings-acl.275/
+  doi: '10.18653/v1/2024.findings-acl.275'
+  arxiv_id: '2401.03729'
+  date_accessed: '2026-07-25'
+  source_type: peer-reviewed-findings
+  access_level: full-text
+  generalizes_across_models: partial
+  verification: agent-verified
+  round: 2
+  provenance: 'research-2026-07-25/DOSSIER.md (P03) - full record incl. method, results with
+    locators, limitations, and what it does NOT establish lives there.'
+- id: S-R04
+  title: 'Flaw or Artifact? Rethinking Prompt Sensitivity in Evaluating LLMs'
+  venue: 'EMNLP 2025 Main (venue via arXiv comments)'
+  year: 2025
+  url: https://arxiv.org/abs/2509.01790
+  doi: '10.48550/arXiv.2509.01790'
+  arxiv_id: '2509.01790'
+  date_accessed: '2026-07-25'
+  source_type: peer-reviewed-conference
+  access_level: full-text
+  generalizes_across_models: partial
+  verification: author-verified
+  round: 2
+  provenance: 'research-2026-07-25/DOSSIER.md (P04) - full record incl. method, results with
+    locators, limitations, and what it does NOT establish lives there.'
+- id: S-R05
+  title: 'Same Task, More Tokens'
+  venue: 'ACL 2024 Long, 15339-15353'
+  year: 2024
+  url: https://aclanthology.org/2024.acl-long.818/
+  doi: '10.18653/v1/2024.acl-long.818'
+  arxiv_id: '2402.14848'
+  date_accessed: '2026-07-25'
+  source_type: peer-reviewed-conference
+  access_level: full-text
+  generalizes_across_models: partial
+  verification: author-verified
+  round: 2
+  provenance: 'research-2026-07-25/DOSSIER.md (P05) - full record incl. method, results with
+    locators, limitations, and what it does NOT establish lives there.'
+- id: S-R06
+  title: 'Rethinking the Role of Demonstrations'
+  venue: 'EMNLP 2022, 11048-11064'
+  year: 2022
+  url: https://aclanthology.org/2022.emnlp-main.759/
+  doi: '10.18653/v1/2022.emnlp-main.759'
+  arxiv_id: '2202.12837'
+  date_accessed: '2026-07-25'
+  source_type: peer-reviewed-conference
+  access_level: full-text
+  generalizes_across_models: partial
+  verification: agent-verified
+  round: 2
+  provenance: 'research-2026-07-25/DOSSIER.md (P06) - full record incl. method, results with
+    locators, limitations, and what it does NOT establish lives there.'
+- id: S-R07
+  title: 'What Makes Good In-Context Examples for GPT-3?'
+  venue: 'DeeLIO 2022 @ ACL, 100-114'
+  year: 2022
+  url: https://aclanthology.org/2022.deelio-1.10/
+  doi: '10.18653/v1/2022.deelio-1.10'
+  arxiv_id: '2101.06804'
+  date_accessed: '2026-07-25'
+  source_type: peer-reviewed-workshop
+  access_level: full-text
+  generalizes_across_models: partial
+  verification: agent-verified
+  round: 2
+  provenance: 'research-2026-07-25/DOSSIER.md (P07) - full record incl. method, results with
+    locators, limitations, and what it does NOT establish lives there.'
+- id: S-R08
+  title: 'Many-Shot In-Context Learning'
+  venue: 'NeurIPS 2024 (Spotlight)'
+  year: 2024
+  url: https://arxiv.org/abs/2404.11018
+  doi: '10.48550/arXiv.2404.11018'
+  arxiv_id: '2404.11018'
+  date_accessed: '2026-07-25'
+  source_type: peer-reviewed-conference
+  access_level: full-text
+  generalizes_across_models: narrow
+  verification: agent-verified
+  round: 2
+  provenance: 'research-2026-07-25/DOSSIER.md (P08) - full record incl. method, results with
+    locators, limitations, and what it does NOT establish lives there.'
+- id: S-R09
+  title: 'Revisiting Chain-of-Thought Prompting: Zero-shot Can Be Stronger than Few-shot'
+  venue: 'Findings of EMNLP 2025, 13533-13554'
+  year: 2025
+  url: https://aclanthology.org/2025.findings-emnlp.729/
+  doi: '10.18653/v1/2025.findings-emnlp.729'
+  arxiv_id: '2506.14641'
+  date_accessed: '2026-07-25'
+  source_type: peer-reviewed-findings
+  access_level: full-text
+  generalizes_across_models: model-dependent
+  verification: agent-verified
+  round: 2
+  provenance: 'research-2026-07-25/DOSSIER.md (P09) - full record incl. method, results with
+    locators, limitations, and what it does NOT establish lives there.'
+- id: S-R10
+  title: 'Towards Compute-Optimal Many-Shot In-Context Learning'
+  venue: 'COLM 2025 (venue via arXiv comments)'
+  year: 2025
+  url: https://arxiv.org/abs/2507.16217
+  doi: '10.48550/arXiv.2507.16217'
+  arxiv_id: '2507.16217'
+  date_accessed: '2026-07-25'
+  source_type: peer-reviewed-conference
+  access_level: full-text
+  generalizes_across_models: narrow
+  verification: agent-verified
+  round: 2
+  provenance: 'research-2026-07-25/DOSSIER.md (P10) - full record incl. method, results with
+    locators, limitations, and what it does NOT establish lives there.'
+- id: S-R11
+  title: 'Executable Code Actions Elicit Better LLM Agents'
+  venue: 'ICML 2024, PMLR 235, 50208-50232'
+  year: 2024
+  url: https://proceedings.mlr.press/v235/wang24h.html
+  doi: '10.48550/arXiv.2402.01030'
+  arxiv_id: '2402.01030'
+  date_accessed: '2026-07-25'
+  source_type: peer-reviewed-conference
+  access_level: full-text
+  generalizes_across_models: model-dependent
+  verification: agent-verified
+  round: 2
+  provenance: 'research-2026-07-25/DOSSIER.md (P11) - full record incl. method, results with
+    locators, limitations, and what it does NOT establish lives there.'
+- id: S-R12
+  title: 'RedCode: Risky Code Execution and Generation Benchmark for Code Agents'
+  venue: 'NeurIPS 2024 Datasets and Benchmarks'
+  year: 2024
+  url: https://arxiv.org/abs/2411.07781
+  doi: '10.48550/arXiv.2411.07781'
+  arxiv_id: '2411.07781'
+  date_accessed: '2026-07-25'
+  source_type: peer-reviewed-conference
+  access_level: abstract-only
+  generalizes_across_models: broad
+  verification: agent-verified
+  round: 2
+  provenance: 'research-2026-07-25/DOSSIER.md (P12) - full record incl. method, results with
+    locators, limitations, and what it does NOT establish lives there.'
+- id: S-R13
+  title: 'Long-Context LLMs Meet RAG'
+  venue: 'ICLR 2025 (venue via DBLP indexing)'
+  year: 2025
+  url: https://arxiv.org/abs/2410.05983
+  doi: '10.48550/arXiv.2410.05983'
+  arxiv_id: '2410.05983'
+  date_accessed: '2026-07-25'
+  source_type: peer-reviewed-conference
+  access_level: full-text
+  generalizes_across_models: partial
+  verification: agent-verified
+  round: 2
+  provenance: 'research-2026-07-25/DOSSIER.md (P13) - full record incl. method, results with
+    locators, limitations, and what it does NOT establish lives there.'
+- id: S-R14
+  title: 'JSONSchemaBench: A Rigorous Benchmark of Structured Outputs for Language Models'
+  venue: 'none found (DBLP and PMLR searched)'
+  year: 2025
+  url: https://arxiv.org/abs/2501.10868
+  doi: '10.48550/arXiv.2501.10868'
+  arxiv_id: '2501.10868'
+  date_accessed: '2026-07-25'
+  source_type: preprint
+  access_level: full-text
+  generalizes_across_models: narrow
+  verification: agent-verified
+  round: 2
+  provenance: 'research-2026-07-25/DOSSIER.md (P14) - full record incl. method, results with
+    locators, limitations, and what it does NOT establish lives there.'
+- id: S-R15
+  title: 'Let Me Speak Freely? A Study On The Impact Of Format Restrictions'
+  venue: 'EMNLP 2024 Industry Track, 1218-1236'
+  year: 2024
+  url: https://aclanthology.org/2024.emnlp-industry.91/
+  doi: '10.18653/v1/2024.emnlp-industry.91'
+  arxiv_id: '2408.02442'
+  date_accessed: '2026-07-25'
+  source_type: peer-reviewed-conference
+  access_level: full-text
+  generalizes_across_models: model-dependent
+  verification: agent-verified
+  round: 2
+  provenance: 'research-2026-07-25/DOSSIER.md (P15) - full record incl. method, results with
+    locators, limitations, and what it does NOT establish lives there.'
+- id: S-R16
+  title: 'Learning To Retrieve Prompts for In-Context Learning'
+  venue: 'NAACL-HLT 2022, 2655-2671'
+  year: 2022
+  url: https://aclanthology.org/2022.naacl-main.191/
+  doi: '10.18653/v1/2022.naacl-main.191'
+  arxiv_id: '2112.08633'
+  date_accessed: '2026-07-25'
+  source_type: peer-reviewed-conference
+  access_level: full-text
+  generalizes_across_models: narrow
+  verification: agent-verified
+  round: 2
+  provenance: 'research-2026-07-25/DOSSIER.md (P16) - full record incl. method, results with
+    locators, limitations, and what it does NOT establish lives there.'
+- id: S-R17
+  title: 'CRANE: Reasoning with constrained LLM generation'
+  venue: 'ICML 2025 (venue via arXiv comments)'
+  year: 2025
+  url: https://arxiv.org/abs/2502.09061
+  doi: '10.48550/arXiv.2502.09061'
+  arxiv_id: '2502.09061'
+  date_accessed: '2026-07-25'
+  source_type: peer-reviewed-conference
+  access_level: full-text
+  generalizes_across_models: partial
+  verification: agent-verified
+  round: 2
+  provenance: 'research-2026-07-25/DOSSIER.md (P17) - full record incl. method, results with
+    locators, limitations, and what it does NOT establish lives there.'
+- id: S-R18
+  title: 'Benchmarking Complex Instruction-Following with Multiple Constraints Composition'
+  venue: 'NeurIPS 2024 Datasets and Benchmarks'
+  year: 2024
+  url: https://arxiv.org/abs/2407.03978
+  doi: '10.48550/arXiv.2407.03978'
+  arxiv_id: '2407.03978'
+  date_accessed: '2026-07-25'
+  source_type: peer-reviewed-conference
+  access_level: full-text
+  generalizes_across_models: broad
+  verification: agent-verified
+  round: 2
+  provenance: 'research-2026-07-25/DOSSIER.md (P18) - full record incl. method, results with
+    locators, limitations, and what it does NOT establish lives there.'
+- id: S-R19
+  title: 'With Little Power Comes Great Responsibility'
+  venue: 'EMNLP 2020, 9263-9274'
+  year: 2020
+  url: https://aclanthology.org/2020.emnlp-main.745/
+  doi: '10.18653/v1/2020.emnlp-main.745'
+  arxiv_id: '2010.06595'
+  date_accessed: '2026-07-25'
+  source_type: peer-reviewed-conference
+  access_level: full-text
+  generalizes_across_models: broad
+  verification: agent-verified
+  round: 2
+  provenance: 'research-2026-07-25/DOSSIER.md (P19) - full record incl. method, results with
+    locators, limitations, and what it does NOT establish lives there.'
+- id: S-R20
+  title: 'The Hitchhiker''s Guide to Testing Statistical Significance in NLP'
+  venue: 'ACL 2018 Long, 1383-1392'
+  year: 2018
+  url: https://aclanthology.org/P18-1128/
+  doi: '10.18653/v1/P18-1128'
+  arxiv_id: null
+  date_accessed: '2026-07-25'
+  source_type: peer-reviewed-conference
+  access_level: full-text
+  generalizes_across_models: broad
+  verification: agent-verified
+  round: 2
+  provenance: 'research-2026-07-25/DOSSIER.md (P20) - full record incl. method, results with
+    locators, limitations, and what it does NOT establish lives there.'
+- id: S-R21
+  title: 'Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena'
+  venue: 'NeurIPS 2023 Datasets and Benchmarks'
+  year: 2023
+  url: https://proceedings.neurips.cc/paper_files/paper/2023/hash/91f18a1287b398d378ef22505bf41832-Abstract-Datasets_and_Benchmarks.html
+  doi: null
+  arxiv_id: '2306.05685'
+  date_accessed: '2026-07-25'
+  source_type: peer-reviewed-conference
+  access_level: full-text
+  generalizes_across_models: partial
+  verification: agent-verified
+  round: 2
+  provenance: 'research-2026-07-25/DOSSIER.md (P21) - full record incl. method, results with
+    locators, limitations, and what it does NOT establish lives there.'
+- id: S-R22
+  title: 'Large Language Models are not Fair Evaluators'
+  venue: 'ACL 2024 Long, 9440-9450'
+  year: 2024
+  url: https://aclanthology.org/2024.acl-long.511/
+  doi: '10.18653/v1/2024.acl-long.511'
+  arxiv_id: '2305.17926'
+  date_accessed: '2026-07-25'
+  source_type: peer-reviewed-conference
+  access_level: full-text
+  generalizes_across_models: narrow
+  verification: agent-verified
+  round: 2
+  provenance: 'research-2026-07-25/DOSSIER.md (P22) - full record incl. method, results with
+    locators, limitations, and what it does NOT establish lives there.'
+- id: S-R23
+  title: 'LLMs instead of Human Judges? A Large Scale Empirical Study across 20 NLP Evaluation Tasks'
+  venue: 'ACL 2025 Short, 238-255'
+  year: 2025
+  url: https://aclanthology.org/2025.acl-short.20/
+  doi: '10.18653/v1/2025.acl-short.20'
+  arxiv_id: '2406.18403'
+  date_accessed: '2026-07-25'
+  source_type: peer-reviewed-conference
+  access_level: full-text
+  generalizes_across_models: broad
+  verification: agent-verified
+  round: 2
+  provenance: 'research-2026-07-25/DOSSIER.md (P23) - full record incl. method, results with
+    locators, limitations, and what it does NOT establish lives there.'
+- id: S-R24
+  title: 'A Sober Look at Progress in Language Model Reasoning'
+  venue: 'COLM 2025 (venue via arXiv comments)'
+  year: 2025
+  url: https://arxiv.org/abs/2504.07086
+  doi: '10.48550/arXiv.2504.07086'
+  arxiv_id: '2504.07086'
+  date_accessed: '2026-07-25'
+  source_type: peer-reviewed-conference
+  access_level: full-text
+  generalizes_across_models: narrow
+  verification: agent-verified
+  round: 2
+  provenance: 'research-2026-07-25/DOSSIER.md (P24) - full record incl. method, results with
+    locators, limitations, and what it does NOT establish lives there.'
+- id: S-R25
+  title: 'LLM Evaluators Recognize and Favor Their Own Generations'
+  venue: 'NeurIPS 2024 Main'
+  year: 2024
+  url: https://proceedings.neurips.cc/paper_files/paper/2024/hash/7f1f0218e45f5414c79c0679633e47bc-Abstract-Conference.html
+  doi: null
+  arxiv_id: '2404.13076'
+  date_accessed: '2026-07-25'
+  source_type: peer-reviewed-conference
+  access_level: full-text
+  generalizes_across_models: narrow
+  verification: agent-verified
+  round: 2
+  provenance: 'research-2026-07-25/DOSSIER.md (P25) - full record incl. method, results with
+    locators, limitations, and what it does NOT establish lives there.'
+- id: S-R26
+  title: 'On Prompt-Driven Safeguarding for Large Language Models'
+  venue: 'ICML 2024, PMLR 235, 61593-61613'
+  year: 2024
+  url: https://proceedings.mlr.press/v235/zheng24n.html
+  doi: '10.48550/arXiv.2401.18018'
+  arxiv_id: '2401.18018'
+  date_accessed: '2026-07-25'
+  source_type: peer-reviewed-conference
+  access_level: full-text
+  generalizes_across_models: model-dependent
+  verification: agent-verified
+  round: 2
+  provenance: 'research-2026-07-25/DOSSIER.md (P26) - full record incl. method, results with
+    locators, limitations, and what it does NOT establish lives there.'
+- id: S-R27
+  title: 'The Art of Defending'
+  venue: 'Findings of ACL 2024, 13111-13128'
+  year: 2024
+  url: https://aclanthology.org/2024.findings-acl.776/
+  doi: '10.18653/v1/2024.findings-acl.776'
+  arxiv_id: '2401.00287'
+  date_accessed: '2026-07-25'
+  source_type: peer-reviewed-findings
+  access_level: full-text
+  generalizes_across_models: model-dependent
+  verification: agent-verified
+  round: 2
+  provenance: 'research-2026-07-25/DOSSIER.md (P27) - full record incl. method, results with
+    locators, limitations, and what it does NOT establish lives there.'
+- id: S-R28
+  title: 'Fine-tuning Aligned Language Models Compromises Safety, Even When Users Do Not Intend To!'
+  venue: 'ICLR 2024 (Oral)'
+  year: 2024
+  url: https://arxiv.org/abs/2310.03693
+  doi: '10.48550/arXiv.2310.03693'
+  arxiv_id: '2310.03693'
+  date_accessed: '2026-07-25'
+  source_type: peer-reviewed-conference
+  access_level: full-text
+  generalizes_across_models: partial
+  verification: agent-verified
+  round: 2
+  provenance: 'research-2026-07-25/DOSSIER.md (P28) - full record incl. method, results with
+    locators, limitations, and what it does NOT establish lives there.'
+- id: S-R29
+  title: 'AgentDojo'
+  venue: 'NeurIPS 2024 Datasets and Benchmarks'
+  year: 2024
+  url: https://proceedings.neurips.cc/paper_files/paper/2024/hash/97091a5177d8dc64b1da8bf3e1f6fb54-Abstract-Datasets_and_Benchmarks_Track.html
+  doi: '10.52202/079017-2636'
+  arxiv_id: '2406.13352'
+  date_accessed: '2026-07-25'
+  source_type: peer-reviewed-conference
+  access_level: full-text
+  generalizes_across_models: broad
+  verification: agent-verified
+  round: 2
+  provenance: 'research-2026-07-25/DOSSIER.md (P29) - full record incl. method, results with
+    locators, limitations, and what it does NOT establish lives there.'
+- id: S-R30
+  title: 'Adaptive Attacks Break Defenses Against Indirect Prompt Injection Attacks on LLM Agents'
+  venue: 'Findings of NAACL 2025, 7116-7132'
+  year: 2025
+  url: https://aclanthology.org/2025.findings-naacl.395/
+  doi: '10.18653/v1/2025.findings-naacl.395'
+  arxiv_id: '2503.00061'
+  date_accessed: '2026-07-25'
+  source_type: peer-reviewed-findings
+  access_level: full-text
+  generalizes_across_models: partial
+  verification: agent-verified
+  round: 2
+  provenance: 'research-2026-07-25/DOSSIER.md (P30) - full record incl. method, results with
+    locators, limitations, and what it does NOT establish lives there.'
+- id: S-R31
+  title: 'Formalizing and Benchmarking Prompt Injection Attacks and Defenses'
+  venue: 'USENIX Security 24, 1831-1847'
+  year: 2024
+  url: https://www.usenix.org/conference/usenixsecurity24/presentation/liu-yupei
+  doi: null
+  arxiv_id: null
+  date_accessed: '2026-07-25'
+  source_type: peer-reviewed-conference
+  access_level: full-text
+  generalizes_across_models: broad
+  verification: agent-verified
+  round: 2
+  provenance: 'research-2026-07-25/DOSSIER.md (P31) - full record incl. method, results with
+    locators, limitations, and what it does NOT establish lives there.'
+
 cluster_syntheses:
   cluster-A-compression-safety: 'Consensus: moderate, extractive/task-aware compression (roughly 2x-5x
     task-agnostic [S-A03], up to ~10x extractive [S-A07], ~20x claimed in the best case [S-A01]) preserves

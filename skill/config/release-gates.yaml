@@ -38,6 +38,23 @@ gates:
     check: the optimizer's own SKILL.md stays <= 250 lines and its reference
       pointers carry read-conditions (measure_tokens flags clean or justified).
 
+  - id: G-11
+    name: citation-support
+    check: >-
+      Where a rule declares source_claims, every entry names a source the rule
+      actually cites and states what that source underwrites, with a locator; no
+      placeholders. G-09 proves a cited id RESOLVES, which is the weaker property -
+      three rules were found citing sources that said nothing about their claim.
+      Coverage across the registry is REPORTED as a note, never asserted: a gate that
+      claimed coverage it does not have is the decoration this check exists to remove.
+  - id: G-12
+    name: constraint-rules-need-no-source
+    check: >-
+      A rule may declare `rationale_type: constraint` and cite nothing, provided it also
+      sets `evidence_confidence: not-applicable`. Enforced in validate_package AND
+      render_rules - honouring the declaration in one place only lets any rule shed its
+      citations by adding a single line, which a mutation test demonstrated.
+
 defaults:
   allow_safety_regression: false
   allow_critical_quality_regression: false

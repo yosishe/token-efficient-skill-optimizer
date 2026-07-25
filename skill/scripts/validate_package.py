@@ -345,11 +345,27 @@ def check_rules(root, rep):
             violations.append(f"rule #{index}: not a mapping")
             continue
         rid = rule.get("id") or f"#{index}"
+        # G-12: a rule may declare itself a CONSTRAINT - a norm this project adopts rather than an
+        # empirical finding. Such a rule is allowed an empty `sources` list, because forcing it to
+        # name one makes the registry assert an evidential relationship that does not exist. It is
+        # NOT allowed to skip any other field, and it must say so explicitly.
+        is_constraint = rule.get("rationale_type") == "constraint"
         for field in RULE_FIELDS:
             if field not in rule:
                 violations.append(f"{rid}: missing field `{field}`")
             elif is_empty(rule[field]):
+                if field == "sources" and is_constraint:
+                    continue                        # declared constraint: no empirical source needed
                 violations.append(f"{rid}: empty field `{field}`")
+        if is_constraint and rule.get("evidence_confidence") != "not-applicable":
+            violations.append(
+                f"{rid}: rationale_type=constraint requires "
+                f"evidence_confidence: not-applicable, got "
+                f"{rule.get('evidence_confidence')!r}")
+        if not is_constraint and is_empty(rule.get("sources")):
+            violations.append(
+                f"{rid}: no sources and no `rationale_type: constraint` declaration - "
+                f"a rule must either cite evidence or say it is a norm")
         if rule.get("id") in seen:
             violations.append(f"{rid}: duplicate rule id")
         seen.add(rule.get("id"))
@@ -375,7 +391,43 @@ def check_rules(root, rep):
         if "sources" in rule and not isinstance(rule.get("sources"), list):
             violations.append(f"{rid}: sources must be a list")
 
+        # G-11 citation-SUPPORT. C03 proves a cited id resolves; that is the weaker property.
+        # Three rules were found citing sources that said nothing about their claim, so where a
+        # rule declares source_claims the gate enforces that the mapping is CONSISTENT with its
+        # sources and that no claim is a placeholder. Coverage across the whole registry is
+        # reported as a note, not asserted - a gate that claimed full coverage it does not have
+        # would be exactly the decoration this check exists to remove.
+        claims = rule.get("source_claims")
+        if claims is not None:
+            if not isinstance(claims, dict):
+                violations.append(f"{rid}: source_claims must be a mapping of source id -> claim")
+            else:
+                srcs = set(rule.get("sources") or [])
+                for sid, text in claims.items():
+                    if sid not in srcs:
+                        violations.append(
+                            f"{rid}: source_claims names {sid}, which the rule does not cite")
+                    if is_empty(text) or len(str(text).strip()) < 40:
+                        violations.append(
+                            f"{rid}: source_claims[{sid}] is empty or too short to be a claim")
+                    elif "TODO" in str(text) or "TBD" in str(text):
+                        violations.append(
+                            f"{rid}: source_claims[{sid}] is a placeholder, not a claim")
+
     rep.counts["rules"] = len(rules)
+    # G-11 coverage, reported honestly rather than asserted. Backfilling the remaining rules means
+    # re-opening each source and reading what it actually supports - a re-verification, not a
+    # formatting pass - so the number is published as a ratchet instead of being hidden.
+    empirical = [r for r in rules
+                 if isinstance(r, dict) and r.get("rationale_type") != "constraint"]
+    with_claims = [r for r in empirical if r.get("source_claims")]
+    if len(with_claims) < len(empirical):
+        rep.notes.append(
+            f"G-11 citation-support coverage: {len(with_claims)}/{len(empirical)} empirical rules "
+            f"declare source_claims. The remainder cite sources whose SUPPORT has not been "
+            f"re-verified; C03 proves only that those ids resolve. Backfill is tracked here, "
+            f"not assumed.")
+    rep.counts["source_claims"] = f"{len(with_claims)}/{len(empirical)}"
     rep.add("C02", "rule-schema", violations,
             f"{len(rules)} rules x {len(RULE_FIELDS)} fields")
     return rules
@@ -437,7 +489,11 @@ def check_citations(rules, sources_path, upstream_path, rep):
         rid = rule.get("id", "?")
         srcs = rule.get("sources")
         if not srcs:
-            cite_violations.append(f"{rid}: cites no sources")
+            # G-12: a declared constraint is a norm, not an empirical claim, so it has nothing to
+            # cite. C02 already enforces that such a rule sets evidence_confidence: not-applicable,
+            # so this branch cannot be used to smuggle an uncited empirical rule past the gate.
+            if rule.get("rationale_type") != "constraint":
+                cite_violations.append(f"{rid}: cites no sources and is not a declared constraint")
             continue
         if not isinstance(srcs, list):
             continue                                # shape already flagged by C02

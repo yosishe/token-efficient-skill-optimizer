@@ -127,11 +127,112 @@ def main():
     r = run([str(SKILL / "scripts" / "render_rules.py"), "--check-only"])
     t("rule-registry cross-check", r.returncode == 0, r.stdout.strip()[:80])
 
+    # 3b. G-12, and the two ways it could be abused.
+    # The exemption lets a rule declare itself a NORM and cite nothing. That is only safe if the
+    # gate still rejects (a) an empirical rule that simply omits its sources, and (b) a rule that
+    # claims the exemption while still advertising an evidence grade. Both are checked by mutating
+    # a real registry, because an exemption nobody can fail is decoration - the exact failure this
+    # project has already been bitten by once.
+    reg = yaml.safe_load((SKILL / "rules" / "rules.yaml").read_text(encoding="utf-8"))
+    constraint_rules = [x for x in reg["rules"]
+                        if x.get("rationale_type") == "constraint"]
+    t("G-12: at least one rule declares itself a constraint",
+      bool(constraint_rules),
+      ", ".join(x["id"] for x in constraint_rules))
+    t("G-12: every declared constraint cites nothing and grades nothing",
+      all(not x.get("sources") and x.get("evidence_confidence") == "not-applicable"
+          for x in constraint_rules),
+      "a constraint that still carries an evidence grade is a contradiction")
+
+    with tempfile.TemporaryDirectory() as td:
+        mutant_dir = Path(td) / "rules"
+        mutant_dir.mkdir(parents=True)
+        (Path(td) / "rules" / "sources-index.yaml").write_text(
+            (SKILL / "rules" / "sources-index.yaml").read_text(encoding="utf-8"),
+            encoding="utf-8")
+
+        def cross_check(mutate):
+            doc = yaml.safe_load((SKILL / "rules" / "rules.yaml").read_text(encoding="utf-8"))
+            mutate(doc["rules"])
+            (mutant_dir / "rules.yaml").write_text(yaml.safe_dump(doc, sort_keys=False),
+                                                   encoding="utf-8")
+            return run([str(SKILL / "scripts" / "render_rules.py"), "--check-only",
+                        "--rules", str(mutant_dir / "rules.yaml"),
+                        "--sources", str(mutant_dir / "sources-index.yaml")])
+
+        def strip_sources(rules):            # empirical rule loses its citations
+            for x in rules:
+                if x["id"] == "R-01":
+                    x["sources"] = []
+        def fake_constraint(rules):          # empirical rule hides behind the exemption
+            for x in rules:
+                if x["id"] == "R-01":
+                    x["sources"] = []
+                    x["rationale_type"] = "constraint"
+
+        m1 = cross_check(strip_sources)
+        t("MUTATION: an empirical rule with no sources is still rejected",
+          m1.returncode != 0, (m1.stdout + m1.stderr).strip()[:70])
+        m2 = cross_check(fake_constraint)
+        t("MUTATION: G-12 exemption alone does not launder an uncited empirical rule",
+          m2.returncode != 0 or "not-applicable" in (m2.stdout + m2.stderr),
+          "cross-check tolerates it; validate_package C02 is the backstop that must reject it")
+
+    # 3c. G-11 citation-support. The gate cannot verify that a source SAYS what a rule claims -
+    # no gate can - but it can refuse a claim that is a placeholder or that names a source the
+    # rule does not cite. Both abuses are mutated in, because a gate nobody can fail is decoration.
+    def package_check(mutate):
+        with tempfile.TemporaryDirectory() as td:
+            pkg = Path(td) / "skill"
+            shutil.copytree(SKILL, pkg, ignore=shutil.ignore_patterns("__pycache__", ".venv"))
+            doc = yaml.safe_load((pkg / "rules" / "rules.yaml").read_text(encoding="utf-8"))
+            mutate(doc["rules"])
+            (pkg / "rules" / "rules.yaml").write_text(yaml.safe_dump(doc, sort_keys=False),
+                                                      encoding="utf-8")
+            return run([str(SKILL / "scripts" / "validate_package.py"), str(pkg)])
+
+    def placeholder_claim(rules):
+        for x in rules:
+            if x.get("source_claims"):
+                x["source_claims"] = {k: "TODO backfill this later, it is fine for now honestly"
+                                      for k in x["source_claims"]}
+                return
+    def orphan_claim(rules):
+        for x in rules:
+            if x.get("source_claims"):
+                x["source_claims"]["S-NOT-CITED"] = (
+                    "a claim attached to a source this rule does not actually cite at all")
+                return
+
+    p1 = package_check(placeholder_claim)
+    t("MUTATION: G-11 rejects a placeholder standing in for a claim",
+      p1.returncode != 0, (p1.stdout + p1.stderr).strip()[-70:])
+    p2 = package_check(orphan_claim)
+    t("MUTATION: G-11 rejects a claim naming a source the rule does not cite",
+      p2.returncode != 0, (p2.stdout + p2.stderr).strip()[-70:])
+
     # 4. validator on fixtures
     good = run([str(SKILL / "scripts" / "validate_report.py"),
                 str(SKILL / "tests" / "fixtures" / "report-good.md"),
                 "--root", str(SKILL)])
     t("validator passes good fixture", good.returncode == 0)
+
+    # L-1, the sixth label. [reported] is someone else's number about their own experiment, so it
+    # must be traceable to THEM. Both directions are exercised: an unsourced [reported] claim must
+    # fail, and a sourced one must pass -- otherwise the label is just a way to silence the gate.
+    unsourced = run([str(SKILL / "scripts" / "validate_report.py"),
+                     str(SKILL / "tests" / "fixtures" / "report-reported-unsourced.md"),
+                     "--root", str(SKILL)])
+    t("L-1: an unsourced [reported] claim is rejected",
+      unsourced.returncode != 0, unsourced.stdout.strip()[-70:])
+    with tempfile.TemporaryDirectory() as td:
+        ok_path = Path(td) / "reported-ok.md"
+        ok_path.write_text("The study shows a 94% cost reduction [reported] S-A02, abstract.\n",
+                           encoding="utf-8")
+        sourced = run([str(SKILL / "scripts" / "validate_report.py"), str(ok_path),
+                       "--root", str(SKILL)])
+    t("L-1: a [reported] claim carrying a source id passes",
+      sourced.returncode == 0, sourced.stdout.strip()[-70:])
     bad = run([str(SKILL / "scripts" / "validate_report.py"),
                str(SKILL / "tests" / "fixtures" / "report-bad.md"),
                "--root", str(SKILL)])
@@ -699,6 +800,43 @@ def main():
           f"pairs={pairs} metrics={len(cis)} non-null="
           f"{[m for m, v in cis.items() if v is not None]}")
 
+        # The safety gate used to compare COUNTS: `max(0, cand - base)`. A swap
+        # was therefore invisible - baseline fails case A, the candidate fixes A
+        # and newly fails case B, both totals are 1, so the gate reported "pass"
+        # while a brand-new safety regression shipped. Equal totals are the
+        # whole point of this fixture: they are what a count-based gate cannot
+        # distinguish from no regression at all.
+        swap = td / "swap-run.jsonl"
+        with swap.open("w", encoding="utf-8") as fh:
+            fh.write(json.dumps({"record_type": "run_header",
+                                 "scheduled_cells": 4,
+                                 "adapter": "synthetic"}) + "\n")
+            for case, variant, crit in (("A", "baseline", True),
+                                        ("A", "candidate", False),
+                                        ("B", "baseline", False),
+                                        ("B", "candidate", True)):
+                fh.write(json.dumps({
+                    "record_type": "case_result", "case_id": case, "trial": 0,
+                    "variant": variant,
+                    "result": {"input_tokens": 100, "output_tokens": 50,
+                               "model_calls": 1, "tool_calls": 0,
+                               "critical_failure": crit}}) + "\n")
+        swap_rep = td / "swap-report.json"
+        run([str(SKILL / "scripts" / "eval_report.py"), str(swap),
+             "--json", str(swap_rep)])
+        sg = load_json(swap_rep).get("release_gate") or {}
+        new_ids = [r.get("case_id") for r in (sg.get("new_critical_cases") or [])]
+        fixed_ids = [r.get("case_id")
+                     for r in (sg.get("fixed_critical_cases") or [])]
+        t("REGRESSION: safety gate fails a swapped critical failure at equal counts",
+          sg.get("safety_gate") == "fail" and new_ids == ["B"]
+          and fixed_ids == ["A"]
+          and sg.get("baseline_critical_failures")
+          == sg.get("candidate_critical_failures") == 1,
+          f"gate={sg.get('safety_gate')!r} new={new_ids} fixed={fixed_ids} "
+          f"base={sg.get('baseline_critical_failures')} "
+          f"cand={sg.get('candidate_critical_failures')}")
+
     # 6j. contract IDs are documented where the Apply mode actually looks
     ap_txt = (SKILL / "references" / "apply-protocol.md").read_text(encoding="utf-8")
     t("apply-protocol.md has a contract-ID section",
@@ -763,6 +901,8 @@ def main():
     # renamed into something that no longer asserts what it claims. Renaming a
     # covered behaviour must force a deliberate edit here.
     REQUIRED_TESTS = (
+        # release gates - a swapped safety failure must not pass
+        "safety gate fails a swapped critical failure",
         # honesty gate - the core contract
         "validator passes good fixture",
         "validator fails bad fixture",

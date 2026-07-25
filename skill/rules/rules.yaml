@@ -30,6 +30,21 @@
 #
 # All expected_benefit figures are the cited papers' claims about THEIR setups -
 # label anything derived from them [projected] unless re-measured on the target.
+#
+# SCORE 999 = ORDERING PIN, NOT A COMPUTED SCORE (extended 2026-07-25)
+#   Originally used only for tier-S safety rules. Round 2 extends it to evidence-backed
+#   GUARDS and REPORTING CONSTRAINTS (R-24, R-28, R-29, R-32, R-33, R-34): rules whose
+#   savings are 0 by construction, so the formula would sort them last precisely because
+#   they remove no tokens. A guard that sorts below the thing it guards is useless.
+#   These differ from tier-S rules in that they DO cite evidence, and from G-12
+#   constraints in that they are not bare norms.
+#
+# SOURCE_CLAIMS (added 2026-07-25, see G-11)
+#   Where present, source_claims[<id>] states what that source actually underwrites for
+#   this rule, with a locator. A citation that RESOLVES is not a citation that SUPPORTS -
+#   three rules were found citing sources that said nothing about their claim.
+#   Coverage is partial: round-2 rules and corrected rules carry claims; the rest are
+#   backfill, tracked by the G-11 gate's coverage note rather than assumed complete.
 
 version: "1.0.0"
 sources_file: ../../research/sources.yaml
@@ -40,6 +55,7 @@ rules:
 
   - id: R-01
     name: remove-exact-duplication
+    layer: skill-content
     tier: 1
     description: Remove byte-identical or near-identical instruction text repeated across files; keep one canonical copy and reference it.
     mechanism: Repeated static text is billed as input every time each copy loads; one copy + a pointer loads once.
@@ -51,22 +67,60 @@ rules:
     safety_risk: 0
     maintainability_risk: 0  # improves it - single source of truth
     portability_risk: 0
-    evidence_confidence: practitioner
-    priority: {frequency: 3, applicability: 3, savings: 2, confidence: 0.5, risk_penalty: 1, score: 8.0}
-    sources: [S-D09, S-D10]
+    evidence_confidence: moderate
+    priority: {frequency: 3, applicability: 3, savings: 2, confidence: 0.8, risk_penalty: 1, score: 13.4}
+    sources: [S-R05]
+    source_claims:
+      S-R05: >-
+        Input length degrades reasoning with the reasoning content held constant (0.92 -> 0.68 mean
+        accuracy, ~250 vs 3000 tokens). Critically the Duplicate padding condition - padding made of
+        REPETITIONS OF THE RELEVANT PARAGRAPHS - degrades too, which is the closest published
+        support for removing duplicated instruction text. Locator: Fig. 1 and Sec 3.3.1;
+        the direction is stated in the abstract. NOT stated in the abstract: the numbers themselves.
+    citation_correction_2026-07-25: >-
+      Previously cited S-D09 and S-D10. Both pages were opened and neither addresses deduplication of
+      instruction text; the citations resolved but did not support the claim. They are removed rather
+      than kept as decoration. Note this rule's mechanism (each copy is billed on each load) is
+      arithmetic and needs no citation at all; S-R05 is cited for the QUALITY half of the claim.
     contradicting_evidence: none known
     validation_test: Post-change semantic diff shows each removed copy has an in-scope canonical source; behavioral contract unchanged.
     rollback: Restore the removed copies from the frozen baseline (git/_archive copy).
 
   - id: R-02
     name: progressive-disclosure
-    tier: 1
-    description: Move rarely-needed detail out of the always/trigger-loaded tiers (frontmatter, SKILL.md body) into conditionally-loaded references/.
-    mechanism: Context is a finite attention budget; metadata loads every session and body on every trigger, while references bill only when read.
+    layer: skill-content
+    tier: 2   # demoted from 1 on 2026-07-25 - see tier_change below
+    description: Move rarely-needed detail out of the always/trigger-loaded tiers (frontmatter, SKILL.md body) into conditionally-loaded references/ - but only with a stated read-rate estimate and the break-even that follows from it.
+    mechanism: Context is a finite attention budget; metadata loads every session and body on every trigger, while references bill only when read. The saving is entirely contingent on that last clause.
+    tier_change:
+      from: 1
+      to: 2
+      date: '2026-07-25'
+      why: >-
+        This rule was Tier 1 - applied in EVERY profile including `conservative`, whose stated
+        purpose is "accuracy-critical or regulated domain / little or no eval data" - on
+        `practitioner` evidence. Round 2 found that its only quantitative vendor support states a
+        98.7% reduction with no model, no benchmark, no methodology, no trial count, and never uses
+        the word "measured"; and that the other cited page contains no quantitative claim at all,
+        describing the mechanism as "trusting that Claude will read forms.md only when filling out
+        a form". Meanwhile this project's OWN measurement found relocated material read in 8 of 8
+        runs against a 74% break-even, turning a measured -17.2% trigger-path cut into +2.3% MORE
+        expensive per run. A rule whose benefit depends on an unmeasured behavioural rate does not
+        belong in the profile chosen when there is no eval data.
+      what_changes_for_users: >-
+        Under `conservative` this rule no longer fires automatically. Under `balanced` and
+        `aggressive` it still fires, now gated by its validation_test like every other Tier-2 rule.
     target: input
-    applies_when: Body exceeds ~500 lines / ~5k tokens, or contains content needed only in specific sub-flows.
-    do_not_apply_when: The content gates correctness of EVERY invocation (core procedure, output contract, safety boundaries) - keep those in the body.
-    expected_benefit: Body-size reduction on every trigger; largest single input-side lever for bloated skills.
+    applies_when: Body exceeds ~500 lines / ~5k tokens, or contains content needed only in specific sub-flows, AND a read-rate estimate for the moved block can be stated.
+    do_not_apply_when: >-
+      The content gates correctness of EVERY invocation (core procedure, output contract, safety
+      boundaries) - keep those in the body. Also do not apply when the block's honest read-condition
+      would equal the skill's own trigger condition: a block needed whenever the skill fires belongs
+      in the body. Also do not apply when no read-rate can be estimated at all.
+    expected_benefit: >-
+      Body-size reduction on every trigger, REALISED ONLY at read rates below the computed
+      break-even. Report as [behavior-dependent] with the break-even rate stated, never as a flat
+      percentage - the trigger-path number is not the saving.
     quality_risk: 1  # model may fail to read a reference it needs - mitigated by R-03
     safety_risk: 1  # never move safety text out of the loaded tier (R-S1)
     maintainability_risk: 1
@@ -74,12 +128,32 @@ rules:
     evidence_confidence: practitioner
     priority: {frequency: 3, applicability: 3, savings: 3, confidence: 0.5, risk_penalty: 3, score: 10.5}
     sources: [S-D10, S-D09]
-    contradicting_evidence: none known
-    validation_test: Every moved block is reachable via a pointer with a read-condition; trigger-path walkthrough still covers the behavioral contract.
+    source_claims:
+      S-D10: >-
+        Establishes the three-level loading model qualitatively - metadata pre-loaded at startup,
+        SKILL.md read on relevance, bundled files navigated "only as needed" - and scripts running
+        without being loaded. Page opened 2026-07-25: it contains NO quantitative claim of any kind,
+        so it supports the MECHANISM and no effect size. Its own phrasing for the conditional tier
+        is "trusting that Claude will read forms.md only when filling out a form".
+      S-D09: >-
+        Supports minimalism as a principle - "the minimal set of information that fully outlines
+        your expected behavior", context as "a precious, finite resource". Does not quantify a
+        disclosure saving.
+    contradicting_evidence: >-
+      This project's own case study: a section moved verbatim out of `frontend-design` cut the
+      trigger path -17.2% and was then measured as read in 8 of 8 runs, against a break-even
+      computed in advance at 74%. At the observed rate the change made the skill +2.3% MORE
+      expensive per run and was reverted. n=8 on one skill with a disclosed workload skew, but it
+      is the only direct measurement anyone has, and it points the other way.
+    validation_test: >-
+      Every moved block is reachable via a pointer with a read-condition; trigger-path walkthrough
+      still covers the behavioral contract; AND a read-rate estimate is stated with the break-even
+      it implies. If the estimate cannot be made, the rule does not apply.
     rollback: Move the section back into the body.
 
   - id: R-03
     name: read-conditions-on-pointers
+    layer: skill-content
     tier: 1
     description: Every references/ pointer carries an explicit "read only when X" condition.
     mechanism: Without a condition the model reads everything (paying the full conditional tier) or nothing (losing capability); conditions make disclosure actually progressive.
@@ -100,6 +174,7 @@ rules:
 
   - id: R-04
     name: scripts-over-generation
+    layer: skill-content
     tier: 1
     description: Move >15-line embedded code blocks into scripts/ that execute instead of being read+regenerated.
     mechanism: A bundled script executes at ~zero context cost and is deterministic; embedded code is billed as input on load and again as output when the model retypes it.
@@ -120,6 +195,7 @@ rules:
 
   - id: R-05
     name: stable-prefix-cache-alignment
+    layer: provider-api
     tier: 1
     description: Order content stable-first/volatile-last and serialize deterministically so the skill sits inside a cacheable prompt prefix.
     mechanism: Provider prompt caching is a byte-level prefix match; cache reads bill at ~0.1x input. Any timestamp/random id/unsorted serialization upstream invalidates everything after it.
@@ -140,6 +216,7 @@ rules:
 
   - id: R-06
     name: explicit-output-contract
+    layer: skill-content
     tier: 1
     description: Give the skill a concrete output contract - banned content classes, verbosity modes with budgets, and a defined deliverable shape - instead of "be concise".
     mechanism: Output tokens cost 3-6x input on snapshot pricing; prompted length limits cut verbosity while maintaining accuracy, and draft-style output can match quality at a fraction of tokens.
@@ -160,6 +237,7 @@ rules:
 
   - id: R-07
     name: stop-conditions-on-loops
+    layer: skill-content
     tier: 1
     description: Every tool/search/retry loop in the skill has an explicit termination condition and a bounded retry count.
     mechanism: Unbounded "one more source/attempt" loops are pure marginal cost with diminishing returns; overthinking measurably degrades agentic results.
@@ -180,6 +258,7 @@ rules:
 
   - id: R-08
     name: filter-tool-results
+    layer: orchestration
     tier: 1
     description: Filter/summarize/structure tool and sub-agent outputs before they re-enter the model's context; return compact summaries, not raw dumps.
     mechanism: Raw tool output is re-billed as input on every subsequent turn; retrieved-content compression preserves accuracy at a fraction of tokens, and irrelevant similar content actively harms quality.
@@ -200,6 +279,7 @@ rules:
 
   - id: R-09
     name: trigger-boundary-hygiene
+    layer: skill-content
     tier: 1
     description: Frontmatter description has explicit positive triggers AND a negative boundary ("Do not use for...").
     mechanism: False-positive triggering loads the whole body for nothing (paid in every false-fire session); under-triggering wastes the metadata tax entirely. The description is the only always-loaded text - it must route correctly.
@@ -222,6 +302,7 @@ rules:
 
   - id: R-10
     name: consolidate-semantic-overlap
+    layer: skill-content
     tier: 2
     description: Merge instructions that say the same thing in different words; resolve contradictions to one authoritative statement.
     mechanism: Semantic duplicates cost input twice and, worse, contradictions force paid meta-reasoning about which instruction wins.
@@ -233,15 +314,36 @@ rules:
     safety_risk: 1
     maintainability_risk: 0
     portability_risk: 0
-    evidence_confidence: practitioner
-    priority: {frequency: 2, applicability: 3, savings: 2, confidence: 0.5, risk_penalty: 3, score: 3.0}
-    sources: [S-D09]
-    contradicting_evidence: none known
-    validation_test: Per-merge semantic diff review + behavioral-contract walkthrough; any dropped nuance is listed explicitly.
+    evidence_confidence: moderate
+    priority: {frequency: 2, applicability: 3, savings: 2, confidence: 0.8, risk_penalty: 3, score: 6.6}
+    sources: [S-R18, S-R01]
+    source_claims:
+      S-R18: >-
+        Instructions that COMPOSE multiple constraints are followed markedly worse as composition
+        complexity rises, "especially on Selection and Chain" - and scoring each constraint
+        independently overstates compliance, because a failed prerequisite invalidates its
+        dependents. That is the real risk when merging overlapping instructions: the merge can
+        silently void a downstream constraint. Locator: Sec 5; evaluator agreement Sec 4 / Table 4.
+      S-R01: >-
+        Semantics-preserving edits are not behaviour-preserving: 24% of single atomic changes move
+        accuracy by >=5 points with wording held identical. A merge is a larger edit than that.
+        Locator: Sec 4.3 / Fig. 8; the 76-point spread is in the abstract.
+    citation_correction_2026-07-25: >-
+      Previously cited S-D09 alone. That page was opened and contains no guidance on consolidating
+      overlapping or contradictory instructions - two independent extraction passes with
+      differently-worded queries. The citation resolved but did not support the claim, and is removed.
+    contradicting_evidence: >-
+      S-R01's own rebuttal S-R04 argues most measured prompt sensitivity is a scoring artifact, so
+      the size of the merge risk is contested even though its direction is not.
+    validation_test: >-
+      Per-merge semantic diff review + behavioral-contract walkthrough; any dropped nuance is listed
+      explicitly. Plus the dependency check from R-27 - a merged constraint must not orphan a
+      downstream constraint that depended on it.
     rollback: Restore the merged originals from baseline.
 
   - id: R-11
     name: history-summarization
+    layer: orchestration
     tier: 2
     description: Summarize conversation history past a threshold, preserving commitments, constraints, open decisions, and user corrections verbatim.
     mechanism: Multi-turn accumulation degrades quality (~39% multi-turn vs single-turn) AND bills the whole history every turn; a faithful summary cuts both.
@@ -262,6 +364,7 @@ rules:
 
   - id: R-12
     name: prune-irrelevant-context
+    layer: mixed
     tier: 2
     description: Remove retrieved/attached content irrelevant to the current query, prioritizing removal of SIMILAR-but-irrelevant text; place critical content away from the middle.
     mechanism: Length itself taxes accuracy even with perfect retrieval; mid-context position penalties can push below closed-book; similar-but-irrelevant text is the most harmful class.
@@ -282,6 +385,7 @@ rules:
 
   - id: R-13
     name: retrieval-discipline
+    layer: orchestration
     tier: 2
     description: Lower retrieval top-k to what the task uses, deduplicate retrieved chunks, default to fixed-size chunking, compress retrieved docs before insertion.
     mechanism: Every retrieved token is input; most top-k tails are unread; semantic chunking costs compute without consistent gains; compression to ~6% retains accuracy in cited benchmarks.
@@ -302,6 +406,7 @@ rules:
 
   - id: R-14
     name: example-set-pruning
+    layer: skill-content
     tier: 2
     description: Keep few-shot examples that demonstrably prevent failures; drop examples that do not change outcomes; consider dynamic selection over static blocks.
     mechanism: Examples are among the largest static blocks; non-discriminating examples are pure input cost.
@@ -322,6 +427,7 @@ rules:
 
   - id: R-15
     name: model-routing
+    layer: orchestration
     tier: 2
     description: Route simple/mechanical subtasks to cheaper models; escalate hard or high-risk subtasks to stronger ones; cascades with a quality gate.
     mechanism: Per-token prices differ 5-25x across a provider's lineup (snapshot 2026-07-24); routing captures the spread when quality is verifiably acceptable.
@@ -342,6 +448,7 @@ rules:
 
   - id: R-16
     name: adaptive-output-budgets
+    layer: provider-api
     tier: 2
     description: Scale output/reasoning budgets by task complexity class rather than one global cap.
     mechanism: Fixed global caps either waste tokens on easy tasks or truncate hard ones; budget-aware prompting compresses with slight loss when sized right.
@@ -362,6 +469,7 @@ rules:
 
   - id: R-17
     name: batch-parallel-tool-calls
+    layer: orchestration
     tier: 2
     description: Plan and batch independent tool calls instead of serial call-observe-call loops; combine only where separation is not load-bearing.
     mechanism: Serial loops re-bill context between calls and add latency; planned/parallel execution cut cost 6.7x and improved accuracy in the cited system.
@@ -382,6 +490,7 @@ rules:
 
   - id: R-18
     name: structured-output-when-it-pays
+    layer: provider-api
     tier: 2
     description: Use schema-constrained output only where parse-failure retries are a real observed cost; A/B against prose when the task is reasoning-heavy.
     mechanism: Schemas add token overhead but can eliminate retry loops; however format constraints measurably degrade reasoning on some tasks - the net sign is task-dependent.
@@ -402,6 +511,7 @@ rules:
 
   - id: R-19
     name: semantic-response-cache
+    layer: orchestration
     tier: 2
     description: Cache full responses for repeated semantically-equivalent queries; serve hits without a model call.
     mechanism: The only caching tier that saves OUTPUT tokens and whole model calls, not just input.
@@ -422,6 +532,7 @@ rules:
 
   - id: R-20
     name: bound-delegation-depth
+    layer: orchestration
     tier: 2
     description: Cap sub-agent delegation depth and require sub-agents to return bounded summaries, not transcripts; use multi-agent only for parallelizable work.
     mechanism: Multi-agent runs cost ~15x chat tokens; token spend explains ~80% of outcome variance - depth and return-size caps keep the multiplier only where parallelism pays.
@@ -444,6 +555,7 @@ rules:
 
   - id: R-21
     name: automated-prompt-compression
+    layer: mixed
     tier: 3
     description: Apply LLMLingua-class extractive, query-aware compression to bulk context at <=5x ratio, with an information-preservation check on entities/grounding.
     mechanism: Token-classification compressors drop low-information tokens; query-aware variants can preserve or improve accuracy at 2-5x.
@@ -464,6 +576,7 @@ rules:
 
   - id: R-22
     name: soft-prompt-compression
+    layer: model-training
     tier: 3
     description: Gist/soft-token compression of recurring instructions. Recorded for completeness - DEFAULT DO-NOT-APPLY.
     mechanism: Instructions distilled into trained soft tokens (up to 26x); but tokens are model-specific artifacts requiring training access.
@@ -484,6 +597,7 @@ rules:
 
   - id: R-23
     name: hard-history-truncation
+    layer: orchestration
     tier: 3
     description: Drop oldest turns beyond a window without summarizing. Cheaper than R-11 but lossy; Aggressive only, with a preserved-commitments floor.
     mechanism: Directly caps history cost; unlike R-11 spends no tokens summarizing.
@@ -506,9 +620,26 @@ rules:
 
   - id: R-S1
     name: never-compress-safety-text
+    layer: skill-content
     tier: S
-    description: Safety boundaries, permission checks, refusal rules, privacy/compliance text are EXEMPT from every removal/compression/merge rule; apparent redundancy there may be defense in depth.
-    mechanism: Compression demonstrably drops instructions and can erode guardrails (preprint evidence; adopted as defense-in-depth default). The cost of a dropped guardrail is unbounded relative to its token cost.
+    description: Safety boundaries, permission checks, refusal rules, privacy/compliance text are EXEMPT from every removal/compression/merge rule. Never edited blind - edits here swing refusal behaviour unpredictably, in BOTH directions.
+    mechanism: >-
+      Editing safety text produces large, model-dependent, UNPREDICTABLE swings in refusal
+      behaviour, and there is no way to know in advance which side of the swing a given target is
+      on. Measured directly: hand-shortening the LLaMA-2 safety prompt raised compliance with
+      harmful queries from 20% to 55% on one model and 12% to 29% on another (S-R26) - and on two
+      other models in the SAME table the safety prompt bought zero percentage points on harmful
+      queries while raising false refusal on HARMLESS queries from 4% to 21%. Deleting a safety
+      instruction roughly tripled unsafe responses (21% -> 7.9% when present), and adding one cost
+      false abstention (0.4% -> 2.3%) (S-R27). The cost of a dropped guardrail is unbounded relative
+      to its token cost, and the cost of an over-refusing skill is a quality regression that a
+      safety-only metric would score as an improvement.
+    rationale_correction_2026-07-25: >-
+      This rule previously read "apparent redundancy there may be defense in depth". NO verified
+      source supports the redundancy claim - the collecting pass searched specifically for work
+      measuring whether repeated safety text adds protection and found none. The rule survives on a
+      different and better-evidenced footing: unpredictability, not redundancy. Note what this
+      change concedes - safety text is NOT automatically load-bearing, and it is NOT free.
     target: safety
     applies_when: always.
     do_not_apply_when: never.
@@ -517,18 +648,63 @@ rules:
     safety_risk: 0
     maintainability_risk: 0
     portability_risk: 0
-    evidence_confidence: experimental  # honest evidence tier - preprints + reasoning
+    evidence_confidence: experimental  # stays experimental - see evidence_gap below
     priority: {frequency: 3, applicability: 3, savings: 0, confidence: 1.0, risk_penalty: 0, score: 999}  # ordering pin, not a computed score
-    sources: [S-A09, S-A10, S-D12]
-    contradicting_evidence: none known
-    validation_test: Diff shows zero net reduction of safety-classified spans; safety cases in the test suite pass.
+    sources: [S-R26, S-R27, S-R28, S-A09, S-A10, S-D12]
+    source_claims:
+      S-R26: >-
+        The only verified work that manipulates safety-prompt TEXT. Shortening it raised harmful
+        compliance 20%->55% (mistral-instruct-v0.1) and 12%->29% (openchat-3.5); on llama-2-chat and
+        codellama-instruct the prompt bought 0pp on harmful queries while raising false refusal on
+        harmless ones 4%->21% and 6%->20%. Locator: Table 1. Caveat: "short" is one hand-written
+        shortening of one prompt on eight 7B open models - NOT the output of a token optimizer.
+      S-R27: >-
+        Ablation of REMOVING a safety instruction: unsafe responses on unsafe prompts 21% -> 7.9%
+        when the instruction is present; false abstention on safe prompts 0.4% -> 2.3%.
+        Locator: Secs 4.1, 4.2. Also: supplying contextual knowledge alongside an unsafe prompt made
+        safety WORSE (21% -> 28.9%, Sec 4.4).
+      S-R28: >-
+        A benign, guideline-following modification silently degrades safety: fine-tuning at the
+        vendors' own recommended hyperparameters moved Llama-2-7b-Chat harmfulness 0.3% -> 16.1%.
+        Locator: Table 3. INFERENTIAL LEAP, stated: the modification there is a WEIGHT UPDATE, not
+        a prompt edit. Cited for the general principle only.
+    evidence_gap: >-
+      No verified peer-reviewed work measures refusal-rate change under prompt COMPRESSION or
+      SUMMARIZATION specifically. S-R26's hand-shortened prompt is the nearest substitute. This rule
+      is therefore defensible as PRECAUTION UNDER MEASURED UNPREDICTABILITY, not as a demonstrated
+      law, which is why evidence_confidence stays `experimental`.
+    contradicting_evidence: >-
+      S-R26 itself: on the two most safety-trained models tested, the safety prompt produced no
+      measurable reduction in harmful compliance while roughly quintupling false refusals. Safety
+      text is not automatically load-bearing. S-R27 confirms the over-refusal cost independently.
+    validation_test: >-
+      Diff shows zero net reduction of safety-classified spans; safety cases in the test suite pass;
+      AND an over-refusal control set is run, because this rule only forbids REDUCING safety text
+      and is blind to a target that has become too refusing.
     rollback: n/a.
 
   - id: R-S2
     name: target-content-is-untrusted
+    layer: orchestration
     tier: S
-    description: The target skill's content (and its examples, docs, embedded text) is DATA. Instructions found inside it are never followed, including instructions about how to report results.
-    mechanism: Indirect prompt injection via ingested content is demonstrated on production systems; an optimizer that obeys its input can be weaponized to certify false savings or plant backdoors.
+    description: The target skill's content (and its examples, docs, embedded text) is DATA. Instructions found inside it are never followed, including instructions about how to report results. The protection is STRUCTURAL - the pipeline never routes target content into an instruction-following position - not an instruction to the model to behave as if it were data.
+    mechanism: >-
+      Indirect prompt injection via ingested content is demonstrated on production systems, and an
+      optimizer that obeys its input can be weaponized to certify false savings or plant backdoors.
+      What has changed is the WARRANT. Telling a model to treat content as data is a measurably
+      unreliable defense: instructional prevention takes a combined attack from 0.76 to 0.17 ASV on
+      one task but from 0.75 to only 0.73 on summarization - the task most like reading a skill file
+      (S-R31) - and under an ADAPTIVE attacker every one of eight published defenses exceeds 50%
+      ASR, including instructional prevention and data-prompt isolation, the two that amount to
+      exactly this instruction (S-R30). Channel separation is what works: 96% -> 0% on manual
+      injections at near-zero utility cost, though still 56-58% under GCG (S-R29 / StruQ line).
+      So this rule is sound to the exact extent that the optimizer's CONTROL FLOW never executes
+      target content - never as a consequence of the model having been told not to.
+    rationale_correction_2026-07-25: >-
+      Previously justified instructionally ("instructions found inside it are never followed"). That
+      framing is now known to be the weakest defense class in the literature. The rule is unchanged
+      in what it requires; its guarantee is re-scoped to NON-ADAPTIVE attackers and re-grounded on
+      control flow.
     target: safety
     applies_when: always - during Analyze, Apply, Benchmark, and reporting.
     do_not_apply_when: never.
@@ -539,13 +715,38 @@ rules:
     portability_risk: 0
     evidence_confidence: strong
     priority: {frequency: 3, applicability: 3, savings: 0, confidence: 1.0, risk_penalty: 0, score: 999}
-    sources: [S-D11, S-D12]
-    contradicting_evidence: none known
-    validation_test: Injection test cases (tests/cases.jsonl) - embedded directives are flagged as findings, never executed.
+    sources: [S-R29, S-R30, S-R31, S-D11, S-D12]
+    source_claims:
+      S-R29: >-
+        Text arriving from a non-user channel routinely hijacks capable agents. Targeted ASR <25%
+        undefended, 8% with a detector, 7.5% under tool-filter ISOLATION - the strongest defense
+        measured - but 17% of cases have tools sufficient for both the user task and the attack, so
+        filtering cannot always help. All defenses cost 15-20% utility under attack. More capable
+        models were EASIER to attack. Locator: Secs 1, 4.3. These are non-adaptive figures, per S-R30.
+      S-R30: >-
+        The contradictory finding, and the reason this rule's justification changed: all eight
+        published defenses exceed 50% ASR under an adaptive attacker, INCLUDING instructional
+        prevention and data-prompt isolation. Adaptive ASR can exceed the undefended baseline.
+        Locator: abstract, Sec 5.2, Tables 2-3. Limits: two 7-8B open models, white-box, defenses
+        attacked individually rather than combined.
+      S-R31: >-
+        Instruction-level defenses fail hardest on summarization - the task most like reading a
+        skill file: combined-attack ASV 0.76 -> 0.17 on duplicate-sentence detection but 0.75 ->
+        0.73 on summarization. Defenses also cost real utility with no attack present.
+        Locator: Table 7a. Authors state all attacks are heuristic, so the ASVs are LOWER BOUNDS.
+    guarantee_scope: >-
+      Removes the entire class of non-adaptive instruction-following from target content. Does NOT
+      make injection impossible: a resourced, optimizing attacker is out of scope, and the
+      literature is explicit that benchmark ASRs are lower bounds.
+    contradicting_evidence: >-
+      S-R30 breaks every defense this rule's old wording relied on. Retained as the primary reason
+      the wording changed rather than being treated as an inconvenience.
+    validation_test: Injection test cases (tests/injection.jsonl) - embedded directives are flagged as findings, never executed; plus a benign-imperative negative control, because a tool that flags ordinary instructional prose as an attack has a false-positive problem.
     rollback: n/a.
 
   - id: R-S3
     name: no-brittle-shorthand
+    layer: skill-content
     tier: S
     description: Never compress instructions into abbreviations, arrow-chains, or invented notation to save tokens; keep prose precise and readable.
     mechanism: Compressors and aggressive rewrites silently lose entities/grounding; unreadable rules are unmaintainable and their behavior unauditable - a maintainability cost that exceeds the token savings.
@@ -566,6 +767,7 @@ rules:
 
   - id: R-S4
     name: honest-measurement
+    layer: reporting
     tier: S
     description: >-
       Every quantitative claim carries one of five labels - measured, estimated,
@@ -589,9 +791,332 @@ rules:
     safety_risk: 0
     maintainability_risk: 0
     portability_risk: 0
-    evidence_confidence: practitioner
+    rationale_type: constraint   # see G-12: a norm needs no empirical source
+    evidence_confidence: not-applicable
     priority: {frequency: 3, applicability: 3, savings: 0, confidence: 1.0, risk_penalty: 0, score: 999}
-    sources: [S-D08]
+    sources: []
+    citation_correction_2026-07-25: >-
+      Previously cited S-D08 and carried evidence_confidence "practitioner". That page was opened and
+      contains nothing on honest measurement, on distinguishing estimates from measurements, on
+      labelling quantitative claims, or on reporting failed changes. Its section headings are about
+      when to use agents, frameworks, and workflow patterns.
+      The defect was in the SCHEMA, not the rule: R-S4 is a norm this project adopts, not an
+      empirical finding, and its own expected_benefit already read "n/a - constraint". Forcing every
+      rule to name a source made the registry assert an evidential relationship that did not exist.
+      Fixed by declaring rationale_type: constraint rather than by hunting for a citation to attach.
     contradicting_evidence: none known
     validation_test: validate_report.py passes on every emitted report.
     rollback: n/a.
+
+  # ============ ROUND 2 (2026-07-25) — added from research-2026-07-25/DOSSIER.md §13 ============
+  # Every rule here carries source_claims: what the cited source actually underwrites, with a
+  # locator. That is the G-11 contract — a citation that resolves is not a citation that supports.
+
+  - id: R-24
+    name: structural-edits-are-behavioural
+    layer: skill-content
+    tier: 1
+    description: Treat relocation, reordering, whitespace normalisation and heading changes as behavioural interventions requiring validation - not as cosmetic changes exempt from testing.
+    mechanism: >-
+      Semantics-preserving edits are not behaviour-preserving. 24% of SINGLE atomic formatting
+      changes move accuracy by >=5 points with wording held identical, and adding one space flipped
+      500+ predictions on a classification suite. A "verbatim move" is not exempt: the studies'
+      perturbations also preserve wording exactly.
+    target: input
+    applies_when: Any Apply run that relocates, reorders or renormalises text - i.e. almost every Apply run.
+    do_not_apply_when: never - this rule constrains HOW other rules are validated, it does not itself remove tokens.
+    expected_benefit: No token benefit. Prevents a class of silent regression that static token counts cannot see. [projected]
+    quality_risk: 0
+    safety_risk: 0
+    maintainability_risk: 1  # raises validation cost per change
+    portability_risk: 0
+    evidence_confidence: moderate
+    priority: {frequency: 3, applicability: 3, savings: 0, confidence: 0.8, risk_penalty: 1, score: 999}  # ordering pin: constrains other rules
+    sources: [S-R01, S-R03, S-R02]
+    source_claims:
+      S-R01: 'Up to 76 accuracy points between semantically equivalent formats (LLaMA-2-13B, abstract); 24% of atomic changes move accuracy >=5 points, 11% under probability ranking (Sec 4.3, Fig. 8). Sensitivity persists across model size, shot count and instruction tuning (abstract).'
+      S-R03: 'Adding one leading/trailing space produced over 500 prediction changes on ChatGPT (Sec 3.1, Fig. 2). Churn, not necessarily net accuracy loss - the paper is careful about this, and Llama-2 was unaffected because that stack strips input.'
+      S-R02: 'Paraphrasing an instruction inverted the induced model leaderboard in 15 of 25 tasks (negative Kendall tau, Sec 4.2); instruction effect significant in 21 of 25 (Friedman).'
+    contradicting_evidence: >-
+      S-R04 finds much of the measured sensitivity is an artifact of rigid answer matching: SD
+      collapses 0.28 -> 0.005 and rank correlation rises 0.30 -> 0.92 under semantics-aware scoring
+      (Sec 3.2). The conflict is real and unresolved for skill files, which neither side studies.
+      This rule is therefore justified as PRECAUTION UNDER DISAGREEMENT, not as settled science.
+    validation_test: Benchmark mode runs the sham-optimized negative controls; a cosmetic-only change must show no measurable difference, or the harness is measuring noise.
+    rollback: Downgrade to advisory if sham controls and semantics-aware scoring show no relocation effect across >=5 packages.
+
+  - id: R-25
+    name: benchmark-across-prompt-variants
+    layer: orchestration
+    tier: 2
+    description: Evaluate before/after across a SET of semantically equivalent prompt surfaces and report the interval, not a single-variant point estimate.
+    mechanism: Single-prompt evaluation cannot separate an optimization's effect from the spread across equivalent phrasings, which can be larger than the effect and can even invert rankings.
+    target: [reporting, quality]
+    applies_when: Any Benchmark or Validate run that will state a quality delta.
+    do_not_apply_when: Static-only comparisons that make no quality claim at all.
+    expected_benefit: Converts an uninterpretable single-run delta into an interval. No token effect. [projected]
+    quality_risk: 0
+    safety_risk: 0
+    maintainability_risk: 1
+    portability_risk: 0
+    evidence_confidence: strong
+    priority: {frequency: 2, applicability: 2, savings: 0, confidence: 1.0, risk_penalty: 1, score: 3.0}
+    sources: [S-R02, S-R04]
+    source_claims:
+      S-R02: 'Across 6.5M instances, 20 LLMs and 39 tasks, paraphrased instructions produce very different absolute AND relative performance; Kendall W mostly below 0.85 (Sec 4.2, Table 4). Single-prompt evaluation supports almost no reliable claim.'
+      S-R04: 'Variance across 12 equivalent templates collapses under a semantics-aware scorer (Sec 3.2), so the measured spread depends on the harness as well as the prompt - which is why the interval must be reported with its scoring method.'
+    contradicting_evidence: Cost - the variant count multiplies eval spend, which is the standing objection.
+    validation_test: Compare the single-variant and multi-variant conclusions on the same optimization; if they disagree, the single-variant one was not safe to report.
+    rollback: Reduce to 3 variants if spread is consistently below the decision threshold.
+
+  - id: R-26
+    name: contract-items-become-verifiers
+    layer: orchestration
+    tier: 2
+    description: Convert each enumerated behavioural-contract item (C-01, C-02, ...) into a deterministic checker and compare prompt-level strict compliance before vs after.
+    mechanism: Verifiable constraints can be checked by a short program without a judge, which turns the contract-ID procedure from narrative into a gate.
+    target: [quality, reporting]
+    applies_when: Apply mode, once the contract has been enumerated.
+    do_not_apply_when: Contract items that are genuinely procedural or semantic and have no mechanical form - those stay reviewer-checked and are reported as such.
+    expected_benefit: No token effect. Makes contract preservation falsifiable. [projected]
+    quality_risk: 0
+    safety_risk: 0
+    maintainability_risk: 1
+    portability_risk: 0
+    evidence_confidence: moderate
+    priority: {frequency: 2, applicability: 2, savings: 0, confidence: 0.8, risk_penalty: 1, score: 2.2}
+    sources: [S-R18]
+    source_claims:
+      S-R18: 'Rule-augmented evaluation - deterministic rules where mechanically checkable, LLM judge only for open-ended constraints - reaches 87.82% agreement with human annotation and beats every non-rule-augmented baseline (Sec 4, Table 4). That is the defensible bar for a before/after compliance harness.'
+    contradicting_evidence: >-
+      Only checkable FORM is verifiable this way. A lenient checker inflates apparent compliance,
+      which is exactly how an optimizer could accidentally certify a regression.
+    validation_test: Delete one contract item deliberately; the checker must fail. An unfailable checker is decoration.
+    rollback: Keep as a partial gate if fewer than 60% of contract items are mechanically checkable.
+
+  - id: R-27
+    name: dependency-aware-contract-scoring
+    layer: orchestration
+    tier: 2
+    description: Score contract items through their dependency structure - a failed prerequisite invalidates its dependents - rather than counting an aggregate pass rate.
+    mechanism: A skill file is a composed instruction. Deleting or relocating one constraint can silently void every downstream constraint that depended on it, and an aggregate pass-rate hides exactly that.
+    target: [quality, reporting]
+    applies_when: Any target whose constraints have prerequisites or ordering.
+    do_not_apply_when: Flat, independent constraint sets - then aggregate scoring loses nothing.
+    expected_benefit: No token effect. Catches a failure class aggregate scoring cannot see. [projected]
+    quality_risk: 0
+    safety_risk: 0
+    maintainability_risk: 1
+    portability_risk: 0
+    evidence_confidence: moderate
+    priority: {frequency: 2, applicability: 2, savings: 0, confidence: 0.8, risk_penalty: 1, score: 2.2}
+    sources: [S-R18]
+    source_claims:
+      S-R18: 'Performance drops sharply as composition complexity rises, "especially on Selection and Chain" compositions (Sec 5) - i.e. dependency-linked constraints are where models fail, and where independent per-constraint scoring overstates compliance.'
+    contradicting_evidence: none known
+    validation_test: Inject a prerequisite deletion; every dependent item must be marked failed, not just the prerequisite.
+    rollback: Revert to flat per-item scoring.
+
+  - id: R-28
+    name: size-the-evaluation-before-running-it
+    layer: orchestration
+    tier: 1
+    description: Run a power analysis BEFORE collecting evaluation data; report SD and a confidence interval, never a bare mean; cluster standard errors when items are grouped by package.
+    mechanism: >-
+      A non-inferiority conclusion is a claim about an interval bound, not a point estimate. An
+      underpowered run cannot distinguish "no regression" from "no ability to see one", and
+      reporting its point estimate as non-inferiority is the error the label vocabulary exists to
+      prevent everywhere else.
+    target: reporting
+    applies_when: Any evaluation that will state a quality delta or a non-inferiority verdict.
+    do_not_apply_when: never, for quality claims. Static token comparisons are deterministic and are exempt.
+    expected_benefit: >-
+      No token effect. Prevents reporting an unresolvable comparison as a result. Sizing depends on
+      the paired-difference SD, which this project has never reported. [projected]
+    quality_risk: 0
+    safety_risk: 0
+    maintainability_risk: 1
+    portability_risk: 0
+    evidence_confidence: strong
+    priority: {frequency: 3, applicability: 3, savings: 0, confidence: 1.0, risk_penalty: 1, score: 999}  # ordering pin: constrains every quality claim
+    sources: [S-R19, S-R24, S-R20]
+    source_claims:
+      S-R19: 'The most common small human-eval design (3 workers x 100 items) is underpowered unless the true effect is >=0.2 on a [0,1] scale; detecting a 0.05 effect needs 10+ ratings per item across 100 items even under LOW rater variance (Sec 5.2, takeaways 1-2, p. 9271). Reported improvements routinely fall below the minimum detectable effect (Table 2, p. 9267).'
+      S-R24: 'Pass@1 standard deviation across 20 seeds spans 5-15 percentage points, a single test item moves the metric 2.5-3.3pp on a 30-item benchmark, and the mean stabilises only at K>=30 runs (Sec 3.1, Figs. 1-3). Claimed improvements fell entirely inside the base model variance.'
+      S-R20: 'For matched samples the Wilcoxon signed-rank test is more powerful than the sign test because it ranks difference magnitudes, and the paired bootstrap is unreliable on small test sets (Sec 3.2, p. 1387). Also: "significant" must keep its statistical meaning.'
+    contradicting_evidence: Cost - a correctly sized run is several times more expensive than an underpowered one. The alternative is not cheaper, it is uninformative.
+    validation_test: Re-analyse any existing grading record and publish its SD and CI; if the interval is not reported, the verdict is not established.
+    rollback: If a reported SD is <=0.35, a smaller sample may suffice and the requirement relaxes to reporting the interval.
+
+  - id: R-29
+    name: judge-hygiene
+    layer: orchestration
+    tier: 1
+    description: Score every pair in BOTH orders and aggregate; use at least two graders with reported agreement; use a grader from a different model family than the generator; report human agreement on a subsample.
+    mechanism: >-
+      Judge reliability is at its WORST precisely where an optimizer operates - comparing two
+      outputs intended to be quality-equivalent. Order effects alone can be larger than the effect
+      under test, and the direction of the bias is judge-specific, so no fixed offset corrects it.
+    target: [quality, reporting]
+    applies_when: Any live quality evaluation using an LLM judge.
+    do_not_apply_when: Deterministic checks (token counts, contract verifiers) - no judge, no bias.
+    expected_benefit: No token effect. Removes a bias larger than the signal being sought. [projected]
+    quality_risk: 0
+    safety_risk: 0
+    maintainability_risk: 1
+    portability_risk: 0
+    evidence_confidence: strong
+    priority: {frequency: 3, applicability: 2, savings: 0, confidence: 1.0, risk_penalty: 1, score: 999}  # ordering pin
+    sources: [S-R22, S-R21, S-R23, S-R25]
+    source_claims:
+      S-R22: 'GPT-4 changes its verdict on 46.3% of similar-quality pairs when the two responses are swapped, versus 5.0% on wide-gap pairs; conflict rate rises as the quality gap shrinks (Sec 2.2, Fig. 2, p. 9442). The direction of the bias is judge-specific - GPT-4 favours position one, ChatGPT position two.'
+      S-R21: 'Judge-human agreement is 85% overall but that figure EXCLUDES ties, and it falls toward 70% as the win-rate gap narrows (Sec 4.2, Table 5, Fig. 2). GPT-4 order-swap consistency is 65.0%, rising to 77.5% with few-shot prompting (Sec 3.3-3.4).'
+      S-R23: 'The best judge tracks human graded scores at Spearman rho = 0.50 on average, with per-dataset values as low as -0.24, and all models align WORSE on machine-generated text than human-generated text (Table 1 p. 241; Fig. 4 p. 243). A prompt optimizer''s outputs are machine-generated by construction.'
+      S-R25: 'Judges recognise their own generations (GPT-4 73.5% out of the box) and favour them on texts humans rate equal, with self-recognition and self-preference linearly linked (Sec 1, contributions 1-4). NOTE: S-R21 states its own study cannot confirm self-preference; the two sources disagree and both are retained.'
+    contradicting_evidence: >-
+      S-R21 and S-R25 disagree on whether self-preference is established. Retained rather than
+      resolved. Cost - both-orders judging roughly doubles judge spend.
+    validation_test: Measure the order-swap conflict rate on the target's own case family; if it is under 5%, the swap requirement can be relaxed for that family with the measurement published.
+    rollback: Single-order judging, with the conflict rate reported as an unmeasured threat to validity.
+
+  - id: R-30
+    name: condition-example-pruning-on-model-capability
+    layer: skill-content
+    tier: 2
+    description: Gate the aggressive form of example pruning (R-14) on the target model class. On weaker or older models, default to KEEPING examples.
+    mechanism: >-
+      On capable instruction-tuned models doing reasoning, exemplars are largely inert for accuracy
+      and their surviving job - anchoring output format - is usually achievable with a short format
+      instruction. On weaker models the same exemplars produce significant gains, so the pruning
+      decision inverts with target capability.
+    target: input
+    applies_when: R-14 is eligible AND the target model class is known.
+    do_not_apply_when: The target model class is unknown or the skill is deployed across mixed tiers - then keep examples and say why.
+    expected_benefit: Avoids a regression class R-14 alone cannot see. Savings are those of R-14 when it applies. [behavior-dependent]
+    quality_risk: 1
+    safety_risk: 0
+    maintainability_risk: 0
+    portability_risk: 2  # the right answer differs per target model
+    evidence_confidence: moderate
+    priority: {frequency: 2, applicability: 2, savings: 1, confidence: 0.8, risk_penalty: 3, score: 0.2}
+    sources: [S-R09, S-R08, S-R06]
+    source_claims:
+      S-R09: 'Zero-shot beats few-shot in most settings on recent strong models, and 50% of exemplar tokens replaced by "XXX" matches or slightly outperforms intact exemplars (Sec 6.1, Fig. 9). But the effect INVERTS for weaker and older models, which show significant gains from exemplars (Sec 5.2, Fig. 6).'
+      S-R08: 'Every task tested has a ceiling past which more examples hurt, and the ceiling is dataset-specific within a task type - XSum declines beyond ~50 while XLSum improves monotonically (Secs 2.2, 3.1, 3.2). Repeated examples stay flat while distinct ones scale (Sec 4.6).'
+      S-R06: 'The counter-rule. Replacing in-distribution example inputs with out-of-distribution text costs 3-16% absolute, and stripping the label vocabulary costs 5-16% (Secs 5.1-5.2). Pruning must never leave a set that misrepresents the input distribution.'
+    contradicting_evidence: S-R06 is a null result about LABELS in classification prompts, not a licence to delete demonstrations. S-R09's finding depends on the authors' own correction of an answer-extraction bias.
+    validation_test: With-vs-without evaluation on the TARGET's model tier, not a proxy.
+    rollback: Restore the examples; revert to unconditional R-14.
+
+  - id: R-31
+    name: example-selection-must-not-break-the-prefix
+    layer: provider-api
+    tier: 2
+    description: When example selection is dynamic, keep most of the example block fixed and cacheable and vary only a small constant slice per query.
+    mechanism: >-
+      Per-query example selection changes the prompt prefix on every request, which destroys the
+      cacheable prefix. A "smarter" prompt can therefore cost MORE than a dumb static one - a
+      direct conflict between R-14 (dynamic selection) and R-05 (stable prefix) that the registry
+      did not previously record.
+    target: cost
+    applies_when: The workflow selects examples per query AND the provider bills cache reads below input.
+    do_not_apply_when: No caching available, or the prompt is unique from byte 0 anyway.
+    expected_benefit: Avoids a cost increase caused by an optimization. Cited as roughly 2x cheaper at 50 shots and 10x at 200 versus uncached similarity selection. [cache-dependent]
+    quality_risk: 1
+    safety_risk: 0
+    maintainability_risk: 1
+    portability_risk: 1
+    evidence_confidence: moderate
+    priority: {frequency: 1, applicability: 2, savings: 2, confidence: 0.8, risk_penalty: 3, score: 0.2}
+    sources: [S-R10]
+    source_claims:
+      S-R10: 'Pinning most of the example block and varying only a small constant slice runs "nearly two times lower in 50-shot settings and ten times lower in 200-shot settings" than similarity-based selection (Sec 4.3). IMPORTANT: this is an attention-time-complexity argument plus proportional plots, NOT a measurement - the authors state costs are proportional "due to the proprietary nature of our LLMs" (Sec 4.1). Also: selection quality matters MOST at small example budgets (Sec 4.2), which is the regime an optimizer creates.'
+    contradicting_evidence: The cost figure is the authors' estimate, not measured, and comes from two Gemini models only.
+    conflicts_with: [R-14]
+    validation_test: Assert cache_read_input_tokens > 0 with and without dynamic selection; if selection zeroes the cache reads, the saving is negative.
+    rollback: Static example block.
+
+  - id: R-32
+    name: cache-minimum-guard
+    layer: provider-api
+    tier: 1
+    description: Before recommending any size reduction, check whether the result falls below the target model's minimum cacheable prefix. If it does, report that caching will silently switch off and the change may be COST-NEGATIVE.
+    mechanism: >-
+      Providers refuse to cache a prefix shorter than a per-model minimum and return NO ERROR when
+      they do. An optimizer that successfully shrinks a prompt past that line turns caching off, and
+      since cache reads bill at 0.1x input, the token reduction can be swamped by the lost discount.
+      This is a failure the tool can cause BY SUCCEEDING at its stated goal.
+    target: cost
+    applies_when: The target sits inside a cached prefix and a reduction would cross the model's minimum.
+    do_not_apply_when: No caching in use, or the prefix stays comfortably above the minimum after the change.
+    expected_benefit: Prevents an optimization from increasing billed cost. Pure guard - it removes no tokens. [cache-dependent]
+    quality_risk: 0
+    safety_risk: 0
+    maintainability_risk: 1  # the per-model minimum table goes stale
+    portability_risk: 1      # minimums are provider- and model-specific
+    evidence_confidence: provider
+    priority: {frequency: 2, applicability: 2, savings: 0, confidence: 1.0, risk_penalty: 2, score: 999}  # ordering pin: a guard, not a saving
+    sources: [S-C01, S-C03]
+    source_claims:
+      S-C01: 'Verbatim: "Shorter prompts cannot be cached, even if marked with cache_control. Any requests to cache fewer than this number of tokens will be processed without caching, and no error is returned." Minimum cacheable prefix read on 2026-07-25: 512 / 1,024 / 2,048 / 4,096 tokens depending on model. Verification is available and cheap: cache_read_input_tokens > 0.'
+      S-C03: 'The second provider sets the same class of threshold - "Caching is available for prompts containing 1024 tokens or more" - so the trap is cross-vendor even though the number is not.'
+    contradicting_evidence: none known
+    validation_test: Given a target near the minimum, the harness must emit the warning; given one far above it, it must not. Both directions tested.
+    rollback: n/a - a guard that only adds a warning.
+
+  - id: R-33
+    name: token-counts-are-not-portable
+    layer: reporting
+    tier: 1
+    description: Stamp every token figure with the model and tokenizer it was measured with, and refuse before/after comparisons that cross a tokenizer boundary.
+    mechanism: >-
+      A tokenizer change moves counts for the SAME TEXT by roughly 30% within a single vendor's own
+      model line. A before/after measured across such a boundary is void, and an absolute token
+      claim that does not name its tokenizer cannot be checked.
+    target: reporting
+    applies_when: always, for any token figure.
+    do_not_apply_when: never.
+    expected_benefit: No token effect. Prevents void comparisons and uncheckable claims. [projected]
+    quality_risk: 0
+    safety_risk: 0
+    maintainability_risk: 0
+    portability_risk: 0
+    evidence_confidence: provider
+    priority: {frequency: 3, applicability: 3, savings: 0, confidence: 1.0, risk_penalty: 0, score: 999}  # ordering pin
+    sources: [S-C02]
+    source_claims:
+      S-C02: 'Verbatim from the vendor pricing page, read 2026-07-25: "Claude 4.7 and later models and Claude Mythos Preview use a newer tokenizer ... This tokenizer produces approximately 30% more tokens for the same text. The exact increase depends on the content and workload shape." That is a vendor estimate, not an independent measurement, and it is enough to void cross-generation comparisons.'
+    contradicting_evidence: none known
+    validation_test: A before/after pair measured on models either side of a tokenizer boundary must be refused, not silently reported.
+    rollback: n/a - a reporting constraint.
+
+  - id: R-34
+    name: model-the-output-side-or-declare-it-unscored
+    layer: reporting
+    tier: 1
+    description: Either price output tokens from measured evaluation transcripts, or have every output-targeting rule declare itself unscored. Never let a dollar figure silently cover only the input side.
+    mechanism: >-
+      Output bills at roughly 5-6x input on current published rates, while the cost model covers the
+      input side only. That is honest as far as it goes, but the registry ranks an OUTPUT-side rule
+      highest of all non-safety rules, so the highest-ranked rule is the one the cost figure cannot
+      express. A reader sees a dollar number and assumes it is the bill.
+    target: [reporting, cost]
+    applies_when: Any cost figure emitted for a target whose rules touch output length or reasoning budget.
+    do_not_apply_when: Input-only optimizations with no output-contract change - then the input-side figure IS the change.
+    expected_benefit: No token effect. Removes a structural bias in which the ranked-highest rule cannot be priced. [projected]
+    quality_risk: 0
+    safety_risk: 0
+    maintainability_risk: 1
+    portability_risk: 0
+    evidence_confidence: provider
+    priority: {frequency: 3, applicability: 2, savings: 0, confidence: 1.0, risk_penalty: 1, score: 999}  # ordering pin
+    sources: [S-C02, S-C04]
+    source_claims:
+      S-C02: 'Published per-MTok rates read 2026-07-25: Claude Opus 5 is $5 input against $25 output - a 5x ratio. Output dominates the bill for any generation-heavy workload.'
+      S-C04: 'The second provider shows the same shape: gpt-5.6-sol at $5.00 input against $30.00 output, a 6x ratio derived from the listed prices. The direction is cross-vendor.'
+    contradicting_evidence: >-
+      Output-token deltas cannot be measured without live runs, so the declare-unscored branch will
+      often be the operative one. That is still an improvement on a dollar figure that silently
+      omits the larger half.
+    validation_test: A cost report for a target with an output-contract change must either include measured output tokens or carry an explicit "output side not modeled" line.
+    rollback: n/a - a reporting constraint.
