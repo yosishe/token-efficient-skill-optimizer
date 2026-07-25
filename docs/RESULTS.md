@@ -1,7 +1,13 @@
-# Results
+# Archived v1.1 results — non-qualifying under v2
 
-What was measured, what was estimated, and what is still unproven. Numbers here carry
-labels because the tool enforces labels — including on its own reports.
+This page preserves the pre-v2 evaluation record so the project's earlier
+decisions remain reviewable.
+
+> **Evidence status:** except for structural registry and current CI counts,
+> numeric values on this page predate schema v2 and lack claim-specific
+> `report.json#/claims/<claim-id>` records. They are historical, non-qualifying
+> observations or proxy outputs—not current `[measured]`, `[estimated]`,
+> `[projected]`, or savings claims.
 
 ---
 
@@ -23,7 +29,7 @@ including reverting one optimization that failed its own economics. That one is 
 
 ---
 
-## What was measured
+## What the historical runs recorded
 
 ### On real third-party skill packages
 
@@ -45,17 +51,17 @@ A 100% false-positive rate on the first action a new user is likely to take.
 
 Fixed by the general rule — a subdirectory containing its own `SKILL.md` is a nested
 package root — rather than by special-casing the fixture path. Post-fix: **0 flags**
-`[measured]`. An independent probe planting an unreferenced file in the outer package
+in an exact local scan. An independent probe planting an unreferenced file in the outer package
 confirmed it is still flagged, so the fix removed noise and not the check.
 
 ### Deterministic gates
 
 | gate | result |
 |---|---|
-| Test suite | 88/88 |
+| Test suite | Historical v1.1 result; current exact count is emitted by CI |
 | Mutation verification | 47 mutations, 47 caught, 0 missed |
-| Package validator | 10/10 checks, 0 violations |
-| Citation cross-check | 27 rules, all evidence ids resolve |
+| Package validator | Current exact check/violation count is emitted by CI |
+| Citation cross-check | 38 rules, all evidence ids resolve |
 | Clean standalone install, no parent project | all of the above pass |
 
 ### A real defect this process caught
@@ -69,23 +75,25 @@ running the gate from an orphaned copy with no parent directory.
 
 ---
 
-## What was estimated
+## What the retired proxy reported
 
-Token figures come from a tokenizer proxy with a disclosed Claude adjustment
-(×1.15–1.25). Cross-rung comparisons are invalid and the protocol forbids them.
+Token figures in this historical section came from the v1.1 proxy calculation.
+The fixed Claude adjustment used then is unsupported; v1.3 retains the section
+for decision provenance but bars these ranges from provider-token,
+observed-usage, or current estimate claims.
 
 Comparing the two most recent versions of this skill package:
 
-| tier | previous | current | delta |
+| tier | previous legacy proxy | current legacy proxy | historical delta |
 |---|---|---|---|
 | **trigger path** (billed on every invocation) | 2,095–2,278 | 2,189–2,380 | **+4.5%** |
-| conditional (read only when pointed at) | 39,433–42,865 | 44,712–48,605 | +5,279 |
-| script (executed, never read into context) | 15,379–16,713 | 42,186–45,853 | +26,807 |
+| conditional (intended for task-specific reads) | 39,433–42,865 | 44,712–48,605 | +5,279 |
+| script (source may stay outside context when executed) | 15,379–16,713 | 42,186–45,853 | +26,807 |
 
-**The current version is larger in every tier.** It bought a defect fix and mechanical
-gate enforcement, and it cost 4.5% `[estimated]` on the only tier billed every time.
-Published as a
-cost, because a tool that hides its own regressions has no standing to audit yours.
+**The candidate was larger in every tier under the retired proxy.** It bought a
+defect fix and mechanical gate enforcement, and the archived scan recorded an
+increase on the trigger path. That directional lesson remains useful; the old
+percentage does not qualify as a v2 estimate.
 
 ---
 
@@ -109,7 +117,7 @@ refusal came with a constructive alternative.
 
 | behavior | previous | current |
 |---|---|---|
-| Used a label marking a saving contingent on a cache hit or an assumed path `[measured]` | 0 of 24 | **13 of 24** |
+| Used a label marking a saving contingent on a cache hit or an assumed path | 0 of 24 | **13 of 24** |
 | Enumerated the target's obligations as numbered contract items before editing | 0 of 24 | **2 of 24** |
 
 The label vocabulary works. The contract-ID procedure **largely did not take** — 2 of 24
@@ -139,28 +147,31 @@ live choice. It has not been run.
 
 ---
 
-## The pilot, reported at its actual value
+## The pilot, preserved without promoting its proxy output
 
-One whole-scenario optimization measured **−0.7%** — effectively nothing. It is published
-at that number rather than replaced with a more flattering slice of the same run. Skills
-that trigger rarely save little no matter how well they are optimized, and the tool will
-tell you that instead of producing a number.
+One whole-scenario optimization produced effectively no reduction under the
+historical v1.1 proxy. The retired numeric result remains in repository history,
+but is not repeated as a v2 estimate here. Skills that trigger rarely save little
+no matter how well they are optimized, and the tool will tell you that instead
+of manufacturing a number.
 
-An ablation on naive full-package loading came out **74%–158% worse** than the baseline it
-was meant to improve. Progressive disclosure only pays when the files genuinely stay off
-the normal path.
+An archived ablation on naive full-package loading was materially worse than the
+baseline it was meant to improve. Progressive disclosure only reduces context
+when runtime evidence shows those files stay off the normal path.
 
 ---
 
 ## Limitations, in one place
 
-- 24 paired observations, 12 cases, one grader, on cases authored alongside the thing
-  under test. Detects blunt regressions; cannot resolve small quality differences.
+- The archived comparison used a small case set and one grader, on cases authored
+  alongside the thing under test. It detects blunt regressions; it cannot resolve
+  small quality differences or support a v2 measured claim.
 - Static token counts are structure, never proof that a target still works.
 - Savings are workload-dependent — a rarely-triggered skill saves little.
-- The honesty gate over-flags: its keyword list cannot tell domain nouns from ordinary
-  English, and roughly ten lines across this project's reports needed an explicit
-  exemption comment. Over-flagging is the right direction for the trade, but it is noise.
+- The honesty gate can over-flag because its keyword list cannot tell domain nouns
+  from ordinary English. v2 does not allow a suppression comment to turn a
+  quantitative sentence into an acceptable claim; rewrite the sentence or bind
+  it to qualifying evidence.
 - Pricing snapshots go stale. Cost figures carry their snapshot date and the model
   refuses to cost a date outside a rate's effective window.
 - **Reachability is over-permissive by construction.** A file counts as discoverable if
@@ -180,14 +191,16 @@ the normal path.
 
 ```bash
 python scripts/run_tests.py            # the suite
-python scripts/validate_package.py .   # the ten release gates
+python scripts/validate_package.py .   # the eleven release gates
 python scripts/measure_tokens.py .     # point it at itself
 ```
 
-Every number above traces to a file in this repository or is labeled as unreproducible
-and why. Where a `[measured]` label appears, a data pointer follows it — that rule is
-enforced mechanically by `scripts/validate_report.py`, which blocked drafts of this very
-page until each claim was either labeled or dropped.
+This historical page makes no v2 `[measured]` claim. That label now requires
+completed `observed_usage`, verified runtime provenance, and a claim-specific
+JSON pointer enforced by `scripts/validate_report.py`. Version 1.2 has no
+live-attestation verifier and therefore rejects the label even when a log
+claims `live_verified`; a future live path requires separate review. The
+presence of an old data file is not enough.
 
 ## Harness data
 

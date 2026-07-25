@@ -1,5 +1,40 @@
 # Changelog — token-efficient-skill-optimizer
 
+## 1.3.0 — 2026-07-25
+
+Auditable accounting and evidence release. This work was originally planned as
+1.2.0, but `main` reached 1.2.1 before publication; the feature release is
+therefore 1.3.0 rather than a version downgrade.
+
+- Token scans are offline by default. Anthropic preflight counting requires an
+  explicit network flag and one complete structured request, and remains a
+  provider estimate rather than observed or billed usage.
+- Evaluation schema and calculation version 2 normalize only mutually exclusive
+  usage buckets, preserve unambiguous v1 aggregates with explicit legacy
+  semantics, and fail closed on overlap, unknown fields, invalid numerics, and
+  oversized usage objects.
+- Observed cost and modeled cache scenarios are separate Decimal-based
+  contracts with exact-model, effective-dated Anthropic profiles. Cached tokens
+  remain context-occupying tokens; OpenAI prices remain data-only.
+- Quantitative claims use exact JSON pointers and bind raw/canonical run,
+  adapter, configuration, case, provider/model, producer-commit, and source
+  hashes. Fixture evidence cannot establish live-model claims, and schema v2
+  ships without a live-attestation verifier.
+- Paired safety evaluation reports the complete transition matrix and cannot
+  cancel a candidate-only failure with a recovery elsewhere. Hash-bound inputs
+  include hidden files and modes, reject nested links and special files, and
+  stream logs through a fresh inode so hard-link or symlink destinations cannot
+  truncate protected evidence.
+- Source resolution is registry-relative, repository validation requires exact
+  upstream/bundled ID parity, and standalone scope is explicitly
+  `bundled_index_only`. The catalog adds versioned locators and captured
+  decompressed-response SHA-256 metadata.
+- Context-management research is expressed as guarded rules and scorer fixtures
+  only. No automatic memory, deletion, compaction, or retrieval engine is added.
+- GitHub Actions separates dependency acquisition from a secretless,
+  capability-dropped, network-isolated deterministic test phase. Exact suite
+  totals are published by CI instead of frozen in documentation.
+
 ## 1.2.1 — 2026-07-25
 
 Test coverage only. No rule, mode, or output-contract change.
@@ -76,7 +111,6 @@ G-12 constraint rules. New `layer:`, `source_claims:`, `conflicts_with:` fields.
 
 97 tests (was 89), 6 of them mutations. 10/10 package checks.
 
-
 ## 1.0.0 — 2026-07-24
 
 Initial release.
@@ -101,9 +135,10 @@ Harness accuracy pass, driven by the first run against a real 29-skill portfolio
 
 - Multilingual heuristics (EN/ZH/HE) for trigger phrasing, negative boundaries,
   and read-conditions. A Chinese skill was mis-flagged for both.
-- New `artifact` tier: text that is not model context (demos/, dist/, package*.json,
-  README*, LICENSE, CHANGELOG, PROVENANCE.md). Excluded from the context surface
-  and from reachability flags.
+- New `artifact` tier: text outside the ordinary modeled trigger path (demos/,
+  dist/, package*.json, README*, LICENSE, CHANGELOG, PROVENANCE.md). It still
+  consumes context if read; it is excluded from automatic-context and
+  reachability estimates.
 - Executables (.py/.js/.mjs/.sh/.ts) are script tier in any directory.
 - Bilingual sibling files (X-en.md vs X.md) reported separately from duplication.
 - Duplicate detection scoped to context tiers only.
@@ -180,22 +215,23 @@ versions passed 16/16 critical cases. See `docs/RESULTS.md`.
 
 Fixes a defect introduced by 1.1.0 itself.
 
-**Four files shipped in 1.1.0 were unreachable from the body.** `SKILL.md` enumerates
-what the package contains, and the 1.1.0 release added files without updating that
-list — so `scripts/eval_runner.py`, `scripts/eval_report.py`,
+**Four files shipped in 1.1.0 had no direct discovery path from the body.**
+`SKILL.md` enumerates what the package contains, and the 1.1.0 release added files
+without updating that list — so `scripts/eval_runner.py`, `scripts/eval_report.py`,
 `scripts/validate_package.py`, and `rules/sources-index.yaml` were installed but
-invisible to the model. The paired A/B harness was 1.1.0's headline capability and
-could not be discovered; `sources-index.yaml` is the file that fixed 1.1.0's own
-headline defect.
+unnamed in the skill instructions. Static analysis cannot disprove dynamic access,
+but the paired A/B harness was 1.1.0's headline capability and had no explicit route;
+`sources-index.yaml` is the file that fixed 1.1.0's own headline defect.
 
 This is the same failure class this skill flags in other people's packages: not waste
-you can delete, but a capability you believe you shipped that the model can never
-reach. The harness did not catch it because its reachability check covers context
-files and scripts are a separate tier — the practical consequence is identical.
+you can delete, but a capability you believe you shipped without a direct discovery
+route. The harness did not catch it because its reachability check covers context
+files and scripts are a separate tier.
 
 - `SKILL.md`: the four names added to `## Bundled resources`, each with the clause a
   reader needs to know when to reach for it. **Costs +103 to +111 tokens on the
-  trigger path (+4.7%) [estimated]** — measured, not guessed; the first draft of this
+  trigger path (+4.7%) [estimated]** — an exact local structural scan, not observed
+  provider usage; the first draft of this
   entry claimed "roughly 30" and the harness disproved it. Published as a cost:
   wiring in an undiscoverable reference always adds tokens on every invocation, and
   is still correct, because the alternative is silent capability loss.
@@ -238,9 +274,10 @@ fixed, all mutation-verified.
   one" IS a trigger. `when <gerund>`, `when you/your` and `for <gerund>` now
   count. A bare "when" does not, and a stop-list keeps "for anything" from
   reading as a gerund.
-- **Runtime config misclassified as context.** `metadata.json` and config-format
-  files under `agents/` are shipped for another runtime and never loaded into
-  context. Now `artifact` tier. Markdown under `agents/` is a sub-agent prompt and
+- **Runtime config misclassified as automatic context.** `metadata.json` and
+  config-format files under `agents/` are shipped for another runtime and stay
+  outside the audited runtime's ordinary trigger path; they still consume context
+  if read. Now `artifact` tier. Markdown under `agents/` is a sub-agent prompt and
   deliberately stays context — excusing the whole directory would trade one
   false-positive class for a blind spot.
 - **New report keys**: `informational` (every suppression, with its reason — a

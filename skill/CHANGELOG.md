@@ -1,5 +1,72 @@
 # Changelog — token-efficient-skill-optimizer
 
+## 1.3.0 — 2026-07-25
+
+This release combines the round-2 research expansion with auditable token
+accounting and evidence integrity.
+
+**Research round 2.** The upstream dossier named by historical provenance
+strings was not shipped. The package instead includes its source index,
+rule-level support locators, and independently retrieved primary-page hashes.
+The missing dossier is disclosed rather than represented as available evidence.
+
+**Two behaviour changes:**
+
+- **R-02 progressive-disclosure moved from Tier 1 to Tier 2.** It no longer
+  fires automatically under the `conservative` profile. Its archived local
+  outputs do not qualify under schema v2, so application now requires an
+  explicit read-rate assumption and reports `[behavior-dependent]`.
+- **`[reported]` is the sixth label** for a figure a cited source reports about
+  its own experiment. It requires a source id and cannot substitute for a
+  target-specific observed-usage claim.
+
+**Evidence corrections.** Unsupported rule rationales were replaced with
+source-linked, bounded statements, and 11 guarded rules (R-24…R-34) were added
+for structural validation, evaluation sizing, judge hygiene, cache/model
+boundaries, tokenizer portability, and output-side cost. G-11 remains an
+enforcing 37/37 support-claim ratchet; source-ID resolution alone is not treated
+as proof of support.
+
+**Accounting and evidence hardening.** This intentionally makes several
+historical numbers unavailable instead of preserving calculations whose field
+semantics were ambiguous.
+
+- Token scans are offline by default. Anthropic preflight counting requires an
+  explicit network flag and one complete structured request, and is labeled a
+  provider estimate rather than exact or measured usage.
+- Evaluation schema v2 preserves raw usage safely, normalizes only disjoint
+  provider buckets, keeps thinking/retrieval/tool fields diagnostic, and accepts
+  unambiguous v1 records through an explicit legacy-semantics path.
+- Cache costing now prices uncached input, reads, 5-minute writes, 1-hour writes,
+  and output separately with effective-dated exact-model profiles. Unknown or
+  overlapping semantics return a typed unavailable result.
+- Source validation now reaches the real `research/sources.yaml`, requires exact
+  bundled-index parity in repository mode, and reports bundled-only scope for
+  standalone installs. Quantitative target claims bind to a specific typed
+  claim record; evaluation, local-measurement, and cost claims are regenerated
+  from their exact bound inputs.
+- Safety gates compare paired case/trial transitions; a new candidate failure can
+  no longer be cancelled by a recovered baseline failure elsewhere.
+- Research and rules were refreshed for current Anthropic token counting,
+  caching, Skills, context editing, compaction, and memory behavior, plus
+  independent tokenizer and long-memory evidence. Universal compression ratios
+  and oldest-first deletion are removed.
+- The live-eval exporter now validates inputs and writes a hash-bound case-ID
+  manifest; exports remain `runtime_unverified`.
+- Live evidence fails closed: v1.3 implements no attestation verifier, rejects
+  every `[measured]` claim, binds baseline/candidate hashes, and stops if an
+  adapter mutates either compared artifact.
+- Hash-bound inputs reject nested symlinks and special files, and evaluation
+  logs publish atomically through a fresh inode so hard-link destinations cannot
+  truncate a protected input.
+- Added advisory Skill structure checks and deterministic GitHub Actions CI
+  with non-persisted checkout credentials and an isolated test network
+  namespace. Live provider/model quality remains unverified and is not a merge
+  gate.
+
+Deterministic check totals are published by CI rather than frozen in this
+changelog.
+
 ## 1.0.0 — 2026-07-24
 
 Initial release.
@@ -24,9 +91,10 @@ Harness accuracy pass, driven by the first run against a real 29-skill portfolio
 
 - Multilingual heuristics (EN/ZH/HE) for trigger phrasing, negative boundaries,
   and read-conditions. A Chinese skill was mis-flagged for both.
-- New `artifact` tier: text that is not model context (demos/, dist/, package*.json,
-  README*, LICENSE, CHANGELOG, PROVENANCE.md). Excluded from the context surface
-  and from reachability flags.
+- New `artifact` tier: text outside the ordinary modeled trigger path (demos/,
+  dist/, package*.json, README*, LICENSE, CHANGELOG, PROVENANCE.md). It still
+  consumes context if read; it is excluded from automatic-context and
+  reachability estimates.
 - Executables (.py/.js/.mjs/.sh/.ts) are script tier in any directory.
 - Bilingual sibling files (X-en.md vs X.md) reported separately from duplication.
 - Duplicate detection scoped to context tiers only.
@@ -103,22 +171,23 @@ versions passed 16/16 critical cases. See `docs/RESULTS.md`.
 
 Fixes a defect introduced by 1.1.0 itself.
 
-**Four files shipped in 1.1.0 were unreachable from the body.** `SKILL.md` enumerates
-what the package contains, and the 1.1.0 release added files without updating that
-list — so `scripts/eval_runner.py`, `scripts/eval_report.py`,
+**Four files shipped in 1.1.0 had no direct discovery path from the body.**
+`SKILL.md` enumerates what the package contains, and the 1.1.0 release added files
+without updating that list — so `scripts/eval_runner.py`, `scripts/eval_report.py`,
 `scripts/validate_package.py`, and `rules/sources-index.yaml` were installed but
-invisible to the model. The paired A/B harness was 1.1.0's headline capability and
-could not be discovered; `sources-index.yaml` is the file that fixed 1.1.0's own
-headline defect.
+unnamed in the skill instructions. Static analysis cannot disprove dynamic access,
+but the paired A/B harness was 1.1.0's headline capability and had no explicit route;
+`sources-index.yaml` is the file that fixed 1.1.0's own headline defect.
 
 This is the same failure class this skill flags in other people's packages: not waste
-you can delete, but a capability you believe you shipped that the model can never
-reach. The harness did not catch it because its reachability check covers context
-files and scripts are a separate tier — the practical consequence is identical.
+you can delete, but a capability you believe you shipped without a direct discovery
+route. The harness did not catch it because its reachability check covers context
+files and scripts are a separate tier.
 
 - `SKILL.md`: the four names added to `## Bundled resources`, each with the clause a
   reader needs to know when to reach for it. **Costs +103 to +111 tokens on the
-  trigger path (+4.7%) [estimated]** — measured, not guessed; the first draft of this
+  trigger path (+4.7%) [estimated]** — an exact local structural scan, not observed
+  provider usage; the first draft of this
   entry claimed "roughly 30" and the harness disproved it. Published as a cost:
   wiring in an undiscoverable reference always adds tokens on every invocation, and
   is still correct, because the alternative is silent capability loss.
@@ -161,9 +230,10 @@ fixed, all mutation-verified.
   one" IS a trigger. `when <gerund>`, `when you/your` and `for <gerund>` now
   count. A bare "when" does not, and a stop-list keeps "for anything" from
   reading as a gerund.
-- **Runtime config misclassified as context.** `metadata.json` and config-format
-  files under `agents/` are shipped for another runtime and never loaded into
-  context. Now `artifact` tier. Markdown under `agents/` is a sub-agent prompt and
+- **Runtime config misclassified as automatic context.** `metadata.json` and
+  config-format files under `agents/` are shipped for another runtime and stay
+  outside the audited runtime's ordinary trigger path; they still consume context
+  if read. Now `artifact` tier. Markdown under `agents/` is a sub-agent prompt and
   deliberately stays context — excusing the whole directory would trade one
   false-positive class for a blind spot.
 - **New report keys**: `informational` (every suppression, with its reason — a

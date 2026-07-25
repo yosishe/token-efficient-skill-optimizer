@@ -1,0 +1,161 @@
+name: deterministic validation
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Acquire source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+
+      - name: Acquire Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.12.13"
+          cache: pip
+          cache-dependency-path: skill/requirements-lock.txt
+
+      - name: Acquire hash-pinned dependencies
+        id: acquire_dependencies
+        run: |
+          SANDBOX_ROOT="/tmp/teso-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          test ! -e "$SANDBOX_ROOT"
+          VERIFICATION_DIR="${SANDBOX_ROOT}/verification"
+          printf 'SANDBOX_ROOT=%s\n' "$SANDBOX_ROOT" >> "$GITHUB_ENV"
+          printf 'VERIFICATION_DIR=%s\n' "$VERIFICATION_DIR" >> "$GITHUB_ENV"
+          mkdir -p "$VERIFICATION_DIR"
+          python -m pip install --require-hashes -r skill/requirements-lock.txt
+
+      - name: Run secretless network-blocked checks
+        id: deterministic_checks
+        if: ${{ steps.acquire_dependencies.outcome == 'success' }}
+        run: |
+          set -euo pipefail
+          TEST_WORKSPACE="${SANDBOX_ROOT}/workspace"
+          test ! -e "$TEST_WORKSPACE"
+          mkdir -p "$TEST_WORKSPACE"
+          cp -a "$GITHUB_WORKSPACE/." "$TEST_WORKSPACE/"
+          TESO_USER="teso-checks"
+          sudo useradd --system --no-create-home \
+            --home-dir /nonexistent --shell /usr/sbin/nologin "$TESO_USER"
+          TESO_UID="$(id -u "$TESO_USER")"
+          TESO_GID="$(id -g "$TESO_USER")"
+          sudo chown -R "$TESO_UID:$TESO_GID" "$SANDBOX_ROOT"
+          PYTHON_BIN="$(command -v python)"
+          test -x "$PYTHON_BIN"
+          sudo unshare --net -- \
+            setpriv --reuid "$TESO_UID" --regid "$TESO_GID" \
+              --clear-groups --no-new-privs \
+              --inh-caps=-all --ambient-caps=-all --bounding-set=-all \
+            env -i \
+              "PATH=$(dirname "$PYTHON_BIN"):/usr/bin:/bin" \
+              "LANG=C.UTF-8" \
+              "LC_ALL=C.UTF-8" \
+              "PYTHON_BIN=$PYTHON_BIN" \
+              "PYTHONPATH=$TEST_WORKSPACE/skill/tests/offline_guard" \
+              "TESO_BLOCK_NETWORK=1" \
+              "TESO_HARDENED_SANDBOX=1" \
+              "SOURCE_DATE_EPOCH=1753430400" \
+              "ANTHROPIC_API_KEY=" \
+              "OPENAI_API_KEY=" \
+              "VERIFICATION_DIR=$VERIFICATION_DIR" \
+              "GITHUB_WORKSPACE=$TEST_WORKSPACE" \
+              bash "$TEST_WORKSPACE/skill/tests/offline_guard/run_ci_checks.sh"
+
+      - name: Publish exact check summary
+        if: always()
+        env:
+          COMMIT_SHA: ${{ github.sha }}
+          ACQUISITION_OUTCOME: ${{ steps.acquire_dependencies.outcome }}
+          VALIDATION_OUTCOME: ${{ steps.deterministic_checks.outcome }}
+        run: |
+          python - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          import os
+          import pathlib
+          import re
+          import sys
+
+          scripts = pathlib.Path(
+              os.environ["GITHUB_WORKSPACE"], "skill", "scripts")
+          sys.path.insert(0, str(scripts))
+          from parse_unittest import parse_unittest_counts
+
+          print("## Deterministic validation")
+          print()
+          print(f"- Commit: `{os.environ['COMMIT_SHA']}`")
+          print("- Dependency acquisition: "
+                f"`{os.environ['ACQUISITION_OUTCOME']}` "
+                "(networked, SHA-pinned Actions and hash-pinned Python artifacts)")
+          namespace = pathlib.Path(
+              os.environ["VERIFICATION_DIR"],
+              "network-namespace.status")
+          network = (
+              "isolated Linux network namespace plus Python socket guard"
+              if namespace.exists() else "not entered")
+          print(f"- Test phase network: `{network}`")
+          print(f"- Validation step outcome: "
+                f"`{os.environ['VALIDATION_OUTCOME']}`")
+          print()
+          print("| suite | executed | passed | failed | skipped |")
+          print("|---|---:|---:|---:|---:|")
+
+          root = pathlib.Path(os.environ["VERIFICATION_DIR"])
+          tests = root / "tests.txt"
+          if tests.exists():
+              match = re.search(
+                  r"== summary-json (\\{[^\\n]+\\}) ==",
+                  tests.read_text())
+              if match:
+                  counts = json.loads(match.group(1))
+                  print("| legacy deterministic harness | "
+                        f"{counts['executed']} | {counts['passed']} | "
+                        f"{counts['failed']} | {counts['skipped']} |")
+              else:
+                  print("| legacy deterministic harness | unavailable | "
+                        "unavailable | unavailable | unavailable |")
+          else:
+              print("| legacy deterministic harness | unavailable | "
+                    "unavailable | unavailable | unavailable |")
+
+          v2 = root / "v2-tests.txt"
+          if v2.exists():
+              counts = parse_unittest_counts(v2.read_text())
+              if counts is not None:
+                  print("| v2 trust-boundary regressions | "
+                        f"{counts['executed']} | {counts['passed']} | "
+                        f"{counts['failed']} | {counts['skipped']} |")
+              else:
+                  print("| v2 trust-boundary regressions | unavailable | "
+                        "unavailable | unavailable | unavailable |")
+          else:
+              print("| v2 trust-boundary regressions | unavailable | "
+                    "unavailable | unavailable | unavailable |")
+
+          package = root / "package.json"
+          if package.exists():
+              data = json.loads(package.read_text())
+              failed = data["checks_total"] - data["checks_passed"]
+              print(f"| package checks | {data['checks_total']} | "
+                    f"{data['checks_passed']} | {failed} | 0 |")
+          else:
+              print("| package checks | unavailable | unavailable | "
+                    "unavailable | unavailable |")
+          print()
+          drift = root / "generated-drift.status"
+          drift_status = (
+              drift.read_text().strip() if drift.exists() else "not run")
+          print(f"- Generated-document drift: `{drift_status}` "
+                "(tracked and untracked files)")
+          print("- Live provider/model tiers: `not run` (fixtures and skipped tests never count as passes)")
+          PY

@@ -19,6 +19,6 @@ rsync -a --delete \
 
 echo "installed -> ${DEST}"
 echo "version:   $(cat "${DEST}/VERSION")"
-echo "notes:     optional venv for exact-ish token counts:"
+echo "notes:     optional venv for tokenizer-based local proxy estimates:"
 echo "           python3 -m venv ~/.claude/skills/token-efficient-skill-optimizer/.venv"
 echo "           ~/.claude/skills/token-efficient-skill-optimizer/.venv/bin/pip install tiktoken pyyaml"

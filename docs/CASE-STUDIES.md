@@ -1,7 +1,14 @@
-# Case studies — three heavily-installed public skills
+# Archived v1.1 case studies — non-qualifying under v2
 
 Run against real skills that hundreds of thousands of people have installed, at pinned
-upstream commits. Every number below is reproducible from those exact revisions.
+upstream commits.
+
+> **Evidence status:** this is a historical v1.1 archive. Its numeric token,
+> score, read-rate, and modeled-cost values predate schema v2 and do not have
+> claim-specific `report.json#/claims/<claim-id>` records. They therefore do not
+> qualify as `[measured]`, `[estimated]`, `[projected]`, or current savings
+> evidence. They are retained here only to explain the decisions that were made
+> at the time. Re-run the cases under v2 before quoting a number.
 
 **These are good skills built by capable teams.** Nothing here is a criticism of them. The
 question being asked is narrow: how much of each package is paid on *every* invocation, and
@@ -15,16 +22,16 @@ A skill package has tiers, and they are not billed alike:
 |---|---|
 | **metadata** (frontmatter) | every session |
 | **body** (`SKILL.md`) | **every trigger** |
-| conditional (`references/`, `rules/`) | only when an instruction points at it |
-| script | executed — never read into context |
-| artifact (`LICENSE`, `README`, lockfiles) | never loaded at all |
+| conditional (`references/`, `rules/`) | when the runtime/model reads it; direct pointers guide discovery |
+| script | source may stay outside context when executed; invocation/output still enter context |
+| artifact (`LICENSE`, `README`, lockfiles) | outside the ordinary trigger path; consumes context whenever explicitly read |
 
 `metadata + body` is the **trigger path**. It is the number that recurs. A 5 MB package with
 a lean body can be cheaper per invocation than a 30 KB package that inlines everything.
 
-## Results
+## Historical results
 
-| skill | author | installs | trigger path before | after | change | verdict |
+| skill | author | installs at capture | legacy trigger-path proxy before | after | historical change | verdict |
 |---|---|---|---|---|---|---|
 | `improve-codebase-architecture` | Matt Pocock | 538,600 | 1,540–1,673 | 1,247–1,356 | **−19.0%** | kept |
 | `react-best-practices` | Vercel | 578,100 | 2,026–2,202 | 1,888–2,052 | **−6.8%** | kept |
@@ -33,8 +40,11 @@ a lean body can be cheaper per invocation than a 30 KB package that inlines ever
 Two of the three shipped. **The third was reverted by its own evaluation**, and that is the
 most useful result in this document.
 
-Token figures are `[estimated]` — a tokenizer proxy with a disclosed Claude adjustment
-(×1.15–1.25). Byte counts are `[measured]`. Both arms measured with the same harness build.
+Token figures below are **legacy v1.1 proxy outputs** retained as historical
+case-study artifacts. Their former fixed Claude adjustment is unsupported and
+v1.3 bars these ranges from provider-token or measured-usage claims. Byte counts
+are exact scans of the archived files, but they are structural facts, not proof
+of runtime context use or preserved behavior.
 
 | skill | body bytes | moved to conditional |
 |---|---|---|
@@ -62,8 +72,9 @@ file and the moment to read it. One paragraph was deleted rather than moved, bec
 clause already existed in the reference file — cited line by line rather than assumed.
 
 **The strongest evidence this is real duplication and not accounting:** even if
-`HTML-REPORT.md` is read on *every single run*, the total is still **74–80 tokens lower** `[estimated]`. The
-body was genuinely repeating the file.
+`HTML-REPORT.md` is read on *every single run*, the legacy proxy was still lower.
+The body was genuinely repeating the file; the archived numeric range does not
+qualify under v2.
 
 **A latent defect surfaced in the process.** The body called a card field **Benefits**; the
 reference file called the same field **Wins**. A naive deferral would have left "Wins" with no
@@ -86,19 +97,19 @@ not assumed: the move pays as long as the writing guidance is needed in **fewer 
 runs. The estimate is 50–65% — below the line, but an *estimate*, and the author wrote "often,"
 not "sometimes."
 
-So **−17.2% `[estimated]` is the trigger path, not the total saving.** A run that does write interface copy
+So the historical trigger-path reduction was not a total saving. A run that does write interface copy
 pays the new trigger path *plus* the referenced file *plus* a read round-trip — slightly more
-than baseline. Expected value across a mixed workload is roughly **6–9%** `[estimated]`.
-Quoting that figure as the overall saving would inflate it.
+than baseline. The old mixed-workload estimate is retained in the table only as
+non-qualifying history. Quoting it as a current overall saving would inflate it.
 
-**What was refused:** the AI-defaults calibration paragraph (~180 tokens `[estimated]`, the single most
+**What was refused:** the AI-defaults calibration paragraph (the single most
 tempting target) stays. It is consumed during both brainstorming and critique — that is, every
 run. Moving it buys a round-trip and no saving.
 
 ### `react-best-practices` — −6.8%
 
 The `## Quick Reference` block — all 70 rule stems with one-line descriptions — is **74% of the
-trigger path**. It was measured, considered, and **deliberately left in the body**.
+trigger path** in the exact local scan. It was considered and **deliberately left in the body**.
 
 The reasoning: its honest read-condition would be "read when writing, reviewing, or refactoring
 React code," which is verbatim the skill's own trigger condition. **When a block's read-condition
@@ -108,14 +119,15 @@ open the file. Moving it would trade a known token cost for an unmeasured capabi
 578,100 installs.
 
 The counter-argument, stated at full strength: that reasoning is mechanistic, not experimental.
-If an evaluation showed no quality delta from moving it, the decision is wrong and it costs
-~1,580 tokens `[estimated]` per invocation for nothing.
+If an evaluation showed no quality delta from moving it, the decision would be
+wrong and the block would consume context per invocation for nothing.
 
 What did change: two blocks fully duplicated elsewhere (a priority table restated by the Quick
 Reference headings, and an applicability list that maps 1:1 onto the frontmatter description)
-moved to `rules/_index.md`, plus a read-condition added to the `AGENTS.md` pointer — that file
-is ~30,000 tokens `[estimated]`, about 15x the entire trigger path, and was previously advertised with no size
-signal and no condition. That guard pays for itself if it prevents **1 read in 594**.
+moved to `rules/_index.md`, plus a read-condition added to the `AGENTS.md`
+pointer. That reference was much larger than the trigger path and was previously
+advertised with no size signal and no condition. Whether the guard pays for
+itself remains workload-dependent.
 
 **All 70 rule stems verified still reachable**, and the documented `rules/<stem>.md` access
 convention — the smartest thing in the package — was preserved untouched.
@@ -172,17 +184,18 @@ The relocated writing guidance was reachable — read in **8 of 8** design runs.
 the problem.
 
 The break-even had been computed in advance: the move pays only if that guidance is needed in
-**fewer than 74%** of runs. The estimate going in was 50–65%. The measured rate was **100%**.
+**fewer than 74%** of runs. The estimate going in was 50–65%. The observed
+fixture-run rate was **100%**.
 
 | read-rate | net per run |
 |---|---|
-| **100% (observed)** | **+44 tokens · +2.3%** `[estimated]` |
-| 74% (break-even) | −52 tokens `[estimated]` |
-| 50% | −140 tokens `[estimated]` |
+| **100% (archived fixture rate)** | **legacy model predicts an increase** |
+| 74% (historical break-even) | legacy model predicts a decrease |
+| 50% (historical scenario) | legacy model predicts a larger decrease |
 
 At the observed rate the optimization makes the skill **more expensive**, before even counting
-the read round-trip. So `−17.2%` was a true measurement of the trigger path and a misleading
-measurement of anything that matters.
+the read round-trip. So `−17.2%` was an exact local scan of the trigger path and
+a misleading description of anything that matters.
 
 The frozen protocol said revert rather than explain, so it is reverted. Note what did *not*
 happen: the quality data would have let it through — the design arm's only real regression was
@@ -190,9 +203,9 @@ a single case that scored `−2` in one trial and `+1` in the other on the ident
 is variance, and it had no causal link to the relocated copywriting material (every design
 output in both arms wrote real interface copy). **It was killed by economics, not by quality.**
 
-This is the case worth reading twice. `−17.2%` is precisely the kind of number that gets
-published: correctly measured, honestly derived, and wrong about the thing a reader would
-conclude from it.
+This is the case worth reading twice. `−17.2%` is precisely the kind of number
+that gets published: correctly calculated for one narrow tier, honestly
+derived, and wrong about the thing a reader would conclude from it.
 
 ## What this still does not establish
 
@@ -205,7 +218,7 @@ and the design cases skew toward tasks requiring interface copy. Both applied id
 both arms, so the comparison holds, but the second is why the 100% read-rate should be read as
 "on a copy-heavy workload" rather than as a universal figure.
 
-## Reproducing
+## Source revisions and re-evaluation
 
 Upstream packages are pinned by commit SHA:
 
@@ -215,11 +228,15 @@ Upstream packages are pinned by commit SHA:
 | `react-best-practices` | `vercel-labs/agent-skills` | `dc8367e6f91c` |
 | `improve-codebase-architecture` | `mattpocock/skills` | `697d4ce9742d` |
 
-Fetch a skill at its pinned revision and point the harness at it:
+Fetch a skill at its pinned revision and point the current harness at it:
 
 ```bash
 python skill/scripts/measure_tokens.py path/to/skill
 ```
+
+The current harness emits schema-v2 local proxy estimates. It will not reproduce
+the retired cross-tokenizer adjustment, and its result must not be compared
+numerically with the archived v1.1 output as though the methods were equivalent.
 
 No upstream content is redistributed here. `anthropics/skills` and `vercel-labs/agent-skills`
 carry **no license** — their measurements and the changes made are reported as fact, but their
