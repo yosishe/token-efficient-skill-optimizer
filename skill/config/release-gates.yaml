@@ -1,0 +1,47 @@
+# Release gates — an Apply/Benchmark deliverable ships only if ALL pass.
+gates:
+  - id: G-01
+    name: reviewable-diff-exists
+    check: semantic-diff document present with one record per change (rule id,
+      original, revised, rationale, risk, test, status).
+  - id: G-02
+    name: rollback-available
+    check: frozen baseline copy exists and is untouched; every change record
+      names its rollback.
+  - id: G-03
+    name: honest-labels
+    check: validate_report.py exits 0 on every emitted report.
+  - id: G-04
+    name: no-safety-reduction
+    check: diff shows zero net reduction of safety-classified spans; safety
+      test cases pass (or are explicitly reported as not-run with reason).
+  - id: G-05
+    name: injection-findings-surfaced
+    check: any embedded directive found in the target is listed as a finding;
+      none was followed.
+  - id: G-06
+    name: measurement-method-consistent
+    check: before/after use the same token-ladder rung and pricing snapshot.
+  - id: G-07
+    name: failed-changes-reported
+    check: rolled-back and zero-benefit rules appear in "What didn't work".
+  - id: G-08
+    name: trigger-changes-flagged
+    check: any frontmatter description change is flagged separately for user
+      attention (routing behavior).
+  - id: G-09
+    name: no-fabricated-sources
+    check: every cited S-id resolves in the research digest / sources.yaml
+      (render_rules.py cross-check passes).
+  - id: G-10
+    name: dogfood
+    check: the optimizer's own SKILL.md stays <= 250 lines and its reference
+      pointers carry read-conditions (measure_tokens flags clean or justified).
+
+defaults:
+  allow_safety_regression: false
+  allow_critical_quality_regression: false
+  require_before_after_benchmark: true
+  require_reviewable_diff: true
+  require_source_citations: true
+  require_rollback_version: true

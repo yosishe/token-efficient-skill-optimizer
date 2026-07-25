@@ -1,0 +1,1663 @@
+meta:
+  project: token-efficient-skill-optimizer
+  tier: DEEP
+  date_collected: '2026-07-24'
+  verification_protocol: Each record was fetched by a research subagent from its primary page (arXiv abs
+    / DOI / official provider or engineering page) with title+author match required before recording;
+    the orchestrator then ran structural integrity checks over all records and re-fetched a per-cluster
+    sample as an independent spot-check (results in research-limitations.md).
+  clusters:
+    cluster-A-compression-safety: present
+    cluster-B-context-rag: present
+    cluster-C-caching-routing-pricing: present
+    cluster-D-output-agents-injection: present
+records:
+- id: S-A01
+  title: 'LLMLingua: Compressing Prompts for Accelerated Inference of Large Language Models'
+  authors: Huiqiang Jiang et al. (Microsoft)
+  venue: EMNLP 2023 (main); arXiv
+  year: 2023
+  url: https://arxiv.org/abs/2310.05736
+  arxiv_id: '2310.05736'
+  doi: 10.48550/arXiv.2310.05736
+  date_accessed: '2026-07-24'
+  access_method: webfetch-abstract
+  source_type: peer-reviewed
+  research_question: Can prompts be compressed at high ratios (coarse-to-fine, token-level) without losing
+    downstream task performance?
+  setup: Budget controller + token-level iterative compression + instruction-tuning-based distribution
+    alignment between a small compressor LM and the target LLM; evaluated on GSM8K, BBH, ShareGPT, Arxiv-March23.
+  main_findings: Coarse-to-fine perplexity-guided token dropping achieves state-of-the-art compression;
+    semantic integrity is maintainable at high ratios if a budget controller allocates compression unevenly
+    (e.g., protecting instructions/questions more than demonstrations).
+  quantitative_results: Up to 20x compression with 'little performance loss' (stated in arXiv abstract).
+    No per-task deltas given in the abstract.
+  limitations: Requires a compressor LM aligned with the target model's distribution; abstract does not
+    quantify the loss at 20x; evaluated on 2023-era GPT-3.5-class targets.
+  evidence_nature: causal
+  relevance: Foundational baseline for any skill/prompt compression rule; supports unequal budget allocation
+    — compress examples/context aggressively, protect instructions.
+  generalizes_across_models: partial
+  confidence: high
+  verification_status: verified-primary
+- id: S-A02
+  title: 'LongLLMLingua: Accelerating and Enhancing LLMs in Long Context Scenarios via Prompt Compression'
+  authors: Huiqiang Jiang et al. (Microsoft)
+  venue: ACL 2024 (main); arXiv
+  year: 2024
+  url: https://arxiv.org/abs/2310.06839
+  arxiv_id: '2310.06839'
+  doi: 10.48550/arXiv.2310.06839
+  date_accessed: '2026-07-24'
+  access_method: webfetch-abstract
+  source_type: peer-reviewed
+  research_question: Can question-aware prompt compression simultaneously cut cost AND improve accuracy
+    in long-context scenarios (countering position bias / lost-in-the-middle)?
+  setup: Question-aware coarse-to-fine compression + document reordering; benchmarks incl. NaturalQuestions
+    and LooGLE; target model GPT-3.5-Turbo.
+  main_findings: Compression is not only lossless in some regimes — it can INCREASE accuracy by increasing
+    the density of query-relevant information and mitigating position bias in long contexts.
+  quantitative_results: Up to +21.4% on NaturalQuestions with 4x fewer tokens in GPT-3.5-Turbo; 94.0%
+    cost reduction on LooGLE; 1.4x-2.6x end-to-end latency speedup at 2x-6x compression of ~10k-token
+    prompts (all stated in arXiv abstract).
+  limitations: Gains concentrated in retrieval-style long-context tasks; requires knowing the question
+    at compression time (not applicable to reusable static skill text compressed offline without a query).
+  evidence_nature: causal
+  relevance: Supports query/task-aware compression and putting critical content at prompt edges; shows
+    compression can be an accuracy tool, not just a cost tool.
+  generalizes_across_models: partial
+  confidence: high
+  verification_status: verified-primary
+- id: S-A03
+  title: 'LLMLingua-2: Data Distillation for Efficient and Faithful Task-Agnostic Prompt Compression'
+  authors: Zhuoshi Pan et al. (Tsinghua + Microsoft)
+  venue: Findings of ACL 2024; arXiv
+  year: 2024
+  url: https://arxiv.org/abs/2403.12968
+  arxiv_id: '2403.12968'
+  doi: 10.48550/arXiv.2403.12968
+  date_accessed: '2026-07-24'
+  access_method: webfetch-abstract
+  source_type: peer-reviewed
+  research_question: Can task-agnostic compression be made faithful and fast by learning token importance
+    from GPT-4-distilled data instead of causal-LM entropy?
+  setup: Extractive compression dataset distilled from an LLM; compression framed as token classification
+    with a bidirectional encoder (XLM-RoBERTa-large); evaluated in-domain (MeetingBank) and out-of-domain
+    (LongBench, ZeroScrolls, GSM8K, BBH).
+  main_findings: Bidirectional token-classification compression outperforms entropy-based (unidirectional)
+    baselines and stays faithful (extractive — keeps original tokens, so no hallucinated content); small
+    encoder makes it cheap enough to run everywhere.
+  quantitative_results: 3x-6x faster than existing prompt-compression methods; 1.6x-2.9x end-to-end latency
+    speedup at 2x-5x compression ratios; 'significant gains over strong baselines' incl. OOD (stated in
+    arXiv abstract).
+  limitations: Practical ratios are moderate (2x-5x), well below LLMLingua's 20x claims; extractive-only
+    — cannot abstract/reword; training data distilled from one teacher LLM.
+  evidence_nature: causal
+  relevance: Best current default for compressing reusable skill text offline (task-agnostic, faithful,
+    cheap); its 2x-5x sweet spot is a realistic compression-budget ceiling for optimization rules.
+  generalizes_across_models: true
+  confidence: high
+  verification_status: verified-primary
+- id: S-A04
+  title: Learning to Compress Prompts with Gist Tokens
+  authors: Jesse Mu, Xiang Lisa Li, Noah Goodman (Stanford)
+  venue: NeurIPS 2023; arXiv
+  year: 2023
+  url: https://arxiv.org/abs/2304.08467
+  arxiv_id: '2304.08467'
+  doi: 10.48550/arXiv.2304.08467
+  date_accessed: '2026-07-24'
+  access_method: webfetch-abstract
+  source_type: peer-reviewed
+  research_question: Can a model be trained to compress instructions into a few cacheable 'gist' tokens,
+    amortizing repeated prompt encoding?
+  setup: 'Attention-mask modification during instruction finetuning (no extra training cost); models:
+    LLaMA-7B (decoder) and FLAN-T5-XXL (encoder-decoder).'
+  main_findings: Instructions can be condensed into reusable soft tokens ('gisting') and cached; the foundational
+    soft-prompt-compression result for repeated system/skill instructions.
+  quantitative_results: Up to 26x prompt compression; up to 40% FLOPs reduction; 4.2% wall-time speedup;
+    'minimal loss in output quality' (all stated in arXiv abstract).
+  limitations: Requires training the target model itself (not applicable to closed API models); 'minimal'
+    quality loss is not zero and is not quantified in the abstract; gist tokens are model-specific.
+  evidence_nature: causal
+  relevance: The archetype for caching a skill's fixed instructions as compressed state; motivates separating
+    a skill's static core (compressible/cacheable) from its dynamic arguments.
+  generalizes_across_models: false
+  confidence: high
+  verification_status: verified-primary
+- id: S-A05
+  title: '500xCompressor: Generalized Prompt Compression for Large Language Models'
+  authors: Zongqian Li, Yixuan Su, Nigel Collier (University of Cambridge)
+  venue: ACL 2025 (main, per ACL Anthology 2025.acl-long.1219); arXiv
+  year: 2025
+  url: https://arxiv.org/abs/2408.03094
+  arxiv_id: '2408.03094'
+  doi: 10.48550/arXiv.2408.03094
+  date_accessed: '2026-07-24'
+  access_method: webfetch-abstract
+  source_type: peer-reviewed
+  research_question: What is the upper limit of prompt compression — can whole contexts be packed into
+    as little as one special token, and how much capability survives?
+  setup: KV-values of learned compressed tokens fed to a frozen decoder (~0.3% added params); pretrained
+    on Arxiv Corpus, finetuned on ArxivQA, evaluated on strictly unseen QA datasets.
+  main_findings: Extreme soft compression (6x-480x) is possible without finetuning the target LLM; KV-values
+    preserve information better than embedding vectors at high ratios; but capability retention drops
+    substantially at the extreme end.
+  quantitative_results: Compression ratios 6x-480x; ~0.3% additional parameters; LLM retains 62.26%-72.89%
+    of its capability vs non-compressed prompts (all stated in arXiv abstract).
+  limitations: The headline retention numbers mean 27%-38% capability LOSS — extreme compression is far
+    from free; QA-centric evaluation; trained per target model family.
+  evidence_nature: causal
+  relevance: 'Quantifies the ceiling: beyond ~an order of magnitude, compression costs real accuracy.
+    Supports a hard cap rule on compression aggressiveness for skills whose correctness matters.'
+  generalizes_across_models: partial
+  confidence: high
+  verification_status: verified-primary
+- id: S-A06
+  title: 'Prompt Compression for Large Language Models: A Survey'
+  authors: Zongqian Li, Yinhong Liu, Yixuan Su, Nigel Collier (University of Cambridge)
+  venue: NAACL 2025 (main, oral — per project repo/anthology listing); arXiv
+  year: 2025
+  url: https://arxiv.org/abs/2410.12388
+  arxiv_id: '2410.12388'
+  doi: 10.48550/arXiv.2410.12388
+  date_accessed: '2026-07-24'
+  access_method: webfetch-abstract
+  source_type: peer-reviewed
+  research_question: How do existing prompt compression methods (hard vs soft) compare mechanically, and
+    where are the field's gaps?
+  setup: 'Secondary source: taxonomy of hard-prompt methods (token dropping/extraction/abstraction) vs
+    soft-prompt methods (gist/memory tokens), analyzed via attention optimization, PEFT, modality integration,
+    and ''new synthetic language'' lenses.'
+  main_findings: 'Field converges on two families: hard (interpretable, model-agnostic, moderate ratios)
+    vs soft (opaque, model-specific, high ratios); open problems include encoder optimization and hybrid
+    hard-soft approaches.'
+  quantitative_results: None stated in abstract.
+  limitations: Survey — no new experimental evidence; evidence quality inherits from the primary studies
+    it aggregates (marked correlational for this reason); snapshot as of late 2024.
+  evidence_nature: correlational
+  relevance: 'The decision map for choosing a compression family per skill type: hard/extractive for portability
+    and auditability, soft for high-ratio caching of static instructions on owned models.'
+  generalizes_across_models: true
+  confidence: high
+  verification_status: verified-primary
+- id: S-A07
+  title: Characterizing Prompt Compression Methods for Long Context Inference
+  authors: Siddharth Jha, Lutfi Eren Erdogan, Sehoon Kim, Kurt Keutzer, Amir Gholami (UC Berkeley)
+  venue: Es-FoMo workshop @ ICML 2024; arXiv
+  year: 2024
+  url: https://arxiv.org/abs/2407.08892
+  arxiv_id: '2407.08892'
+  doi: 10.48550/arXiv.2407.08892
+  date_accessed: '2026-07-24'
+  access_method: webfetch-abstract
+  source_type: preprint
+  research_question: 'Standardized head-to-head: which compression family (extractive, abstractive/summarization,
+    token pruning) degrades least across tasks?'
+  setup: Systematic comparison of extractive compression, summarization-based abstractive compression,
+    and token-pruning methods across multiple long-context tasks.
+  main_findings: Extractive compression often outperforms all other approaches; token-pruning methods
+    lag behind extractive despite recent claims, with only marginal wins on summarization tasks.
+  quantitative_results: Extractive compression enables up to 10x compression with minimal accuracy degradation
+    (stated in arXiv abstract).
+  limitations: Workshop paper (lighter review); long-context/QA-flavored tasks — instruction-following
+    and safety behaviors not directly measured.
+  evidence_nature: causal
+  relevance: 'Directly ranks compression families: prefer extractive over pruning or abstractive rewriting
+    when optimizing skill text — and treat ~10x as the empirical safe-zone boundary.'
+  generalizes_across_models: partial
+  confidence: medium
+  verification_status: verified-primary
+- id: S-A08
+  title: Understanding and Improving Information Preservation in Prompt Compression for LLMs
+  authors: Weronika Łajewska et al. (AWS AI Labs collaboration)
+  venue: Findings of EMNLP 2025; arXiv
+  year: 2025
+  url: https://arxiv.org/abs/2503.19114
+  arxiv_id: '2503.19114'
+  doi: 10.48550/arXiv.2503.19114
+  date_accessed: '2026-07-24'
+  access_method: webfetch-abstract
+  source_type: peer-reviewed
+  research_question: Do prompt compression methods actually preserve the information that matters — beyond
+    raw task accuracy?
+  setup: Holistic evaluation framework scoring compression on (i) downstream task performance, (ii) grounding
+    in the input context, (iii) information preservation (e.g., entity retention), applied to SOTA hard
+    and soft compression methods.
+  main_findings: Some state-of-the-art compressors fail to preserve key details of the original prompt,
+    which caps performance on complex tasks; controlling compression granularity substantially repairs
+    a soft-prompt method.
+  quantitative_results: Granularity-controlled soft prompting yields up to +23% downstream performance,
+    +8 BERTScore points in grounding, and 2.7x more entities preserved (stated in arXiv abstract).
+  limitations: Improvement demonstrated on one soft method; abstract does not name which SOTA methods
+    fail or by how much per task.
+  evidence_nature: causal
+  relevance: Argues optimization rules must gate on information-preservation metrics (entities, grounding),
+    not only end-task accuracy — silent detail loss is the failure mode of naive compression.
+  generalizes_across_models: partial
+  confidence: high
+  verification_status: verified-primary
+- id: S-A09
+  title: 'When Compression Becomes an Attack Surface: Black-Box Attacks on Prompt-Compressed LLM Agents
+    (formerly ''CompressionAttack'')'
+  authors: Zesen Liu, Zhixiang Zhang, Yuchong Xie, Dongdong She (HKUST)
+  venue: arXiv (cs.CR / cs.AI); v4 2026-06-19
+  year: 2025
+  url: https://arxiv.org/abs/2510.22963
+  arxiv_id: '2510.22963'
+  doi: 10.48550/arXiv.2510.22963
+  date_accessed: '2026-07-24'
+  access_method: webfetch-abstract
+  source_type: preprint
+  research_question: Does deploying a prompt compressor in an LLM agent create a new attack surface —
+    can adversarial pre-compression perturbations make the compressor drop safety guardrails or task-critical
+    evidence?
+  setup: Formalizes 'adversarial information loss' (AIL); COMA, a transfer-based black-box attack using
+    surrogate compressors/LLMs; evaluated across 3 tasks and 6 compressors, plus 2 real-world agent case
+    studies.
+  main_findings: When trusted and untrusted inputs share one compression budget, perturbing only untrusted
+    inputs can steer the compressor to discard safety guardrails or key evidence BEFORE the LLM ever sees
+    them — the compressor, not the LLM, is the target.
+  quantitative_results: COMA achieves 0.71 average attack success rate vs 0.21 for the strongest baseline,
+    across 3 tasks and 6 compressors (stated in arXiv abstract).
+  limitations: Not yet peer-reviewed (multiple arXiv revisions incl. a retitle at v4); attack-side evaluation
+    — defenses only sketched; agent case studies limited to two.
+  evidence_nature: causal
+  relevance: 'Direct evidence that compression erodes safety instructions under adversarial input: optimization
+    rules must exempt safety/policy text from shared compression budgets and never co-compress trusted
+    instructions with untrusted content.'
+  generalizes_across_models: partial
+  confidence: medium
+  verification_status: verified-primary
+- id: S-A10
+  title: 'Separating Constraint Compliance from Semantic Accuracy: A Novel Benchmark for Evaluating Instruction-Following
+    Under Compression'
+  authors: Rahul Baxi
+  venue: arXiv (under review at TMLR per abstract page)
+  year: 2025
+  url: https://arxiv.org/abs/2512.17920
+  arxiv_id: '2512.17920'
+  doi: 10.48550/arXiv.2512.17920
+  date_accessed: '2026-07-24'
+  access_method: webfetch-abstract
+  source_type: preprint
+  research_question: When prompts are compressed, is degradation driven by losing semantic content or
+    by dropping constraints/instructions — and how does it vary with compression level?
+  setup: 'Compression-Decay Comprehension Test (CDCT): 9 frontier LLMs x 8 concepts x 5 compression levels
+    (c=0.0 ~2 words to c=1.0 ~135 words); 3-judge LLM jury (Fleiss'' kappa=0.90 on constraint compliance).'
+  main_findings: 'Constraint compliance follows a U-curve: violations PEAK at medium compression (c=0.5)
+    — mid-length prompts are the danger zone, worse than either extreme; constraint compliance and semantic
+    accuracy are statistically orthogonal dimensions.'
+  quantitative_results: U-curve prevalence 97.2%; violations peak at c=0.5 (~27 words); dimensions orthogonal
+    (r=0.193, p=0.084); constraint effects 2.9x larger than semantic effects; RLHF 'helpfulness' ablation
+    improves constraint compliance +598% on average (71/72 trials, p<0.001); reasoning models beat efficient
+    models by 27.5% (Cohen's d=0.96) (all stated in arXiv abstract).
+  limitations: Single-author preprint, unreplicated, still under review; LLM-judge-based scoring; tiny
+    prompts (2-135 words) — regime differs from long-context compression; striking effect sizes (+598%)
+    await independent confirmation.
+  evidence_nature: causal
+  relevance: Warns that moderate shortening — the optimizer's most tempting operation — is where instruction/constraint
+    dropping peaks; compliance must be tested per compression level, not assumed monotonic.
+  generalizes_across_models: partial
+  confidence: low
+  verification_status: verified-primary
+- id: S-B01
+  title: 'Lost in the Middle: How Language Models Use Long Contexts'
+  authors: Nelson F. Liu, Kevin Lin, John Hewitt, Ashwin Paranjape, Michele Bevilacqua, Fabio Petroni,
+    Percy Liang
+  venue: Transactions of the Association for Computational Linguistics (TACL), vol. 12 (ACL Anthology
+    2024.tacl-1.9); arXiv v1 2023-07-06, v3 2023-11-20
+  year: 2024
+  url: https://arxiv.org/abs/2307.03172
+  arxiv_id: '2307.03172'
+  doi: 10.48550/arXiv.2307.03172
+  date_accessed: '2026-07-24'
+  access_method: webfetch-fulltext
+  source_type: peer-reviewed-journal
+  research_question: 'How robustly do LLMs use information at different positions within a long input
+    context, on tasks that require finding relevant information inside the context?
+
+    '
+  setup: 'Controlled position-manipulation experiments on two tasks: multi-document QA (NaturalQuestions-based,
+    10/20/30 retrieved documents, the gold document moved systematically across positions) and synthetic
+    key-value retrieval. Open and closed models tested, including GPT-3.5-Turbo (4K/16K), Claude, and
+    explicitly long-context models.
+
+    '
+  main_findings: 'Performance is highest when relevant information is at the beginning (primacy) or end
+    (recency) of the context and degrades significantly in the middle — a U-shaped position curve. The
+    effect persists "even for explicitly long-context models" (abstract). Query-aware contextualization
+    (placing the query both before and after the documents) fixes key-value retrieval but not multi-doc
+    QA.
+
+    '
+  quantitative_results: 'Read in full text (ar5iv, Fig. 5 / sec 2.3 / sec 4.2): with 20 documents, GPT-3.5-Turbo
+    accuracy = 75.8% at position 0, 63.2% at the last position, and 53.8% at the middle (index 9); with
+    30 documents: 73.4% / 63.7% / 50.9% — a ~22-25 point drop from beginning to middle. Middle-position
+    performance falls BELOW the closed-book (no documents) baseline of 56.1%. Key-value retrieval: GPT-3.5-Turbo
+    (16K) worst-case 45.6% without query-aware contextualization, perfect with it (300 key-value pairs).
+
+    '
+  limitations: 'Models are 2023-era (GPT-3.5/4, Claude 1.x, MPT, LongChat); absolute numbers are dated
+    even though the positional effect has been reproduced later (see S-B02, S-B03). Mostly extractive
+    QA-style tasks, not generation or agentic use.
+
+    '
+  evidence_nature: causal
+  relevance: 'Foundational for context-layout rules: an optimizer should place task-critical instructions/facts
+    at the start or end of the prompt, never buried mid-context, and should treat mid-context tokens as
+    low-yield — more context can be worse than none (middle < closed-book).
+
+    '
+  generalizes_across_models: yes — U-shape observed across all open and closed models tested, including
+    long-context variants (2023-era models; effect replicated by later studies)
+  confidence: high
+  verification_status: verified-primary
+- id: S-B02
+  title: 'NoLiMa: Long-Context Evaluation Beyond Literal Matching'
+  authors: Ali Modarressi, Hanieh Deilamsalehy, Franck Dernoncourt, Trung Bui, Ryan A. Rossi, Seunghyun
+    Yoon, Hinrich Schütze
+  venue: ICML 2025 (Adobe Research / LMU); arXiv submitted 2025-02-07, revised 2025-07-09
+  year: 2025
+  url: https://arxiv.org/abs/2502.05167
+  arxiv_id: '2502.05167'
+  doi: 10.48550/arXiv.2502.05167
+  date_accessed: '2026-07-24'
+  access_method: webfetch-abstract
+  source_type: conference-paper
+  research_question: 'Does long-context retrieval performance survive when the question and the "needle"
+    share minimal lexical overlap, forcing latent associative reasoning instead of literal matching?
+
+    '
+  setup: 'Needle-in-a-haystack benchmark where needle-question pairs are linked only by associative/world
+    knowledge (minimal lexical overlap), haystacks up to 1M tokens; 13 popular LLMs all claiming >=128K
+    context (incl. GPT-4o, Gemini 1.5 Pro, Llama 3.3 70B).
+
+    '
+  main_findings: 'Models perform well below 1K tokens but degrade rapidly as context grows — long before
+    their claimed context limits — once surface-level lexical matching cannot carry the retrieval. Claimed
+    context window size vastly overstates the effective reasoning length.
+
+    '
+  quantitative_results: 'Read on arXiv abstract page: at 32K tokens, 11 of 13 models drop below 50% of
+    their strong short-context baselines; GPT-4o falls from a 99.3% short-context baseline to 69.7%.
+
+    '
+  limitations: 'Synthetic needle-retrieval framing; associative-hop tasks may understate performance on
+    naturalistic documents where redundancy helps. Scores are for one needle type; agentic/multi-fact
+    settings untested.
+
+    '
+  evidence_nature: causal
+  relevance: 'Rules out "just rely on the long window" as an optimization strategy: a skill optimizer
+    should keep the semantic distance between query terms and stored context small (lexical anchors matter)
+    and should not assume content placed deep in a 128K window is usable — effective length is a fraction
+    of nominal.
+
+    '
+  generalizes_across_models: yes — 13 models across vendors; 11/13 show the same >50% relative drop at
+    32K
+  confidence: high
+  verification_status: verified-primary
+- id: S-B03
+  title: 'Context Rot: How Increasing Input Tokens Impacts LLM Performance'
+  authors: Kelly Hong, Anton Troynikov, Jeff Huber (Chroma)
+  venue: Chroma technical report (research.trychroma.com), published 2025-07-14; reproducible (code/tasks
+    released)
+  year: 2025
+  url: https://www.trychroma.com/research/context-rot
+  arxiv_id: null
+  doi: null
+  date_accessed: '2026-07-24'
+  access_method: provider-doc
+  source_type: technical-report
+  research_question: 'Do frontier models process the 10,000th input token as reliably as the 100th — i.e.,
+    how does performance change with input length alone, holding task difficulty fixed?
+
+    '
+  setup: '18 LLMs across 4 families (Claude Opus 4/Sonnet 4/3.7/3.5/Haiku 3.5; o3, GPT-4.1 family, GPT-4o,
+    GPT-4 Turbo, GPT-3.5 Turbo; Gemini 2.5 Pro/Flash, 2.0 Flash; Qwen3 235B/32B/8B). Tasks: extended NIAH
+    varying needle-question semantic similarity, distractor count, needle-haystack blending, and haystack
+    structure; LongMemEval (conversational QA, focused vs full-history prompt); synthetic repeated-words
+    replication.
+
+    '
+  main_findings: 'Performance degrades non-uniformly with input length even on trivially simple tasks;
+    degradation accelerates when needle-question similarity is low, when distractors are present, and
+    in full-history vs focused prompts. Surprisingly, models do better on shuffled haystacks than logically
+    structured ones.
+
+    '
+  quantitative_results: 'Read on the report page (qualitative statements with per-model plots): low-similarity
+    needle-question pairs — "performance degrades more quickly in input length" than high-similarity pairs;
+    "even a single distractor reduces performance relative to the baseline"; on LongMemEval, Claude models
+    show "the most pronounced gap between focused and full prompt performance"; repeated-words task —
+    correct placement more likely when the unique word appears early in the input.
+
+    '
+  limitations: 'Vendor-adjacent technical report (Chroma sells retrieval infra), not peer-reviewed; page
+    presents plots more than headline numbers; NIAH-style tasks dominate. Methodology and code are public,
+    mitigating but not removing the conflict-of-interest concern.
+
+    '
+  evidence_nature: causal
+  relevance: 'Direct evidence for a "focused-context" rule: passing only the relevant slice of history/documents
+    beats passing everything, across 18 recent models; also motivates distractor-filtering before context
+    assembly (a single hard distractor already costs accuracy).
+
+    '
+  generalizes_across_models: yes — 18 models, 4 vendors, consistent direction (magnitudes differ by family;
+    Claude most sensitive to full-history prompts on LongMemEval)
+  confidence: medium
+  verification_status: verified-primary
+- id: S-B04
+  title: Context Length Alone Hurts LLM Performance Despite Perfect Retrieval
+  authors: Yufeng Du, Minyang Tian, Srikanth Ronanki, Subendhu Rongali, Sravan Bodapati, Aram Galstyan,
+    Azton Wells, Roy Schwartz, Eliu A. Huerta, Hao Peng
+  venue: Findings of EMNLP 2025; arXiv submitted 2025-10-06
+  year: 2025
+  url: https://arxiv.org/abs/2510.05381
+  arxiv_id: '2510.05381'
+  doi: 10.48550/arXiv.2510.05381
+  date_accessed: '2026-07-24'
+  access_method: webfetch-abstract
+  source_type: conference-paper
+  research_question: 'Is long-context failure explained by retrieval/distraction, or does input length
+    per se degrade performance even when the model attends only to the relevant tokens?
+
+    '
+  setup: '5 open- and closed-source LLMs on math, QA, and coding tasks; input length is manipulated with
+    padding while the relevant information stays fixed and retrievable; includes conditions where irrelevant
+    tokens are masked so the model is forced to attend only to relevant ones.
+
+    '
+  main_findings: 'Performance declines substantially as input grows even when models can perfectly retrieve
+    all relevant information, and the degradation persists when irrelevant tokens are masked — length
+    itself, independent of distraction or retrieval quality, impairs performance.
+
+    '
+  quantitative_results: 'Read on arXiv abstract page: performance declines 13.9%–85% as input length increases
+    despite perfect retrieval; a proposed mitigation gives a consistent improvement of up to 4% for GPT-4o
+    on the RULER benchmark.
+
+    '
+  limitations: '5 models only; padding-based length manipulation is synthetic; the wide 13.9%–85% range
+    means the effect size is highly model/task dependent; mitigation gain (<=4%) is modest relative to
+    the losses.
+
+    '
+  evidence_nature: causal
+  relevance: 'The strongest justification for token-count minimization as a first-class objective: even
+    perfectly relevant-only pipelines pay a length tax, so an optimizer should cut total tokens, not merely
+    improve relevance ranking. Caveat it also implies: pruning distractors alone is NOT sufficient to
+    recover accuracy.
+
+    '
+  generalizes_across_models: partial — 5 models, consistent direction but very wide magnitude range (13.9%–85%)
+  confidence: high
+  verification_status: verified-primary
+- id: S-B05
+  title: LLMs Get Lost In Multi-Turn Conversation
+  authors: Philippe Laban, Hiroaki Hayashi, Yingbo Zhou, Jennifer Neville (Microsoft Research / Salesforce)
+  venue: 'arXiv preprint (Microsoft code release: microsoft/lost_in_conversation); submitted 2025-05-09'
+  year: 2025
+  url: https://arxiv.org/abs/2505.06120
+  arxiv_id: '2505.06120'
+  doi: 10.48550/arXiv.2505.06120
+  date_accessed: '2026-07-24'
+  access_method: webfetch-abstract
+  source_type: arxiv-preprint
+  research_question: 'How much does LLM task performance change when a fully-specified single-turn instruction
+    is instead revealed gradually ("sharded") across an underspecified multi-turn conversation?
+
+    '
+  setup: 'Large-scale simulation: 200,000+ simulated conversations comparing single-turn vs multi-turn
+    delivery of the same instructions, across six generation tasks, on top open- and closed-weight LLMs;
+    performance decomposed into aptitude and reliability.
+
+    '
+  main_findings: 'All tested LLMs perform significantly worse in multi-turn, underspecified conversations
+    than single-turn: models make early assumptions, prematurely attempt final answers, and over-rely
+    on their own previous (possibly wrong) turns — "when LLMs take a wrong turn in a conversation, they
+    get lost and do not recover."
+
+    '
+  quantitative_results: 'Read on arXiv abstract page: average performance drop of 39% across six generation
+    tasks in multi-turn vs single-turn; decomposition attributes it to a minor loss in aptitude and a
+    significant increase in unreliability.
+
+    '
+  limitations: 'Simulated (LLM-simulated users), not organic conversations; preprint (not yet peer-reviewed
+    as fetched); the 39% averages over tasks with varying spread; abstract does not quantify individual
+    mitigation strategies.
+
+    '
+  evidence_nature: simulated
+  relevance: 'Grounds conversation-history rules: accumulated raw history is a liability — an optimizer
+    should consolidate scattered turn-by-turn specs into one restated, fully-specified instruction block
+    before expensive steps, and should distrust content the model itself generated in earlier (possibly
+    wrong) turns when compacting history.
+
+    '
+  generalizes_across_models: yes — all top open- and closed-weight LLMs tested show the degradation (average
+    39%)
+  confidence: medium
+  verification_status: verified-primary
+- id: S-B06
+  title: Compressing Context to Enhance Inference Efficiency of Large Language Models (Selective Context)
+  authors: Yucheng Li, Bo Dong, Chenghua Lin, Frank Guerin
+  venue: EMNLP 2023 (ACL Anthology 2023.emnlp-main.391); arXiv submitted 2023-10-09
+  year: 2023
+  url: https://arxiv.org/abs/2310.06201
+  arxiv_id: '2310.06201'
+  doi: 10.48550/arXiv.2310.06201
+  date_accessed: '2026-07-24'
+  access_method: webfetch-abstract
+  source_type: conference-paper
+  research_question: 'Can input contexts be pruned of redundant content — without model changes — while
+    preserving downstream task performance?
+
+    '
+  setup: '"Selective Context": rank lexical units by self-information computed with a small causal LM
+    and delete low-information spans. Evaluated on arXiv papers, news, and long conversations, over summarization,
+    QA, and response generation.
+
+    '
+  main_findings: 'Roughly half the context can be pruned with only minor measured quality loss, yielding
+    large memory/latency savings; redundancy in natural text is high enough that task-agnostic pruning
+    is viable, but the loss is small, not zero.
+
+    '
+  quantitative_results: 'Read on arXiv abstract page: 50% reduction in context cost; 36% reduction in
+    inference memory; 32% reduction in inference time; quality cost = drop of 0.023 BERTscore and 0.038
+    in faithfulness across four downstream applications.
+
+    '
+  limitations: 'Task-agnostic (query-blind) pruning: the 0.038 faithfulness drop shows real information
+    loss; self-information scoring depends on the small scoring LM; 2023-era evaluation models; aggressive
+    ratios beyond 50% not established as safe.
+
+    '
+  evidence_nature: causal
+  relevance: 'Baseline pruning rule for the optimizer: ~2x token cuts are nearly free, but it quantifies
+    the harm side — pruning is NOT lossless (faithfulness suffers measurably), so safety-critical skill
+    content should be exempt from task-agnostic pruning.
+
+    '
+  generalizes_across_models: partial — method is model-agnostic in principle but validated on a small
+    2023 model set; savings replicate, quality cost may vary
+  confidence: medium
+  verification_status: verified-primary
+- id: S-B07
+  title: 'LongLLMLingua: Accelerating and Enhancing LLMs in Long Context Scenarios via Prompt Compression'
+  authors: Huiqiang Jiang, Qianhui Wu, Xufang Luo, Dongsheng Li, Chin-Yew Lin, Yuqing Yang, Lili Qiu (Microsoft)
+  venue: ACL 2024 (ACL Anthology 2024.acl-long.91); arXiv submitted 2023-10-10, revised 2024-08-12
+  year: 2024
+  url: https://arxiv.org/abs/2310.06839
+  arxiv_id: '2310.06839'
+  doi: 10.48550/arXiv.2310.06839
+  date_accessed: '2026-07-24'
+  access_method: webfetch-abstract
+  source_type: conference-paper
+  research_question: 'Can question-aware prompt compression plus document reordering simultaneously cut
+    cost/latency AND improve accuracy in long-context / RAG scenarios?
+
+    '
+  setup: 'Coarse-to-fine, question-aware compression: document-level ranking by question-conditioned perplexity,
+    token-level compression with adaptive ratios, plus a document reordering mechanism that exploits the
+    positional (lost-in-the-middle) bias; evaluated on NaturalQuestions, LongBench, LooGLE and others
+    with GPT-3.5-Turbo.
+
+    '
+  main_findings: 'Compression that is aware of the question and of positional bias can beat the uncompressed
+    prompt — higher key-information density outperforms more raw tokens; explicitly builds on the finding
+    that performance depends on the density AND position of key information.
+
+    '
+  quantitative_results: 'Read on arXiv abstract page: up to 21.4% performance boost on NaturalQuestions
+    with ~4x fewer tokens (GPT-3.5-Turbo); 94.0% cost reduction on LooGLE; end-to-end latency accelerated
+    1.4x–2.6x when compressing ~10K token prompts at 2x–6x ratios.
+
+    '
+  limitations: 'Requires an auxiliary small LM at inference time (extra component/latency); headline gains
+    measured mainly with GPT-3.5-Turbo-era targets; compression hyperparameters (ratios, reorder) need
+    tuning per task; gains shrink when the original prompt is already dense.
+
+    '
+  evidence_nature: causal
+  relevance: 'The strongest "compression can INCREASE accuracy" datapoint: an optimizer should compress
+    query-aware (not query-blind like S-B06) and reorder surviving content so the most relevant items
+    sit at positions models actually use — turning S-B01''s positional pathology into a free optimization
+    lever.
+
+    '
+  generalizes_across_models: partial — principle (density+position) replicated broadly, but reported numbers
+    are GPT-3.5-Turbo-centric and depend on the auxiliary compressor
+  confidence: high
+  verification_status: verified-primary
+- id: S-B08
+  title: 'RECOMP: Improving Retrieval-Augmented LMs with Compression and Selective Augmentation'
+  authors: Fangyuan Xu, Weijia Shi, Eunsol Choi (UT Austin / UW)
+  venue: ICLR 2024 (per authors' ICLR'24 poster; arXiv page itself does not name the venue); arXiv submitted
+    2023-10-06
+  year: 2024
+  url: https://arxiv.org/abs/2310.04408
+  arxiv_id: '2310.04408'
+  doi: 10.48550/arXiv.2310.04408
+  date_accessed: '2026-07-24'
+  access_method: webfetch-abstract
+  source_type: conference-paper
+  research_question: 'Can retrieved documents be compressed into short textual summaries before in-context
+    integration without hurting — and sometimes helping — end-task performance?
+
+    '
+  setup: 'Two trained compressors over retrieved document sets: extractive (selects useful sentences)
+    and abstractive (synthesizes a multi-document summary), both trained end-to-end to maximize the target
+    LM''s task performance when the summary is prepended; evaluated on language modeling and open-domain
+    QA.
+
+    '
+  main_findings: 'Retrieved context can be compressed to a small fraction of its size with minimal performance
+    loss; critically, "selective augmentation" — returning an EMPTY summary when retrieval is irrelevant
+    or uninformative — is built in, acknowledging that appending bad retrievals hurts. Trained compressors
+    significantly outperform off-the-shelf summarizers.
+
+    '
+  quantitative_results: 'Read on arXiv abstract page: compression rate as low as 6% (i.e., ~94% of retrieved
+    tokens removed) with minimal loss in performance on both language modeling and open-domain QA. (No
+    further numbers stated on the abstract page.)
+
+    '
+  limitations: 'Compressors are trained per task/target-LM (transfer not guaranteed); abstractive compression
+    inherits summarization-hallucination risk; abstract gives no per-dataset accuracy deltas; 2023-era
+    retrieval setups.
+
+    '
+  evidence_nature: causal
+  relevance: 'Template for the optimizer''s retrieved-context stage: (a) compress retrieved material to
+    short summaries instead of concatenating top-k chunks, and (b) implement the empty-summary guard —
+    when retrieval adds nothing, add NOTHING to the context rather than "best available" chunks.
+
+    '
+  generalizes_across_models: partial — concept demonstrated on multiple LMs but compressors are trained
+    for specific target models/tasks
+  confidence: medium
+  verification_status: verified-primary
+- id: S-B09
+  title: 'The Power of Noise: Redefining Retrieval for RAG Systems'
+  authors: Florin Cuconasu, Giovanni Trappolini, Federico Siciliano, Simone Filice, Cesare Campagnano,
+    Yoelle Maarek, Nicola Tonellotto, Fabrizio Silvestri
+  venue: SIGIR 2024 (DOI 10.1145/3626772.3657834, pp. 719-729); arXiv v1 2024-01-26, v4 2024-05-01
+  year: 2024
+  url: https://arxiv.org/abs/2401.14887
+  arxiv_id: '2401.14887'
+  doi: 10.1145/3626772.3657834
+  date_accessed: '2026-07-24'
+  access_method: webfetch-abstract
+  source_type: conference-paper
+  research_question: 'Which properties of retrieved documents (relevant / related-but-irrelevant / random;
+    position; count) actually help or hurt the generator in a RAG pipeline?
+
+    '
+  setup: 'Controlled injection experiments in a RAG QA pipeline: vary the type (gold, semantically related
+    "hard" negatives, random), number, and position of documents in the prompt and measure LLM answer
+    accuracy.
+
+    '
+  main_findings: 'Related-but-irrelevant documents — exactly what dense retrievers rank highly — are actively
+    harmful, while (counterintuitively) random irrelevant documents can IMPROVE accuracy. Retriever "relevance"
+    ranking is therefore not aligned with what helps the generator; RAG retrieval needs rethinking around
+    the generator''s behavior.
+
+    '
+  quantitative_results: 'Read on arXiv abstract page: high-scoring but not-directly-relevant documents
+    negatively impact effectiveness; adding random documents in the prompt improves LLM accuracy by up
+    to 35%. (Position-of-gold numbers are in the paper body, not stated on the abstract page.)
+
+    '
+  limitations: 'The random-noise benefit is fragile: a later SIGIR follow-up titled "The Powerless Noise:
+    How Experimental Settings Shape the Reported Power of Noise" (seen in search results; not fetched)
+    reports the effect is setting-dependent. Mostly NQ-style QA with 2024-era open models; mechanism unexplained.
+
+    '
+  evidence_nature: causal
+  relevance: 'Sharpens the distractor rule: the danger to filter is SEMANTICALLY-SIMILAR irrelevant content
+    (hard negatives), not noise per se — so dedup/filter thresholds based on embedding similarity alone
+    are the wrong instrument; also cautions against assuming a larger top-k of "high-scoring" chunks is
+    safer.
+
+    '
+  generalizes_across_models: partial — harm from hard negatives replicates broadly (consistent with S-B03);
+    the random-noise BENEFIT is setting-dependent per follow-up work
+  confidence: medium
+  verification_status: verified-primary
+- id: S-B10
+  title: Is Semantic Chunking Worth the Computational Cost?
+  authors: Renyi Qu, Ruixuan Tu, Forrest Sheng Bao
+  venue: Findings of NAACL 2025 (ACL Anthology 2025.findings-naacl.114, per Anthology listing); arXiv
+    submitted 2024-10-16
+  year: 2025
+  url: https://arxiv.org/abs/2410.13070
+  arxiv_id: '2410.13070'
+  doi: 10.48550/arXiv.2410.13070
+  date_accessed: '2026-07-24'
+  access_method: webfetch-abstract
+  source_type: conference-paper
+  research_question: 'Does semantic chunking (splitting documents at semantic-similarity boundaries) actually
+    outperform simple fixed-size chunking enough to justify its computational cost in RAG?
+
+    '
+  setup: 'Systematic comparison of semantic chunkers vs fixed-size chunking across three retrieval-related
+    tasks: document retrieval, evidence retrieval, and retrieval-based answer generation.
+
+    '
+  main_findings: '"The computational costs associated with semantic chunking are not justified by consistent
+    performance gains" (abstract) — gains over fixed-size chunking are inconsistent and corpus-dependent,
+    challenging a widely-assumed RAG best practice.
+
+    '
+  quantitative_results: 'Read on arXiv abstract page: the abstract states the conclusion qualitatively
+    and contains no headline numbers; per-task tables are in the paper body (not fetched). Recorded here
+    as a directional, replicated negative result.
+
+    '
+  limitations: 'Abstract-level verification only (no effect sizes captured); results depend on corpus
+    semantic structure — corpora with strong topic shifts may still benefit; evaluates retrieval quality,
+    not end-to-end token cost of the whole pipeline.
+
+    '
+  evidence_nature: causal
+  relevance: 'Default-configuration rule: the optimizer should default to cheap fixed-size (or structure-based)
+    chunking and demand measured evidence before paying for semantic chunking — an example of "expensive
+    preprocessing does not automatically buy accuracy."
+
+    '
+  generalizes_across_models: partial — retriever/corpus-dependent; finding is about the chunking stage,
+    largely independent of the generator model
+  confidence: medium
+  verification_status: verified-primary
+- id: S-C01
+  title: Prompt caching (Anthropic official documentation)
+  authors: Anthropic
+  venue: Claude Developer Platform docs (platform.claude.com)
+  year: 2026
+  url: https://platform.claude.com/docs/en/build-with-claude/prompt-caching
+  arxiv_id: null
+  doi: null
+  date_accessed: '2026-07-24'
+  access_method: provider-doc
+  source_type: provider-doc
+  research_question: How does Anthropic's prompt caching work, what does it cost, and what are the prefix-stability
+    requirements?
+  setup: Official feature documentation for the Messages API cache_control mechanism (explicit breakpoints
+    + top-level automatic caching).
+  main_findings: 'Caching is a strict prefix match. Cache prefixes are created in the order tools -> system
+    -> messages; a change at any level invalidates that level and all subsequent levels. Up to 4 cache
+    breakpoints per request. Default TTL is 5 minutes; an optional 1-hour TTL exists via cache_control
+    {type: ephemeral, ttl: "1h"}. Minimum cacheable prompt length is model-dependent (512 / 1,024 / 2,048
+    / 4,096 tokens); shorter prefixes silently do not cache. Toggles like tool_choice, images, and thinking
+    parameters invalidate messages-level (or model-specific) cache tiers while preserving the tools cache;
+    changing tool definitions invalidates everything.
+
+    '
+  quantitative_results: 'Verbatim multipliers (pricing table on the page): 5-minute cache writes = "1.25
+    times the base input tokens price"; 1-hour cache writes = "2 times the base input tokens price"; cache
+    read tokens (hits & refreshes) = "0.1 times the base input tokens price". Worked example given for
+    Claude Opus 5: base input $5/MTok, 5m cache writes $6.25/MTok, 1h cache writes $10/MTok, cache hits
+    & refreshes $0.50/MTok. Minimum cacheable prefix: 512 tokens (Claude Opus 5, Claude Fable 5, Claude
+    Mythos 5); 1,024 tokens (Claude Opus 4.8, Claude Sonnet 5, Claude Sonnet 4.6, Claude Sonnet 4.5, Claude
+    Opus 4.1, Claude Opus 4); 2,048 tokens (Claude Mythos Preview, Claude Opus 4.7, Claude Haiku 3.5);
+    4,096 tokens (Claude Opus 4.6, Claude Opus 4.5, Claude Haiku 4.5). Max 4 breakpoints per request.
+
+    '
+  limitations: Vendor documentation, not peer-reviewed; numbers can change at any time; caches are model-scoped
+    so any model switch is a full cache rebuild.
+  evidence_nature: Authoritative provider specification (normative, not empirical).
+  relevance: Directly defines the cache-write/cache-read cost model and the prefix-stability constraints
+    any token-efficient skill/prompt layout must satisfy.
+  generalizes_across_models: Multipliers uniform across Claude models; minimum cacheable prefix and thinking/effort
+    invalidation behavior are model-specific.
+  confidence: high
+  verification_status: verified-primary
+- id: S-C02
+  title: Pricing (Anthropic official pricing page)
+  authors: Anthropic
+  venue: Claude Developer Platform docs (platform.claude.com)
+  year: 2026
+  url: https://platform.claude.com/docs/en/about-claude/pricing
+  arxiv_id: null
+  doi: null
+  date_accessed: '2026-07-24'
+  access_method: provider-doc
+  source_type: provider-doc
+  research_question: What are the current per-model input/output/cache-write/cache-read rates for Claude
+    models?
+  setup: Official per-model pricing table (USD per MTok) including cache columns, Batch API rates, fast-mode
+    premiums, and modifier stacking rules.
+  main_findings: 'Full per-model table with columns: Base Input Tokens / 5m Cache Writes / 1h Cache Writes
+    / Cache Hits & Refreshes / Output Tokens (values recorded in pricing_snapshot below). Batch API gives
+    a 50% discount on both input and output. Cache multipliers stack with Batch and data-residency modifiers.
+    inference_geo: "us" applies a 1.1x multiplier on all token categories (Claude 4.6+). Claude Sonnet
+    5 has introductory pricing ($2/$10) through 2026-08-31, then $3/$15. Fast mode (Opus tier) is premium-priced
+    ($10/$50 for Opus 5 and Opus 4.8). Claude 4.7+ models use a newer tokenizer producing ~30% more tokens
+    for the same text.
+
+    '
+  quantitative_results: 'Verbatim (per MTok, USD): Claude Fable 5 $10 in / $12.50 5m-write / $20 1h-write
+    / $1 cache-hit / $50 out. Claude Opus 5 and Opus 4.8/4.7/4.6/4.5: $5 / $6.25 / $10 / $0.50 / $25.
+    Claude Sonnet 5 (through Aug 31, 2026): $2 / $2.50 / $4 / $0.20 / $10; (from Sep 1, 2026): $3 / $3.75
+    / $6 / $0.30 / $15. Claude Sonnet 4.6 & 4.5: $3 / $3.75 / $6 / $0.30 / $15. Claude Haiku 4.5: $1 /
+    $1.25 / $2 / $0.10 / $5. Batch: 50% off (e.g., Opus 4.8 $2.50 in / $12.50 out). "A cache hit costs
+    10% of the standard input price, which means caching pays off after just one cache read for the 5-minute
+    duration (1.25x write), or after two cache reads for the 1-hour duration (2x write)." Web search $10
+    per 1,000 searches.
+
+    '
+  limitations: Prices subject to change; partner clouds (Bedrock/Vertex) have independent pricing; Sonnet
+    5 has a dated pricing transition that must be tracked.
+  evidence_nature: Authoritative provider price list (normative).
+  relevance: Primary input to provider-cost-profiles.yaml; supplies the exact break-even arithmetic for
+    cache-write-tier selection and model-downgrade savings ratios.
+  generalizes_across_models: Anthropic-only; cross-provider comparison requires S-C04.
+  confidence: high
+  verification_status: verified-primary
+- id: S-C03
+  title: Prompt caching (OpenAI official documentation — automatic prompt caching)
+  authors: OpenAI
+  venue: OpenAI API docs (platform.openai.com -> developers.openai.com)
+  year: 2026
+  url: https://developers.openai.com/api/docs/guides/prompt-caching
+  arxiv_id: null
+  doi: null
+  date_accessed: '2026-07-24'
+  access_method: provider-doc
+  source_type: provider-doc
+  research_question: How does OpenAI's automatic prompt caching work and what discount/retention rules
+    apply?
+  setup: Official guide; caching is automatic (no cache_control API), routed by a hash of the initial
+    prompt prefix. Fetched via 301 redirect from platform.openai.com/docs/guides/prompt-caching.
+  main_findings: 'Caching is automatic for prompts of "1024 tokens or longer" on "all recent models, gpt-4o
+    and newer". Requests are routed by a hash of the initial prefix; a hit applies the discounted cached-input
+    rate and reduces latency. Guidance: place "static content like instructions and examples at the beginning
+    of your prompt, and put variable content, such as user-specific information, at the end" — the same
+    stable-prefix discipline as Anthropic, but with no explicit breakpoint control.
+
+    '
+  quantitative_results: 'Verbatim: minimum prompt length "1024 tokens or longer". Retention: for GPT-5.6
+    models and later, cached content is "eligible for reuse for at least 30 minutes, but OpenAI may retain
+    it longer"; older models keep cached prefixes for "5 to 10 minutes of inactivity, up to a maximum
+    of one hour". Cache writes on GPT-5.6+ are "billed at 1.25x the uncached input token rate"; "Cache
+    writes have no additional fee on models before the GPT-5.6 family". Cache reads are reported in usage.cached_tokens
+    and billed at the per-model "cached input" rate (see S-C04: uniformly 0.1x input on listed models).
+
+    '
+  limitations: No user-visible TTL control and no explicit breakpoints; retention windows are best-effort
+    ('may retain it longer'); read discount stated on the pricing page, not in this guide.
+  evidence_nature: Authoritative provider specification (normative).
+  relevance: Shows the second major provider converging on the same economics (1.25x write on newest family,
+    ~0.1x read, prefix stability), which makes a provider-agnostic stable-prefix optimization rule viable.
+  generalizes_across_models: OpenAI models gpt-4o and newer; write-fee rule differs between pre- and post-GPT-5.6
+    families.
+  confidence: high
+  verification_status: verified-primary
+- id: S-C04
+  title: Pricing (OpenAI official API pricing page)
+  authors: OpenAI
+  venue: OpenAI API docs (platform.openai.com -> developers.openai.com)
+  year: 2026
+  url: https://developers.openai.com/api/docs/pricing
+  arxiv_id: null
+  doi: null
+  date_accessed: '2026-07-24'
+  access_method: provider-doc
+  source_type: provider-doc
+  research_question: What are the current per-model input/cached-input/output rates for OpenAI models?
+  setup: Official pricing table, per 1M tokens, standard tier. Fetched via 301 redirect from platform.openai.com/docs/pricing.
+  main_findings: 'Current text-model table (per 1M tokens, USD) headed by the gpt-5.6 family (sol/terra/luna)
+    plus gpt-5.5 and the gpt-5.4 family (base/mini/nano). Cached input is uniformly 10% of the input price
+    on every listed model. "Regional processing (data residency) endpoints are charged a 10% uplift for
+    models released on or after March 5, 2026, that are eligible for data residency."
+
+    '
+  quantitative_results: 'Verbatim (Input / Cached Input / Output per 1M tokens): gpt-5.6-sol $5.00 / $0.50
+    / $30.00; gpt-5.6-terra $2.50 / $0.25 / $15.00; gpt-5.6-luna $1.00 / $0.10 / $6.00; gpt-5.5 $5.00
+    / $0.50 / $30.00; gpt-5.4 $2.50 / $0.25 / $15.00; gpt-5.4-mini $0.75 / $0.075 / $4.50; gpt-5.4-nano
+    $0.20 / $0.02 / $1.25.
+
+    '
+  limitations: Prices subject to change; page does not state a per-MTok cache-write price (write billing
+    is defined in the caching guide, S-C03); batch/priority tiers not captured in this extract.
+  evidence_nature: Authoritative provider price list (normative).
+  relevance: Second primary input to provider-cost-profiles.yaml; enables cross-provider routing cost
+    arithmetic (e.g., Haiku 4.5 vs gpt-5.4-mini for cheap-tier routing).
+  generalizes_across_models: OpenAI-only; cached-input = 0.1x input holds across all listed models.
+  confidence: high
+  verification_status: verified-primary
+- id: S-C05
+  title: 'FrugalGPT: How to Use Large Language Models While Reducing Cost and Improving Performance'
+  authors: Lingjiao Chen, Matei Zaharia, James Zou
+  venue: arXiv preprint (Stanford)
+  year: 2023
+  url: https://arxiv.org/abs/2305.05176
+  arxiv_id: '2305.05176'
+  doi: null
+  date_accessed: '2026-07-24'
+  access_method: webfetch-abstract
+  source_type: paper
+  research_question: Can strategically combining multiple LLM APIs match top-model quality at a fraction
+    of the cost?
+  setup: Proposes three strategy families — prompt adaptation, LLM approximation (incl. completion caching),
+    and LLM cascade — and implements FrugalGPT, a learned cascade that queries cheaper APIs first and
+    escalates only when a scorer deems the answer unreliable.
+  main_findings: 'A learned cascade over commercial LLM APIs can match or exceed the best single model''s
+    accuracy while dramatically cutting spend; caching and prompt adaptation compose with cascading. Foundational
+    paper for the cost/quality-frontier framing used by all later routing work.
+
+    '
+  quantitative_results: 'Verbatim claims: FrugalGPT can "match the performance of the best individual
+    LLM (e.g. GPT-4) with up to 98% cost reduction" or "improve the accuracy over GPT-4 by 4% with the
+    same cost" (on the evaluated benchmarks).
+
+    '
+  limitations: 2023-era model lineup and prices; per-task scorer must be trained; headline 98% is best-case
+    on specific benchmarks; cascades add latency (multiple sequential calls on escalation).
+  evidence_nature: Empirical benchmark study (preprint; widely cited).
+  relevance: Canonical justification for a cheap-model-first cascade rule in the optimizer; its scorer-then-escalate
+    pattern is the template for a quality gate.
+  generalizes_across_models: Framework is model-agnostic; exact savings depend on current price ratios
+    and task difficulty mix.
+  confidence: high
+  verification_status: verified-primary
+- id: S-C06
+  title: 'RouteLLM: Learning to Route LLMs with Preference Data'
+  authors: Isaac Ong, Amjad Almahairi, Vincent Wu, Wei-Lin Chiang, Tianhao Wu, Joseph E. Gonzalez, M Waleed
+    Kadous, Ion Stoica
+  venue: arXiv preprint (v1 2024-06-26; v4 2025-02-23); LMSYS / UC Berkeley
+  year: 2024
+  url: https://arxiv.org/abs/2406.18665
+  arxiv_id: '2406.18665'
+  doi: null
+  date_accessed: '2026-07-24'
+  access_method: webfetch-abstract
+  source_type: paper
+  research_question: Can a router trained on human preference data decide per-query between a strong and
+    a weak LLM without quality loss?
+  setup: Trains router models on Chatbot-Arena human preference data plus data augmentation; router dynamically
+    selects between a stronger and a weaker LLM at inference time.
+  main_findings: 'Preference-trained routers optimize the cost/quality balance per query and — critically
+    for a config-driven optimizer — show "significant transfer learning capabilities": they keep working
+    when the underlying strong/weak model pair is swapped at test time.
+
+    '
+  quantitative_results: 'Verbatim: routing "significantly reduces costs — by over 2 times in certain cases"
+    while maintaining response quality on the evaluated benchmarks.
+
+    '
+  limitations: Two-model (binary) routing only; savings depend on the query-difficulty distribution; router
+    itself needs training data and calibration; smaller savings than cascade papers because there is no
+    multi-stage escalation.
+  evidence_nature: Empirical study with open-source framework (routellm).
+  relevance: Supports a per-request model-selection rule keyed on estimated query difficulty, with evidence
+    that the routing policy survives model swaps (important since provider price lists churn).
+  generalizes_across_models: Explicitly demonstrated transfer across model pairs — strongest cross-model
+    generalization evidence in this cluster.
+  confidence: high
+  verification_status: verified-primary
+- id: S-C07
+  title: 'Prompt Cache: Modular Attention Reuse for Low-Latency Inference'
+  authors: In Gim, Guojun Chen, Seung-seob Lee, Nikhil Sarda, Anurag Khandelwal, Lin Zhong
+  venue: MLSys 2024 (arXiv v1 2023-11-07, v2 2024-04-25)
+  year: 2024
+  url: https://arxiv.org/abs/2311.04934
+  arxiv_id: '2311.04934'
+  doi: null
+  date_accessed: '2026-07-24'
+  access_method: webfetch-abstract
+  source_type: paper
+  research_question: Can attention/KV states of reusable prompt segments be cached and reused across prompts,
+    beyond strict prefix matching?
+  setup: Defines 'prompt modules' — reusable text segments (system messages, documents, templates) whose
+    attention states are precomputed and reused with positional-accuracy handling, on GPU and CPU inference.
+  main_findings: 'KV-state reuse at the granularity of modular segments (not just exact prefixes) substantially
+    cuts time-to-first-token for long prompts while preserving output accuracy, without modifying model
+    parameters. The academic underpinning for why provider prefix caches price reads at ~0.1x: the prefill
+    compute genuinely disappears.
+
+    '
+  quantitative_results: 'Verbatim: TTFT improvements "range from 8x for GPU-based inference to 60x for
+    CPU-based inference" on long-prompt workloads (document QA, recommendation), with output accuracy
+    maintained.
+
+    '
+  limitations: Requires serving-stack control (not applicable to closed APIs directly); modular (non-prefix)
+    reuse needs positional-encoding care; gains concentrated in TTFT, not decode throughput.
+  evidence_nature: Peer-reviewed systems paper with implementation benchmarks.
+  relevance: Explains the mechanism behind provider prompt caching and bounds what a self-hosted tier
+    of the optimizer could achieve; motivates template/segment-stable skill design.
+  generalizes_across_models: Technique is architecture-general for transformer LLMs; measured numbers
+    are setup-specific.
+  confidence: high
+  verification_status: verified-primary
+- id: S-C08
+  title: 'SGLang: Efficient Execution of Structured Language Model Programs (RadixAttention)'
+  authors: Lianmin Zheng, Liangsheng Yin, Zhiqiang Xie, Chuyue Sun, Jeff Huang, Cody Hao Yu, Shiyi Cao,
+    Christos Kozyrakis, Ion Stoica, Joseph E. Gonzalez, Clark Barrett, Ying Sheng
+  venue: arXiv preprint (v1 2023-12-12, v2 2024-06-06); Stanford/UC Berkeley
+  year: 2024
+  url: https://arxiv.org/abs/2312.07104
+  arxiv_id: '2312.07104'
+  doi: null
+  date_accessed: '2026-07-24'
+  access_method: webfetch-abstract
+  source_type: paper
+  research_question: How much throughput can automatic, tree-structured KV-cache reuse (RadixAttention)
+    recover in multi-call LLM programs?
+  setup: Frontend language for LM programs + runtime with RadixAttention (radix-tree KV-cache sharing
+    across requests with a shared prefix) and compressed FSMs for structured decoding; evaluated on agent,
+    reasoning, JSON, and RAG pipelines.
+  main_findings: 'Automatic prefix sharing across concurrent program calls (many branches reusing one
+    cached prefix) is a first-class runtime optimization; multi-call agentic workloads — exactly the skill-invocation
+    pattern — are where KV reuse pays most.
+
+    '
+  quantitative_results: 'Verbatim: "up to 6.4x higher throughput compared to state-of-the-art inference
+    systems on various large language and multi-modal models" across agent control, logical reasoning,
+    JSON decoding, and RAG tasks.
+
+    '
+  limitations: Self-hosted serving systems only; gains depend on prefix-sharing degree across concurrent
+    requests; not directly actionable against closed provider APIs except as design intuition.
+  evidence_nature: Systems paper with open-source implementation (sglang) and benchmarks.
+  relevance: Justifies fan-out-after-first-call patterns (share one warm prefix across parallel skill
+    calls) and radix/tree-shaped prompt layouts for the optimizer's multi-agent flows.
+  generalizes_across_models: Runtime-level technique, model-agnostic within transformer serving.
+  confidence: high
+  verification_status: verified-primary
+- id: S-C09
+  title: 'GPTCache: An Open-Source Semantic Cache for LLM Applications Enabling Faster Answers and Cost
+    Savings'
+  authors: Fu Bang (Zilliz)
+  venue: 3rd Workshop for NLP Open Source Software (NLP-OSS 2023), Singapore — ACL Anthology 2023.nlposs-1.24
+  year: 2023
+  url: https://aclanthology.org/2023.nlposs-1.24/
+  arxiv_id: null
+  doi: 10.18653/v1/2023.nlposs-1.24
+  date_accessed: '2026-07-24'
+  access_method: webfetch-abstract
+  source_type: paper
+  research_question: Can semantic (embedding-similarity) caching of full LLM responses cut API cost and
+    latency for repeated/similar queries?
+  setup: 'Open-source cache layer: queries are embedded, a vector store retrieves similar past queries,
+    and a cached response is returned on similarity match instead of calling the LLM API.'
+  main_findings: 'Response-level semantic caching short-circuits the LLM call entirely for semantically
+    repeated queries — a complementary layer above provider token-level prefix caching (which still charges
+    0.1x for reads and always pays full output price). Stabilizes response times against network fluctuation.
+
+    '
+  quantitative_results: 'Verbatim: "Integrating GPTCache with the GPT service offered by OpenAI can increase
+    response speed 2-10 times when the cache is hit"; API-recall cost drops with hit rate (no single cost
+    percentage claimed).
+
+    '
+  limitations: False-positive hits can return wrong/stale answers (similarity threshold tuning); hit rates
+    workload-dependent; single-author workshop paper, limited formal evaluation.
+  evidence_nature: Peer-reviewed workshop/system paper + widely used open-source project.
+  relevance: Defines the third caching tier for the optimizer (exact/semantic response cache above provider
+    prefix cache); its risks define the guardrails a caching rule needs.
+  generalizes_across_models: Provider-agnostic by construction (sits in front of any LLM API).
+  confidence: medium
+  verification_status: verified-primary
+- id: S-C10
+  title: 'AutoMix: Automatically Mixing Language Models'
+  authors: Pranjal Aggarwal, Aman Madaan, Ankit Anand, Srividya Pranavi Potharaju, Swaroop Mishra, Pei
+    Zhou, Aditya Gupta, Dheeraj Rajagopal, Karthik Kappaganthu, Yiming Yang, Shyam Upadhyay, Manaal Faruqui,
+    Mausam
+  venue: arXiv preprint (v1 2023-10-19, v5 2025-01-19)
+  year: 2023
+  url: https://arxiv.org/abs/2310.12963
+  arxiv_id: '2310.12963'
+  doi: null
+  date_accessed: '2026-07-24'
+  access_method: webfetch-abstract
+  source_type: paper
+  research_question: Can a small model's own self-verification signal drive routing to larger models only
+    when needed?
+  setup: Small LM answers first; a few-shot self-verification step estimates answer correctness; a POMDP-based
+    router decides whether to escalate to a larger model, evaluated across five LMs and five datasets.
+  main_findings: 'Training-free (few-shot) self-verification is a workable escalation trigger — no dedicated
+    router-training corpus needed, unlike RouteLLM — and POMDP routing handles the noisiness of self-verification
+    signals.
+
+    '
+  quantitative_results: 'Verbatim: "AutoMix consistently surpasses strong baselines, reducing computational
+    cost by over 50% for comparable performance", evaluated across five language models and five challenging
+    datasets.
+
+    '
+  limitations: Self-verification adds tokens/latency to every cheap-model call; verifier reliability varies
+    by task; savings (50%+) below FrugalGPT's best-case because verification overhead is paid up front.
+  evidence_nature: Empirical benchmark study (preprint, multiply revised through 2025).
+  relevance: 'Gives the optimizer a zero-training escalation mechanism: cheap model + self-check, escalate
+    on low confidence — the simplest deployable cascade rule.'
+  generalizes_across_models: Demonstrated across five model families; mechanism is model-agnostic.
+  confidence: high
+  verification_status: verified-primary
+- id: S-D01
+  title: 'Concise Thoughts: Impact of Output Length on LLM Reasoning and Cost'
+  authors: Sania Nayab, Giulio Rossolini, Marco Simoni, Andrea Saracino, Giorgio Buttazzo, Nicolamaria
+    Manes, Fabrizio Giacomelli
+  venue: arXiv preprint (cs.CL)
+  year: 2024
+  url: https://arxiv.org/abs/2407.19825
+  arxiv_id: '2407.19825'
+  doi: 10.48550/arXiv.2407.19825
+  date_accessed: '2026-07-24'
+  access_method: webfetch-abstract
+  source_type: preprint
+  research_question: Does controlling/limiting LLM output length degrade reasoning quality, and can conciseness
+    be prompted without losing accuracy?
+  setup: Proposes Constrained-CoT (CCoT) — CoT prompting with an explicit output-length limit — plus new
+    'correct conciseness' metrics that jointly score accuracy and brevity; evaluated across multiple models
+    and reasoning datasets.
+  main_findings: Verbose CoT output is partly redundant; CCoT prompting yields substantially more concise
+    answers while maintaining accuracy across the tested models, and the paper argues cost/latency should
+    be first-class evaluation dimensions alongside accuracy.
+  quantitative_results: None stated in the abstract (abstract-level access only); abstract claims 'effectiveness
+    of CCoT across different models' without numbers. Do not cite specific percentages from this record
+    without reading the full text.
+  limitations: Abstract-only verification here; effect sizes vary by model and dataset; length control
+    via prompting is soft (models can ignore the budget).
+  evidence_nature: causal (controlled prompting experiments)
+  relevance: Direct evidence base for a skill-optimizer rule that adds explicit output-length constraints
+    to skill instructions — supports 'budgeted CoT' phrasing as a token-saving lever with small accuracy
+    cost.
+  generalizes_across_models: partial — tested on several open models; magnitude of conciseness/accuracy
+    tradeoff is model-dependent
+  confidence: medium
+  verification_status: verified-primary
+- id: S-D02
+  title: Token-Budget-Aware LLM Reasoning
+  authors: Tingxu Han, Zhenting Wang, Chunrong Fang, Shiyu Zhao, Shiqing Ma, Zhenyu Chen
+  venue: arXiv preprint (v1 Dec 2024, v5 Jun 2025)
+  year: 2024
+  url: https://arxiv.org/abs/2412.18547
+  arxiv_id: '2412.18547'
+  doi: 10.48550/arXiv.2412.18547
+  date_accessed: '2026-07-24'
+  access_method: webfetch-abstract
+  source_type: preprint
+  research_question: Can chain-of-thought reasoning be compressed by putting a token budget in the prompt,
+    and how should the budget be chosen per problem?
+  setup: 'TALE framework: dynamically estimates a reasonable token budget from the reasoning complexity
+    of each problem and injects it into the prompt to guide compressed reasoning.'
+  main_findings: Current LLM reasoning is 'unnecessarily lengthy'; a well-chosen prompt-level token budget
+    compresses reasoning substantially with only slight performance reduction; budget choice matters —
+    too-small budgets break compression effectiveness.
+  quantitative_results: Abstract states 'significant' token-cost reduction with 'only a slight performance
+    reduction'; no exact percentages given at abstract level.
+  limitations: Abstract-only verification; budget estimation itself costs tokens/calls; degradation concentrated
+    on the hardest instances (per the general pattern the paper's framing implies — verify in full text
+    before citing).
+  evidence_nature: causal (controlled budget-injection experiments)
+  relevance: Supports a skill-optimizer rule of per-task-difficulty token budgets rather than one fixed
+    budget — i.e., budgets should be adaptive, and a naive global cap is the failure mode this paper warns
+    about.
+  generalizes_across_models: partial — evaluated on multiple LLMs; optimal budgets are model- and task-specific
+  confidence: medium
+  verification_status: verified-primary
+- id: S-D03
+  title: 'Chain of Draft: Thinking Faster by Writing Less'
+  authors: Silei Xu, Wenhao Xie, Lingxiao Zhao, Pengcheng He
+  venue: arXiv preprint (Feb 2025)
+  year: 2025
+  url: https://arxiv.org/abs/2502.18600
+  arxiv_id: '2502.18600'
+  doi: 10.48550/arXiv.2502.18600
+  date_accessed: '2026-07-24'
+  access_method: webfetch-abstract
+  source_type: preprint
+  research_question: Can models reason via minimal 'draft' intermediate steps instead of verbose CoT without
+    losing accuracy?
+  setup: 'Chain of Draft (CoD) prompting: instructs the model to write minimal-but-informative intermediate
+    reasoning steps (human-scratchpad style); compared against standard CoT across reasoning benchmarks.'
+  main_findings: CoD matches or surpasses CoT accuracy while drastically cutting output tokens, reducing
+    both cost and latency — verbosity of the reasoning trace, not its existence, is the main token sink.
+  quantitative_results: 'Abstract: CoD ''matches or surpasses CoT in accuracy while using as little as
+    only 7.6% of the tokens'' (i.e., up to ~92% output-token reduction). Stated in the arXiv abstract.'
+  limitations: Abstract-only verification; 'as little as' is a best case, not an average; known community
+    caveats (small models, zero-shot settings) not verified here.
+  evidence_nature: causal (controlled prompting comparison)
+  relevance: 'Strongest headline number for the optimizer''s core bet: instructing terse reasoning style
+    in skill prompts can cut output tokens by an order of magnitude at roughly equal accuracy on standard
+    benchmarks.'
+  generalizes_across_models: partial — abstract claims results 'across various reasoning benchmarks';
+    per-model breakdown not verified at abstract level
+  confidence: medium
+  verification_status: verified-primary
+- id: S-D04
+  title: Let Me Speak Freely? A Study on the Impact of Format Restrictions on Performance of Large Language
+    Models
+  authors: Zhi Rui Tam, Cheng-Kuang Wu, Yi-Lin Tsai, Chieh-Yen Lin, Hung-yi Lee, Yun-Nung Chen
+  venue: arXiv preprint (cs.CL, v3 Oct 2024)
+  year: 2024
+  url: https://arxiv.org/abs/2408.02442
+  arxiv_id: '2408.02442'
+  doi: 10.48550/arXiv.2408.02442
+  date_accessed: '2026-07-24'
+  access_method: webfetch-abstract
+  source_type: preprint
+  research_question: Does forcing structured output formats (JSON/XML) impair LLM reasoning and comprehension
+    relative to free-form generation?
+  setup: Compares LLM performance on common tasks under standardized-format constraints (structured generation)
+    vs unrestricted free-text responses, across multiple models and constraint strictness levels.
+  main_findings: Format restrictions cause meaningful performance degradation on reasoning tasks; the
+    stricter the format constraint, the larger the degradation — a 'significant decline in LLMs reasoning
+    abilities under format restrictions'.
+  quantitative_results: No specific metrics in the abstract; the stated relationship is monotonic — stricter
+    constraints correlate with larger reasoning losses across tested models. Numbers require full-text
+    read before citation.
+  limitations: Abstract-only verification; the follow-up debate (e.g., dottxt's 'Say What You Mean' rebuttal
+    arguing prompt-design confounds) is not captured here — treat the effect as real but contested in
+    magnitude.
+  evidence_nature: causal (controlled format-constraint comparison)
+  relevance: 'Core evidence for the structured-output economics cluster: a skill optimizer should use
+    the loosest schema that still parses, and prefer ''reason free-form, then emit JSON'' two-phase patterns
+    over reasoning-inside-schema — schema strictness is a quality cost, not free.'
+  generalizes_across_models: partial — degradation observed across several models but with model- and
+    task-dependent magnitude
+  confidence: medium
+  verification_status: verified-primary
+- id: S-D05
+  title: 'The Danger of Overthinking: Examining the Reasoning-Action Dilemma in Agentic Tasks'
+  authors: Alejandro Cuadron, Dacheng Li, Wenjie Ma, Xingyao Wang, Yichuan Wang, Siyuan Zhuang, Shu Liu,
+    Luis Gaspar Schroeder, Tian Xia, Huanzhi Mao, Nicholas Thumiger, Aditya Desai, Ion Stoica, Ana Klimovic,
+    Graham Neubig, Joseph E. Gonzalez
+  venue: arXiv preprint (Feb 2025)
+  year: 2025
+  url: https://arxiv.org/abs/2502.08235
+  arxiv_id: '2502.08235'
+  doi: 10.48550/arXiv.2502.08235
+  date_accessed: '2026-07-24'
+  access_method: webfetch-abstract
+  source_type: preprint
+  research_question: How does excessive internal deliberation ('overthinking') in large reasoning models
+    affect performance and cost on interactive agentic tasks?
+  setup: 'Analyzed 4,018 trajectories on SWE-Bench Verified software-engineering tasks; built an overthinking-score
+    framework (validated against expert human ratings) identifying three failure patterns: Analysis Paralysis,
+    Rogue Actions, Premature Disengagement.'
+  main_findings: Higher overthinking scores correlate with worse task performance; reasoning models overthink
+    more than non-reasoning models; simple mitigation (selecting the lower-overthinking solution) recovers
+    large gains at lower cost; function-calling capability and selective RL are proposed mitigations.
+  quantitative_results: 'From the abstract: selecting solutions with lower overthinking scores improves
+    performance by ~30% while reducing computational costs by 43%; overthinking scores inversely correlate
+    with task performance across 4,018 trajectories.'
+  limitations: Score↔performance link is correlational; the 30%/43% result comes from a post-hoc selection
+    intervention, not from training models to think less; single domain (SWE).
+  evidence_nature: correlational (with an interventional selection result supporting a causal reading)
+  relevance: 'Justifies optimizer rules that cap deliberation in agent loops: prefer acting/tool-calling
+    over extended reasoning chains, add early-termination heuristics, and treat long reasoning traces
+    in agentic contexts as a defect signal, not diligence.'
+  generalizes_across_models: partial — pattern strongest in reasoning models (o1-like); non-reasoning
+    models overthink less
+  confidence: high
+  verification_status: verified-primary
+- id: S-D06
+  title: An LLM Compiler for Parallel Function Calling
+  authors: Sehoon Kim, Suhong Moon, Ryan Tabrizi, Nicholas Lee, Michael W. Mahoney, Kurt Keutzer, Amir
+    Gholami
+  venue: ICML 2024 (arXiv v3 Jun 2024)
+  year: 2024
+  url: https://arxiv.org/abs/2312.04511
+  arxiv_id: '2312.04511'
+  doi: 10.48550/arXiv.2312.04511
+  date_accessed: '2026-07-24'
+  access_method: webfetch-abstract
+  source_type: peer-reviewed
+  research_question: Can planning and executing tool calls in parallel (instead of sequential ReAct-style
+    interleaving) reduce agent latency and cost without hurting accuracy?
+  setup: 'LLMCompiler: a Function Calling Planner produces a DAG execution plan, a Task Fetching Unit
+    dispatches calls, and an Executor runs independent calls concurrently; benchmarked against ReAct on
+    open- and closed-source models.'
+  main_findings: 'Compiler-style upfront planning + batched/parallel tool execution dominates sequential
+    think-act-observe loops on parallelizable tasks: faster, cheaper, and slightly more accurate (fewer
+    repeated/derailed intermediate steps).'
+  quantitative_results: 'From the abstract: vs ReAct — up to 3.7x latency speedup, up to 6.7x cost savings,
+    up to ~9% accuracy improvement.'
+  limitations: Gains require decomposable/parallelizable tasks; 'up to' figures are best-case; abstract-only
+    verification of benchmark details.
+  evidence_nature: causal (system benchmark comparison)
+  relevance: Evidence for an optimizer rule to instruct agents/skills to batch independent tool calls
+    in one turn and plan calls upfront — sequential one-call-per-turn loops are a measurable token/latency
+    tax.
+  generalizes_across_models: yes — demonstrated on both open-source and closed-source models
+  confidence: high
+  verification_status: verified-primary
+- id: S-D07
+  title: How we built our multi-agent research system
+  authors: Anthropic (engineering blog)
+  venue: Anthropic Engineering blog
+  year: 2025
+  url: https://www.anthropic.com/engineering/multi-agent-research-system
+  arxiv_id: null
+  doi: null
+  date_accessed: '2026-07-24'
+  access_method: webfetch-fulltext
+  source_type: engineering-report
+  research_question: What does a production multi-agent research system cost in tokens, and when does
+    the overhead pay off?
+  setup: 'Orchestrator-worker architecture: lead agent (Opus 4) plans and delegates to parallel Sonnet
+    4 subagents plus a CitationAgent; internal BrowseComp-style research evaluations.'
+  main_findings: Multi-agent beats single-agent on breadth-first parallelizable research but at large
+    token cost; token spend is the dominant performance predictor; explicit effort-scaling heuristics
+    in prompts are needed to stop agents overinvesting in simple queries.
+  quantitative_results: 'Stated in the post: agents use ~4x more tokens than chat; multi-agent systems
+    ~15x more tokens than chat; token usage explains ~80% of performance variance on their BrowseComp
+    eval; multi-agent (Opus 4 lead + Sonnet 4 subagents) outperformed single-agent Opus 4 by 90.2% on
+    the internal research eval; effort-scaling guideline example: ''simple fact-finding requires just
+    1 agent with 3-10 tool calls''.'
+  limitations: Internal, non-peer-reviewed evaluation on Anthropic's own task distribution; economics
+    only favorable when task value justifies 15x tokens; findings are Claude-specific.
+  evidence_nature: correlational (internal eval + engineering lessons; token-variance result is a regression
+    finding)
+  relevance: 'The key cost anchor for the optimizer: multi-agent is a 15x token multiplier, so an optimizer
+    should default to single-agent and require justification (parallelizable, high-value task) before
+    recommending multi-agent; effort-scaling rules (N tool calls per task tier) are directly reusable
+    skill text.'
+  generalizes_across_models: partial — Claude-specific measurements; the token-overhead direction and
+    effort-scaling principle plausibly general
+  confidence: high
+  verification_status: verified-primary
+- id: S-D08
+  title: Building effective agents
+  authors: Erik Schluntz and Barry Zhang (Anthropic)
+  venue: Anthropic Engineering blog
+  year: 2024
+  url: https://www.anthropic.com/engineering/building-effective-agents
+  arxiv_id: null
+  doi: null
+  date_accessed: '2026-07-24'
+  access_method: webfetch-fulltext
+  source_type: engineering-report
+  research_question: When should a system be a fixed workflow vs an autonomous agent, and how should complexity
+    be justified?
+  setup: 'Distills Anthropic''s cross-customer experience into a taxonomy: workflows (LLMs orchestrated
+    through predefined code paths) vs agents (LLMs dynamically directing their own process/tool use),
+    plus composable patterns (prompt chaining, routing, parallelization, orchestrator-workers, evaluator-optimizer).'
+  main_findings: 'Simplicity first: start with a single prompt + retrieval/in-context examples and add
+    multi-step complexity only when it demonstrably improves outcomes; ''agentic systems often trade latency
+    and cost for better task performance, and you should consider when this tradeoff makes sense''; agents
+    suit open-ended tasks with clear success criteria.'
+  quantitative_results: None — prescriptive guidance, no measurements in the post.
+  limitations: No quantitative evidence; provider guidance reflecting Claude-era-2024 deployments; patterns,
+    not experiments.
+  evidence_nature: anecdotal (practitioner synthesis)
+  relevance: 'Grounds the optimizer''s default posture: prefer the simplest structure (single call > workflow
+    > agent) and treat every added agentic step as a cost that must earn its tokens — the meta-rule under
+    which all other token rules sit.'
+  generalizes_across_models: partial — written for Claude but framework is provider-agnostic
+  confidence: high
+  verification_status: verified-primary
+- id: S-D09
+  title: Effective context engineering for AI agents
+  authors: Anthropic (engineering blog)
+  venue: Anthropic Engineering blog
+  year: 2025
+  url: https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents
+  arxiv_id: null
+  doi: null
+  date_accessed: '2026-07-24'
+  access_method: webfetch-fulltext
+  source_type: engineering-report
+  research_question: How should agent context be curated so a finite attention budget is spent on high-signal
+    tokens?
+  setup: 'Practitioner synthesis: ''context rot'' (performance degrades as context grows; attention strained
+    by n^2 pairwise token relationships), with techniques — minimal high-signal system prompts, just-in-time
+    retrieval via lightweight identifiers, compaction, structured note-taking/external memory, and sub-agent
+    architectures returning condensed summaries.'
+  main_findings: Goal is 'the smallest possible set of high-signal tokens that maximize the likelihood
+    of some desired outcome'; prefer progressive disclosure (agents incrementally discover context through
+    exploration) over pre-loading everything; use compaction and external notes for long horizons.
+  quantitative_results: 'One illustrative figure in the post: sub-agents may explore tens of thousands
+    of tokens but should return only ~1,000-2,000-token summaries. No controlled measurements.'
+  limitations: No experiments; 'context rot' magnitude unquantified in the post; Claude-centric.
+  evidence_nature: anecdotal (practitioner synthesis)
+  relevance: 'The optimizer''s north-star framing: every skill/system-prompt token competes for attention
+    budget, so trimming low-signal instruction text is a quality intervention, not just a cost one; also
+    motivates load-on-demand references over inline content.'
+  generalizes_across_models: partial — attention/context-rot rationale applies to all transformers; specific
+    practices tuned to Claude
+  confidence: high
+  verification_status: verified-primary
+- id: S-D10
+  title: Equipping agents for the real world with Agent Skills
+  authors: Anthropic (engineering blog)
+  venue: Anthropic Engineering blog
+  year: 2025
+  url: https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills
+  arxiv_id: null
+  doi: null
+  date_accessed: '2026-07-24'
+  access_method: webfetch-fulltext
+  source_type: provider-doc
+  research_question: How should reusable agent capabilities (Skills) be structured so expertise loads
+    only when needed?
+  setup: 'Defines Agent Skills as folders of instructions/scripts/resources with three-level progressive
+    disclosure: (1) YAML frontmatter name+description pre-loaded into the system prompt, (2) SKILL.md
+    body loaded when relevant, (3) bundled files loaded on demand; includes authoring guidance.'
+  main_findings: Only the metadata line pays a permanent context cost; skill bodies and references should
+    be split for on-demand loading; use code/scripts for deterministic operations instead of token-intensive
+    generation; iterate with the model to find what context it actually needs; install skills only from
+    trusted sources — skills are a security surface.
+  quantitative_results: None — no token numbers stated in the post.
+  limitations: Provider documentation, no measurements; Claude-specific mechanism (though the pattern
+    is portable).
+  evidence_nature: anecdotal (design documentation)
+  relevance: 'The direct spec for what the Token-Efficient Skill Optimizer optimizes: minimize level-1
+    metadata cost, keep SKILL.md lean, push detail to level-3 files, and replace generative steps with
+    scripts — plus the explicit warning that skill content is a trust/injection surface (ties to S-D11/S-D12).'
+  generalizes_across_models: partial — progressive-disclosure pattern is general; the mechanism is Claude's
+  confidence: high
+  verification_status: verified-primary
+- id: S-D11
+  title: 'Not what you''ve signed up for: Compromising Real-World LLM-Integrated Applications with Indirect
+    Prompt Injection'
+  authors: Kai Greshake, Sahar Abdelnabi, Shailesh Mishra, Christoph Endres, Thorsten Holz, Mario Fritz
+  venue: arXiv preprint (cs.CR; also presented at AISec workshop — arXiv page verified)
+  year: 2023
+  url: https://arxiv.org/abs/2302.12173
+  arxiv_id: '2302.12173'
+  doi: 10.48550/arXiv.2302.12173
+  date_accessed: '2026-07-24'
+  access_method: webfetch-abstract
+  source_type: preprint
+  research_question: Can adversaries attack LLM-integrated applications remotely by embedding instructions
+    in data the LLM retrieves, rather than by prompting it directly?
+  setup: Introduces and demonstrates Indirect Prompt Injection (IPI) against real systems (Bing's GPT-4-powered
+    Chat, code-completion engines) and synthetic GPT-4 applications; builds an attack taxonomy.
+  main_findings: 'LLMs blur the data/instruction boundary, so retrieved content functions like arbitrary
+    code execution: demonstrated data theft, worming, information-ecosystem contamination, and manipulation
+    of application behavior/API calls; ''effective mitigations of these emerging threats are currently
+    lacking'' (at time of writing).'
+  quantitative_results: None in the abstract — the contribution is a demonstrated attack class and taxonomy,
+    not benchmark rates.
+  limitations: 2023-era systems; demonstrations rather than measured attack success rates at abstract
+    level; defenses have evolved since.
+  evidence_nature: causal (demonstrated attacks on real systems)
+  relevance: 'The foundational reason the optimizer must treat optimized-target content (skill bodies,
+    tool results, documents fed to the optimizer) as untrusted data: any text an LLM ingests is a potential
+    instruction channel, so optimization pipelines need instruction/data separation and screening.'
+  generalizes_across_models: yes — the data/instruction confusion is architectural, demonstrated across
+    multiple LLM applications
+  confidence: high
+  verification_status: verified-primary
+- id: S-D12
+  title: Design Patterns for Securing LLM Agents against Prompt Injections
+  authors: Luca Beurer-Kellner, Beat Buesser, Ana-Maria Creţu, Edoardo Debenedetti, Daniel Dobos, Daniel
+    Fabian, Marc Fischer, David Froelicher, Kathrin Grosse, Daniel Naeff, Ezinwanne Ozoani, Andrew Paverd,
+    Florian Tramèr, Václav Volhejn
+  venue: 'arXiv preprint (Jun 2025; multi-org: invariantlabs/ETH/Google/Microsoft et al.)'
+  year: 2025
+  url: https://arxiv.org/abs/2506.08837
+  arxiv_id: '2506.08837'
+  doi: 10.48550/arXiv.2506.08837
+  date_accessed: '2026-07-24'
+  access_method: webfetch-abstract
+  source_type: preprint
+  research_question: Which agent architectures give principled (not heuristic) resistance to prompt injection
+    while preserving utility?
+  setup: Proposes and systematically analyzes a set of design patterns for injection-resistant agents
+    (e.g., constraining what untrusted content can influence), with utility/security tradeoff analysis
+    and real-world case studies.
+  main_findings: Security against injection should come from structural constraints on agent design —
+    once an agent ingests untrusted input, its subsequent actions must be restricted — rather than from
+    model-level filtering alone; each pattern trades some generality/utility for provable resistance.
+  quantitative_results: None in the abstract — contribution is architectural patterns and case-study analysis,
+    not benchmark numbers.
+  limitations: Abstract-only verification; patterns constrain agent capability (utility cost); 'provable
+    resistance' applies within each pattern's threat-model assumptions.
+  evidence_nature: anecdotal (principled design analysis + case studies, not controlled experiments)
+  relevance: 'Gives the optimizer its concrete defensive playbook: process skill/document content under
+    restricted privileges, don''t let text from the optimized artifact steer tool use, and design the
+    optimization loop so untrusted content can affect only quarantined outputs.'
+  generalizes_across_models: yes — architectural patterns are model-agnostic by construction
+  confidence: high
+  verification_status: verified-primary
+cluster_syntheses:
+  cluster-A-compression-safety: 'Consensus: moderate, extractive/task-aware compression (roughly 2x-5x
+    task-agnostic [S-A03], up to ~10x extractive [S-A07], ~20x claimed in the best case [S-A01]) preserves
+    most task accuracy, and question-aware compression can even IMPROVE long-context accuracy by densifying
+    relevant information [S-A02]. Soft-prompt methods [S-A04, S-A05] reach far higher ratios but are model-specific
+    and opaque.
+
+    Disagreements: (a) how lossy high-ratio compression really is — "little performance loss at 20x" [S-A01]
+    vs 27-38% capability loss at extreme ratios [S-A05] and silent entity/grounding loss even in SOTA
+    methods [S-A08]; (b) token pruning''s value — its papers'' claims vs S-A07''s finding that it lags
+    extractive; (c) whether degradation is semantic or instructional — S-A10 says constraint-dropping
+    dominates (2.9x) and is non-monotonic, which no other source models.
+
+    Candidate rule R1 — Budget cap: default skill-text compression to extractive methods at <=5x, hard
+    ceiling ~10x; beyond that require explicit accuracy sign-off. Support: S-A01, S-A03, S-A07. Risk:
+    S-A05''s measured 27-38% loss at extreme ratios; S-A08''s silent information loss.
+
+    Candidate rule R2 — Protect instructions and safety text: never compress constraints/safety instructions
+    in the same budget as content; keep them verbatim (or restore post-compression) and never co-compress
+    trusted instructions with untrusted input. Support: S-A09 (guardrail-dropping attack, ASR 0.71), S-A10
+    (constraint violations peak at mid compression), S-A01 (budget controller precedent).
+
+    Candidate rule R3 — Task-aware over generic: when the query/task is known, use question-aware compression
+    + reordering (can gain accuracy, +21.4% NQ at 4x fewer tokens); when compressing reusable skill text
+    offline, use faithful task-agnostic token classification (LLMLingua-2-style). Support: S-A02, S-A03,
+    S-A06.
+
+    Candidate rule R4 — Verify preservation, not just accuracy: gate every compressed skill version on
+    information-preservation checks (entity retention, grounding) and per-compression-level constraint-compliance
+    tests, since compliance decay is U-shaped, not monotonic. Support: S-A08, S-A10; risk: S-A10 is unreplicated
+    (low confidence), so treat the U-curve as a hypothesis to test in-house.
+
+    Overall evidence caveat: quality-degradation evidence is strong and peer-reviewed; safety-specific
+    erosion evidence [S-A09, S-A10] is newer and preprint-only — real but less settled.
+
+    '
+  cluster-B-context-rag: 'CONSENSUS: (1) Accuracy degrades with input length long before nominal window
+    limits — across 18 models (S-B03), 13 models (S-B02: 11/13 below 50% of baseline at 32K), and even
+    with PERFECT retrieval and masked irrelevant tokens (S-B04: 13.9%-85% drops) — so token count itself
+    is a cost, not just noise. (2) Position matters: mid-context information can be worth less than no
+    context at all (S-B01: middle 53.8% < closed-book 56.1%). (3) Query-aware compression of context is
+    cheap and can even raise accuracy (S-B07: +21.4% with 4x fewer tokens; S-B08: 6% compression rate
+    with minimal loss), while semantically-similar-but-irrelevant content reliably hurts (S-B03, S-B09).
+    DISAGREEMENTS: random noise sometimes HELPS (+35%, S-B09) while any hard distractor hurts (S-B03)
+    — the harmful variable is semantic similarity, not token count of junk, and the noise benefit is setting-dependent;
+    S-B03 also finds shuffled haystacks beat structured ones, complicating "coherent context is better"
+    intuitions; semantic chunking underdelivers vs its reputation (S-B10). CANDIDATE RULES: R1 — enforce
+    a token budget and prefer the focused slice over full history/top-k dumps (S-B03, S-B04, S-B05); risk:
+    S-B04 shows even relevant-only long prompts degrade, so budget, don''t just filter. R2 — compress
+    retrieved/skill context QUERY-AWARE with reordering so key items sit at start/end (S-B07, S-B01, S-B08);
+    risk: query-blind pruning measurably hurts faithfulness (S-B06: -0.038) and abstractive compression
+    can hallucinate — exempt safety-critical instructions from pruning. R3 — filter hard negatives (high
+    embedding-similarity, non-answering chunks) rather than deduplicating by similarity alone, and add
+    NOTHING when retrieval is uninformative (S-B09, S-B08, S-B03). R4 — for multi-turn skills, periodically
+    consolidate the conversation into one restated fully-specified spec instead of growing raw history
+    (S-B05: -39% multi-turn; S-B03 LongMemEval focused>full); risk: summarization is lossy and models
+    don''t recover from a wrong compacted premise (S-B05) — keep an escape hatch to the raw log.
+
+    '
+  cluster-C-caching-routing-pricing: 'Consensus: both major providers now price cache reads at 0.1x input
+    and (on their newest
+
+    families) cache writes at 1.25x input, and both make the same architectural demand — a
+
+    byte-stable prefix with static content first — so stable-prefix skill layout is a
+
+    provider-agnostic optimization, mechanistically grounded by KV-reuse systems work
+
+    (S-C07 8-60x TTFT, S-C08 6.4x throughput). Routing/cascade literature consistently finds
+
+    large savings at held quality: 98% best-case (FrugalGPT), >2x (RouteLLM), >50% (AutoMix).
+
+    Disagreements: control surface (Anthropic explicit cache_control breakpoints + TTL choice
+
+    vs OpenAI fully automatic, no TTL control); write billing history (OpenAI pre-5.6 free
+
+    writes vs Anthropic always-charged); minimum cacheable prefix (OpenAI flat 1024 vs
+
+    Anthropic 512-4096 by model); and routing savings magnitude, which tracks how much
+
+    verification overhead each scheme pays up front.
+
+    Candidate optimization rules:
+
+    R-C1 stable-prefix layout — order skill content tools->system->messages, static-first,
+
+    no timestamps/UUIDs/non-deterministic serialization in the prefix; risk: a single silent
+
+    invalidator voids all downstream cache (verify via cache_read_input_tokens > 0).
+
+    R-C2 cache-write-tier selection — choose 5m vs 1h TTL from expected re-invocation
+
+    interval; 5m breaks even after 1 read, 1h after 2 (S-C02 verbatim); risk: 2x writes on
+
+    bursty low-reuse traffic; also gate on the per-model minimum cacheable prefix.
+
+    R-C3 difficulty-based routing/cascade — cheap model + self-verify, escalate on low
+
+    confidence (AutoMix), or preference-trained router (RouteLLM); risk: quality loss on
+
+    misrouted hard queries and router miscalibration after model/price churn — require a
+
+    quality gate and periodic recalibration against the pricing_snapshot.
+
+    R-C4 semantic response cache above the provider prefix cache (GPTCache) for repeated
+
+    queries — the only tier that also saves output tokens; risk: false-positive similarity
+
+    hits serving wrong/stale answers — require conservative thresholds and staleness TTLs.
+
+    '
+  cluster-D-output-agents-injection: "Consensus: (1) Reasoning/output verbosity is heavily compressible\
+    \ — terse-reasoning prompting and token budgets\ncut output tokens dramatically (up to ~92% in CoD's\
+    \ best case) at near-equal accuracy on standard benchmarks\n(S-D01, S-D02, S-D03); (2) token spend,\
+    \ not architecture cleverness, dominates agent cost-performance (S-D07:\ntoken usage explains ~80%\
+    \ of eval variance); (3) context is a finite attention budget — minimal high-signal\nprompts + progressive\
+    \ disclosure beat pre-loading (S-D09, S-D10); (4) any text an LLM ingests is an instruction\nchannel,\
+    \ so skill/tool/document content must be handled as untrusted (S-D11, S-D12).\nDisagreements/tensions:\
+    \ strict output-format constraints measurably hurt reasoning (S-D04) yet structured output\nreduces\
+    \ parse failures/retries — the economics depend on constraint strictness (magnitude contested by the\n\
+    dottxt rebuttal, unverified here); multi-agent gives +90.2% on parallelizable research but at ~15x\
+    \ tokens\n(S-D07) vs the simplicity-first default (S-D08); conciseness pressure risks accuracy loss\
+    \ on hardest instances\n(S-D01/S-D02 report 'slight' degradation; S-D05 shows the mirror risk, Premature\
+    \ Disengagement, when agents\nunder-deliberate).\nCandidate optimization rules:\nR1 Budgeted terse\
+    \ reasoning — add explicit output-token budgets / draft-style reasoning instructions to skills\n \
+    \  (S-D01, S-D02, S-D03); risk: accuracy drop on hard problems, budgets must scale with difficulty\
+    \ (S-D02).\nR2 Loosest-schema principle — request the minimal structure that still parses; reason\
+    \ free-form then format\n   (S-D04); risk: looser formats raise parse/retry costs — measure both sides.\n\
+    R3 Plan-and-batch tool calls + effort scaling — batch independent calls in one turn, cap tool calls\
+    \ per task\n   tier ('simple fact-finding = 1 agent, 3-10 calls') (S-D06, S-D07); risk: upfront plans\
+    \ fail on tasks needing\n   observation-dependent branching.\nR4 Single-agent default, progressive\
+    \ disclosure — recommend multi-agent only for parallelizable high-value\n   tasks (15x token cost,\
+    \ S-D07/S-D08); keep skill metadata minimal, push detail to on-demand files, replace\n   generative\
+    \ steps with scripts (S-D09, S-D10); risk: over-trimming removes context the model actually needed.\n\
+    R5 Anti-overthinking + untrusted-content gates — penalize long deliberation between actions in agent\
+    \ loops\n   (~30% gain / 43% cost cut from selecting low-overthinking solutions, S-D05), and treat\
+    \ every optimized-target\n   document/skill body as untrusted input processed under restricted privileges\
+    \ (S-D11, S-D12); risk: pushing\n   act-over-think too far causes rogue actions/premature disengagement\
+    \ (S-D05).\n"
