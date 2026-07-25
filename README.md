@@ -80,6 +80,34 @@ published at that value rather than swapped for a more flattering slice. Skills 
 trigger rarely save little no matter how well they are optimized — which is exactly the
 answer you want before spending a week on one.
 
+## Tried on real skills
+
+Run against three of the most-installed public skills, at pinned commits. The **trigger path**
+is `frontmatter + body` — the tier billed on every single invocation.
+
+| skill | installs | before | after | | |
+|---|---|---|---|---|---|
+| `improve-codebase-architecture` | 538K | 1,540–1,673 | 1,247–1,356 | **−19.0%** | kept |
+| `react-best-practices` | 578K | 2,026–2,202 | 1,888–2,052 | **−6.8%** | kept |
+| `frontend-design` | 702K | 1,887–2,051 | 1,563–1,700 | −17.2% | **reverted** |
+
+`[estimated]`. No prose was compressed or reworded — every change is a verbatim move or a
+delete-with-citation, so each is auditable line by line.
+
+**Quality was then measured, not assumed.** A blinded paired A/B, 24 paired observations, sides
+randomized, thresholds frozen before the run: original **3.875** vs optimized **3.833** on a 0–4
+scale — inside the pre-declared −0.25 threshold, with 17 ties and the optimized side marginally
+ahead head-to-head. On `improve-codebase-architecture` every one of the eight paired deltas was
+**exactly zero** and all seven report fields survived relocation.
+
+**The third one was reverted by its own evaluation, and it is the most useful result here.** The
+relocated material turned out to be read in **8 of 8** runs. Break-even had been computed in
+advance at 74%, so at the observed rate the change makes the skill **+2.3% more expensive**. The
+quality data would have let it through; the economics killed it. `−17.2%` was correctly measured
+and misleading about everything a reader would infer from it.
+
+Full detail, including what was refused and why: [`docs/CASE-STUDIES.md`](docs/CASE-STUDIES.md).
+
 ## Quick start
 
 ```bash
@@ -120,6 +148,7 @@ open, and every design decision states what it rejected and why.
 
 | | |
 |---|---|
+| [`docs/CASE-STUDIES.md`](docs/CASE-STUDIES.md) | Run against three skills with 1.8M installs between them — what changed, what was refused, and why |
 | [`docs/RESULTS.md`](docs/RESULTS.md) | What was measured, what was estimated, what is unproven — with limitations beside the numbers, not in a footnote |
 | [`docs/DECISIONS.md`](docs/DECISIONS.md) | 11 design decisions, each with its reasoning and what was rejected |
 | [`docs/EVIDENCE.md`](docs/EVIDENCE.md) | All 42 sources, and which rule each one supports |

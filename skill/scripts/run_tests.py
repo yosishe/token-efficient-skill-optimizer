@@ -314,6 +314,123 @@ def main():
           ran and nflag("references/outer-orphan.md"),
           f"ran={ran} flags={nflags}")
 
+    # 6b-3. THE FIVE FALSE-POSITIVE CLASSES (added 2026-07-25 with their fix).
+    # Pointed at the three most-installed public skills the harness emitted 149
+    # findings of which ~2 were actionable. Each block below pins ONE class and
+    # its guard half: the guard is the point. Suppressing a whole check is the
+    # easy way to make a false-positive count go to zero, and this function has
+    # already been over-corrected once (see the depth-guard comments above), so
+    # every rescue here is paired with a case that must still be reported.
+    def tier_of(rep, path):
+        return next((f.get("tier") for f in rep["files"] if f["path"] == path),
+                    None)
+
+    def noted(rep, needle):
+        return any(needle in n for n in rep.get("informational", []))
+
+    # FP-1: a body that lists 70 rule STEMS plus one path example
+    # ("rules/alpha-one.md") HAS told the model how to reach every one of them,
+    # and doing it that way costs fewer tokens than 70 literal paths. 68 of
+    # vercel/react-best-practices' 72 flags were this.
+    cv = measure("convention-skill")
+    t("FP-1 CONVENTION: a listed stem plus a documented <dir>/<file>.<ext> path "
+      "is reachable",
+      not flagged(cv, "alpha-two.md") and not flagged(cv, "beta-three.md")
+      and noted(cv, "reachable by documented convention"),
+      f"flags={cv['flags']}")
+    # Guard half 1 - the sharpest test of whether the rescue is too permissive.
+    # _scaffold.md sits in the SAME directory as the documented path example;
+    # only its stem is absent from the body. Accepting the directory alone
+    # (i.e. dropping the stem test) rescues it and hides a real orphan.
+    t("FP-1 CONVENTION: a stem the body never lists is still flagged",
+      flagged(cv, "_scaffold.md"), f"flags={cv['flags']}")
+    # Guard half 2 - the other conjunct. gamma-four's stem IS listed, but its
+    # directory is named only as a bare `notes/`; a listing without a documented
+    # path shape is not a reachability claim.
+    t("FP-1 CONVENTION: a listed stem with no path convention for its directory "
+      "is still flagged", flagged(cv, "gamma-four.md"), f"flags={cv['flags']}")
+
+    # FP-2: AGENTS.md overlaps every rule file 85-95% and the body says so
+    # ("## Full Compiled Document ... `AGENTS.md`"). That is documented,
+    # intentional duplication - 72 more of the same skill's 144 findings.
+    bd = measure("bundle-skill")
+    t("FP-2 BUNDLE: a declared compiled bundle is not a duplication finding",
+      not any("COMPILED.md" in (d["file_a"], d["file_b"])
+              for d in bd["duplicates"])
+      and len(bd["compiled_bundle_pairs"]) >= 3
+      and noted(bd, "compiled/complete bundle"),
+      f"dups={[(d['file_a'], d['file_b']) for d in bd['duplicates']]} "
+      f"bundle={len(bd['compiled_bundle_pairs'])}")
+    # Guard half - two near-identical parts NOT declared anywhere must still be
+    # reported. Without it, "declare everything mentioned in the body a bundle"
+    # would pass the test above and silence real duplication.
+    t("FP-2 BUNDLE: an undeclared overlapping pair is still a duplication "
+      "finding",
+      any({d["file_a"], d["file_b"]} == {"parts/rule-notes.md",
+                                         "parts/rule-notes-copy.md"}
+          for d in bd["duplicates"]),
+      f"dups={[(d['file_a'], d['file_b']) for d in bd['duplicates']]}")
+    # The declaration needs BOTH a name and a marker near it, in the same
+    # section. parts/*.md are named in the body and one of them even carries the
+    # marker word "bundle" in its own filename - neither is a declaration.
+    t("FP-2 BUNDLE: a merely-mentioned file is not declared a bundle",
+      bd["declared_bundles"] == ["COMPILED.md"],
+      f"declared={bd['declared_bundles']}")
+
+    # FP-3: disable-model-invocation: true means the author turned auto-trigger
+    # OFF. Trigger phrasing and a negative boundary describe a surface that does
+    # not exist - 2 of mattpocock/improve-codebase-architecture's 3 flags.
+    na = measure("no-autoinvoke-skill")
+    t("FP-3 NO-AUTOINVOKE: both description checks suppressed, with the reason "
+      "stated",
+      not flagged(na, "trigger phrasing")
+      and not flagged(na, "negative boundary")
+      and noted(na, "disable-model-invocation"),
+      f"flags={na['flags']} info={na.get('informational')}")
+
+    rc = measure("runtime-config-skill")
+    # Guard half for FP-3 AND the negative control for FP-4 in one fixture: the
+    # same two checks, on a manifest that does NOT disable model invocation and
+    # whose description says "when the audit asks" - a bare "when", which is
+    # ordinary prose, not trigger phrasing.
+    t("FP-3 NO-AUTOINVOKE: without the key both description checks still fire",
+      flagged(rc, "trigger phrasing") and flagged(rc, "negative boundary"),
+      f"flags={rc['flags']}")
+    t("FP-4 SEMANTIC TRIGGER: a bare 'when' is not trigger phrasing",
+      flagged(rc, "trigger phrasing"), f"flags={rc['flags']}")
+
+    # FP-4: "...when building new UI or reshaping an existing one" IS trigger
+    # phrasing; the literal marker list just did not cover how
+    # anthropics/frontend-design happens to be worded.
+    st = measure("semantic-trigger-skill")
+    t("FP-4 SEMANTIC TRIGGER: 'when <gerund>' counts as trigger phrasing",
+      not flagged(st, "trigger phrasing"), f"flags={st['flags']}")
+    # Guard half - the SAME description has no negative boundary, and that
+    # finding is real. Broadening the trigger heuristic must not take it out.
+    t("FP-4 SEMANTIC TRIGGER: the missing negative boundary is still reported",
+      flagged(st, "negative boundary"), f"flags={st['flags']}")
+
+    # FP-5: agents/openai.yaml is 166 B of display name for a DIFFERENT runtime
+    # and metadata.json is registry data. Both are shipped and never read into
+    # context, so counting them as conditional context inflates the surface and
+    # then flags them undiscoverable.
+    t("FP-5 RUNTIME CONFIG: metadata.json and agents/*.yaml are artifacts, not "
+      "context",
+      tier_of(rc, "metadata.json") == "artifact"
+      and tier_of(rc, "agents/openai.yaml") == "artifact"
+      and not flagged(rc, "metadata.json")
+      and not flagged(rc, "openai.yaml"),
+      f"metadata.json={tier_of(rc, 'metadata.json')} "
+      f"openai.yaml={tier_of(rc, 'agents/openai.yaml')} flags={rc['flags']}")
+    # Guard half - a Markdown brief under agents/ is a sub-agent PROMPT, which
+    # is model context. Excusing the whole directory would trade this
+    # false-positive class for a blind spot over real unreachable capability.
+    t("FP-5 RUNTIME CONFIG: a Markdown brief under agents/ is still context and "
+      "still flagged",
+      tier_of(rc, "agents/reviewer.md") == "conditional"
+      and flagged(rc, "agents/reviewer.md"),
+      f"tier={tier_of(rc, 'agents/reviewer.md')} flags={rc['flags']}")
+
     # 6c. validator edge cases (both were real bugs found on real reports)
     with tempfile.TemporaryDirectory() as td:
         # 'Second' in a heading must not read as a latency unit. No inline

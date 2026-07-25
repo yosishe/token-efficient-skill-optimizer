@@ -63,7 +63,19 @@ NON_CONTEXT_FILE = re.compile(
     r"^(package(-lock)?\.json|readme(\.[a-z]{2})?\.md|license.*|changelog.*|"
     r"version|tsconfig\.json|requirements\.txt|pyproject\.toml|makefile|"
     r"test-prompts\.json|\.?eslintrc.*|\.gitignore|provenance\.md|"
+    r"metadata\.json|"
     r"contributing\.md|codeowners|notice)$", re.I)
+
+# Runtime-config files: shipped so some OTHER runtime can register, label or
+# gate the skill. They are never loaded into model context, so counting them as
+# conditional context both inflates the surface and produces an "undiscoverable"
+# flag for a file nothing is ever meant to open. (Measured 2026-07-25 on
+# mattpocock/improve-codebase-architecture: agents/openai.yaml is 166 B of
+# display_name + allow_implicit_invocation, and was 1 of that skill's 3 flags.)
+# Scoped to CONFIG extensions on purpose: a Markdown brief under agents/ is a
+# sub-agent prompt, which IS model context and must stay flaggable.
+RUNTIME_CONFIG_DIRS = {"agents", ".agents"}
+RUNTIME_CONFIG_EXT = {".yaml", ".yml", ".json", ".toml", ".ini", ".cfg"}
 
 # Language-suffixed sibling files (README.en.md vs README.md, c1-demo-en.html vs
 # c1-demo.html) are intentional translations, not redundancy to remove.
@@ -72,6 +84,42 @@ LANG_SUFFIX = re.compile(r"[-_.](en|zh|cn|tw|he|ja|ko|fr|es|de|pt|ru|ar)(?=\.|$)
 
 NGRAM_N = 8            # word n-gram size for duplicate detection
 NGRAM_REPORT_MIN = 20  # report file pairs sharing at least this many distinct n-grams
+
+# A compiled bundle is a file the BODY ITSELF declares to be the everything-in-
+# one-file rendering of the package ("For the complete guide with all rules
+# expanded: `AGENTS.md`"). Its overlap with each constituent is the whole point
+# of shipping it, and the reader chooses one or the other - it is documented,
+# intentional duplication, not waste. Reporting it as duplication was 72 of
+# vercel/react-best-practices' 144 findings (2026-07-25).
+BUNDLE_MARKERS = (
+    # English
+    "compiled", "compilation", "bundle", "bundled", "concatenat",
+    "single file", "single document", "all-in-one", "all in one",
+    "complete guide", "complete document", "complete reference",
+    "complete version", "full guide", "full document", "full reference",
+    "full text", "full version", "combined document", "combined guide",
+    "unabridged", "everything in one", "all rules expanded", "fully expanded",
+    "expanded in full",
+    # Chinese
+    "完整文档", "完整版", "合并", "汇总", "全文",
+    # Hebrew
+    "מסמך מלא", "גרסה מלאה", "מאוחד", "מקובץ",
+)
+# Chars either side of the filename mention that count as "the same context".
+# A window rather than a paragraph because the declaration is routinely split
+# across a heading and its first line ("## Full Compiled Document" / "For the
+# complete guide ...: `AGENTS.md`") - paragraph splitting misses exactly that.
+# The window never crosses a markdown heading: the next `## ...` starts a new
+# subject, and letting it bleed backwards declared two ordinary rule files
+# bundles on the first real run of this check (2026-07-25).
+BUNDLE_WINDOW = 300
+ATX_HEADING_RE = re.compile(r"^#{1,6}[ \t]", re.M)
+# A pair is bundle-vs-constituent only if the bundle is the LARGER side and it
+# really absorbed the other file. Both halves matter: without the size test a
+# small file that merely mentions the word "compiled" would excuse its own
+# duplication, and without the ratio test two unrelated files sharing boilerplate
+# would be laundered as "compilation overlap".
+BUNDLE_CONSTITUENT_MIN_RATIO = 0.20
 
 # tiktoken->Claude adjustment range. Basis: Anthropic's token-counting guidance
 # states tiktoken undercounts Claude tokens by ~15-20% on typical text (more on
@@ -90,6 +138,11 @@ def classify_tier(rel):
     if any(part.lower() in NON_CONTEXT_DIRS for part in parts[:-1]):
         return "artifact"
     if NON_CONTEXT_FILE.match(Path(rel).name):
+        return "artifact"
+    # A config-format file inside an agents/ directory is another runtime's
+    # manifest, not context. Markdown there is deliberately NOT caught.
+    if (any(part.lower() in RUNTIME_CONFIG_DIRS for part in parts[:-1])
+            and Path(rel).suffix.lower() in RUNTIME_CONFIG_EXT):
         return "artifact"
     # Executables are script tier wherever they live (data/_sync_all.py is a
     # tool, not context) - they cost context only if the model reads them.
@@ -179,20 +232,68 @@ def _lang_normalized(path):
     return LANG_SUFFIX.sub("", path)
 
 
-def duplicate_pairs(file_texts):
+def _sections(text):
+    """Split markdown at ATX headings -> [section_text].
+
+    The heading line stays with the section it introduces, because the
+    declaration routinely lives in the heading ("## Full Compiled Document").
+    """
+    starts = sorted({0} | {m.start() for m in ATX_HEADING_RE.finditer(text)})
+    return [text[s:(starts[i + 1] if i + 1 < len(starts) else len(text))]
+            for i, s in enumerate(starts)]
+
+
+def declared_bundles(body, candidates):
+    """Context files the body itself declares to be a compiled/complete bundle.
+
+    Detection is deliberately two-sided: the file's NAME must appear in the
+    body AND a bundle marker must appear near that mention, in the same
+    markdown section. A marker alone ("this skill compiles a report") declares
+    nothing; a bare filename mention is just a pointer.
+
+    Filenames are MASKED (same length, so offsets survive) before the marker
+    search: `rules/bundle-barrel-imports.md` contains the literal marker word
+    "bundle", and without masking a rule file declared itself a bundle - which
+    then quietly re-listed its own overlap as a real duplicate.
+    """
+    bases = sorted({os.path.basename(r) for r in candidates if os.path.basename(r)},
+                   key=len, reverse=True)
+    out = set()
+    for section in _sections(body):
+        masked = section
+        for b in bases:
+            masked = masked.replace(b, " " * len(b))
+        low = masked.lower()
+        for rel in candidates:
+            base = os.path.basename(rel)
+            if rel in out or not base:
+                continue
+            for m in re.finditer(re.escape(base), section):
+                window = low[max(0, m.start() - BUNDLE_WINDOW):
+                             m.end() + BUNDLE_WINDOW]
+                if any(k in window for k in BUNDLE_MARKERS):
+                    out.add(rel)
+                    break
+    return out
+
+
+def duplicate_pairs(file_texts, bundles=frozenset()):
     """Cross-file shared word-8-gram report. [measured] - exact set math.
 
-    Returns (real_duplicates, bilingual_sibling_pairs). Language-suffixed
-    siblings are reported separately: they are intentional translations, and
-    listing them as duplication produced 9 of the top-12 findings on a real
-    bilingual skill (2026-07-24).
+    Returns (real_duplicates, bilingual_sibling_pairs, compiled_bundle_pairs).
+    Language-suffixed siblings are reported separately: they are intentional
+    translations, and listing them as duplication produced 9 of the top-12
+    findings on a real bilingual skill (2026-07-24). `bundles` (see
+    declared_bundles) is the same idea one level up: a documented compiled
+    rendering of the package overlaps every constituent BY DESIGN, so those
+    pairs are reported informationally instead of as findings.
 
     Callers pass CONTEXT files only. Duplication inside artifacts (demo HTML,
     build metadata) costs zero context tokens, so reporting it as an
     optimization finding is noise - it was 427 of 437 pairs on that same skill.
     """
     grams = {p: word_ngrams(t) for p, t in file_texts.items()}
-    out, siblings = [], []
+    out, siblings, bundled = [], [], []
     paths = sorted(grams)
     for i, a in enumerate(paths):
         for b in paths[i + 1:]:
@@ -200,15 +301,25 @@ def duplicate_pairs(file_texts):
             if len(shared) < NGRAM_REPORT_MIN:
                 continue
             smaller = min(len(grams[a]), len(grams[b])) or 1
+            ratio = round(len(shared) / smaller, 3)
             rec = {"file_a": a, "file_b": b,
                    "shared_8grams": len(shared),
-                   "overlap_ratio_of_smaller": round(len(shared) / smaller, 3)}
-            if _lang_normalized(a) == _lang_normalized(b):
+                   "overlap_ratio_of_smaller": ratio}
+            # bundle-vs-constituent: the declared bundle is the bigger side and
+            # has really absorbed the other file.
+            big, small = (a, b) if len(grams[a]) >= len(grams[b]) else (b, a)
+            if (big in bundles and small not in bundles
+                    and len(grams[big]) > len(grams[small])
+                    and ratio >= BUNDLE_CONSTITUENT_MIN_RATIO):
+                rec["bundle"] = big
+                bundled.append(rec)
+            elif _lang_normalized(a) == _lang_normalized(b):
                 siblings.append(rec)
             else:
                 out.append(rec)
     key = lambda d: -d["shared_8grams"]
-    return sorted(out, key=key), sorted(siblings, key=key)
+    return (sorted(out, key=key), sorted(siblings, key=key),
+            sorted(bundled, key=key))
 
 
 # ----------------------------------------------------------- structural flags
@@ -242,9 +353,72 @@ READ_CONDITION_RE = re.compile(
     r"|כאשר|רק\s|אם\s|לפני|בעת|במקרה",                       # Hebrew
     re.I)
 
+# Trigger phrasing stated semantically instead of with a marker word. "...when
+# building new UI or reshaping an existing one" IS the trigger; the literal list
+# above just happened to match how the first sample of skills was worded
+# (anthropics/frontend-design, 2026-07-25).
+# Deliberately narrow: a bare "when" anywhere in the description is NOT
+# accepted - it is ordinary prose ("choices that matter when reviewed").
+# Only when/for + a gerund, or when + you/your.
+TRIGGER_GERUND_RE = re.compile(r"\b(?:when|for)\s+([a-z]{3,}ing)\b", re.I)
+TRIGGER_WHEN_YOU_RE = re.compile(r"\bwhen\s+your?\b", re.I)
+# -ing words that are not gerunds. Without this, "Do not use for anything real"
+# would read as trigger phrasing - the stop-list is what keeps the rule from
+# collapsing into "contains the word for".
+NON_GERUND_ING = {
+    "anything", "everything", "nothing", "something", "thing", "things",
+    "during", "string", "strings", "king", "kings", "ring", "rings", "spring",
+    "morning", "evening", "ceiling", "sibling", "siblings", "wing", "wings",
+    "being", "bring", "sing", "swing", "sterling", "engineering",
+}
+
 # A concrete pointer names a real file. Generic path-convention prose
 # ("paths look like references/xxx.md") is not a pointer and must not be flagged.
 CONCRETE_REF_RE = re.compile(r"references/(?!x{2,}|<|\*|\.\.\.)[\w.-]+\.\w+")
+
+# Convention-based reachability (FP-1). A body that lists 70 rule STEMS and then
+# documents the path shape once ("rules/async-parallel.md") has told the model
+# everything it needs to open rules/advanced-init-once.md. That is MORE token-
+# efficient than 70 literal paths, so flagging all 70 penalised the better
+# design: 68 of vercel/react-best-practices' 72 flags (2026-07-25).
+# Both halves are required, and neither is the depth guard:
+#   * the stem must appear in the body as a whole token, and
+#   * the body must show a real <dir>/<name>.<ext> path for THAT directory.
+# The depth guard (bare directory mentions must be depth >= 2) is untouched -
+# a body saying only "references/" still shows no <dir>/<file>.<ext> pattern and
+# still rescues nothing.
+MIN_CONVENTION_STEM = 3   # 1-2 char stems collide with ordinary prose
+
+
+def _dir_path_convention(directory, body):
+    """True if `body` shows a concrete `<directory>/<name>.<ext>` path."""
+    if not directory:
+        return False          # a root-level file has no directory convention
+    return bool(re.search(re.escape(directory) + r"/[A-Za-z0-9_.\-]+\.[A-Za-z0-9]+",
+                          body))
+
+
+def _stem_named(stem, body):
+    """True if `stem` appears in `body` as a whole token.
+
+    Substring matching would make `rerender-memo` rescue `rerender-memo-with-
+    default-value` and vice versa; the boundary class includes `-` and `_` so a
+    stem only matches its own listing.
+    """
+    if len(stem) < MIN_CONVENTION_STEM:
+        return False
+    return bool(re.search(r"(?<![A-Za-z0-9_-])" + re.escape(stem)
+                          + r"(?![A-Za-z0-9_-])", body))
+
+
+def has_trigger_phrasing(desc):
+    """Literal marker OR a semantic when/for construction."""
+    if any(h in desc.lower() for h in TRIGGER_MARKERS):
+        return True
+    if TRIGGER_WHEN_YOU_RE.search(desc):
+        return True
+    return any(m.group(1).lower() not in NON_GERUND_ING
+               for m in TRIGGER_GERUND_RE.finditer(desc))
 
 
 def nested_package_root(rel, nested_roots):
@@ -264,19 +438,35 @@ def nested_package_root(rel, nested_roots):
 
 
 def structural_flags(name, desc, body, ref_texts, script_blob="",
-                     nested_bodies=None):
+                     nested_bodies=None, auto_invocation=True):
+    """Return (flags, notes). `notes` explains every suppression, per run."""
     nested_bodies = nested_bodies or {}
-    flags = []
+    flags, notes = [], []
     if not desc:
         flags.append("CRITICAL: no frontmatter description - skill cannot trigger")
     else:
         if len(desc) > 1024:
             flags.append(f"description {len(desc)} chars > 1024 spec limit")
         low = desc.lower()
-        if not any(h in low for h in TRIGGER_MARKERS):
-            flags.append("description lacks explicit trigger phrasing")
-        if not any(h in low for h in NEGATIVE_BOUNDARY_MARKERS):
-            flags.append("description lacks a negative boundary ('Do not use for...')")
+        # A skill with disable-model-invocation: true never auto-triggers - the
+        # author turned that off on purpose. Its description is a menu label for
+        # explicit invocation, so "no trigger phrasing" and "no negative
+        # boundary" describe a surface that does not exist. Both were 2 of the 3
+        # flags on mattpocock/improve-codebase-architecture (2026-07-25).
+        # The 1024-char spec limit and the missing-description check still
+        # apply: those are about the manifest, not about triggering.
+        if not auto_invocation:
+            notes.append(
+                "trigger-phrasing and negative-boundary checks suppressed: "
+                "frontmatter sets disable-model-invocation: true, so this skill "
+                "never auto-triggers and its description is not a trigger "
+                "surface (it is a label for explicit invocation)")
+        else:
+            if not has_trigger_phrasing(desc):
+                flags.append("description lacks explicit trigger phrasing")
+            if not any(h in low for h in NEGATIVE_BOUNDARY_MARKERS):
+                flags.append(
+                    "description lacks a negative boundary ('Do not use for...')")
     body_lines = body.splitlines()
     if len(body_lines) > 500:
         flags.append(f"body {len(body_lines)} lines > 500 - extract to references/")
@@ -288,6 +478,7 @@ def structural_flags(name, desc, body, ref_texts, script_blob="",
         if CONCRETE_REF_RE.search(para) and not READ_CONDITION_RE.search(para):
             flags.append("a references/ pointer has no read-condition ('read only when...')")
             break
+    by_convention = []
     for rel, rtext in sorted(ref_texts.items()):
         # Which manifest is this file discovered through? A file under a nested
         # package root is reached via THAT package's SKILL.md; judging it
@@ -330,10 +521,31 @@ def structural_flags(name, desc, body, ref_texts, script_blob="",
                 or any(d in scope_body for d in dirs_named)
                 or any(n in script_blob for n in names)):
             continue
+        # Reachable by documented convention: the body lists this file's STEM
+        # and shows a concrete path for its directory. See MIN_CONVENTION_STEM
+        # and _dir_path_convention - this ADDS a rescue path, it does not
+        # loosen the depth guard above (a bare "references/" mention shows no
+        # <dir>/<file>.<ext> path and rescues nothing).
+        stem = Path(inner).stem
+        if (_dir_path_convention(os.path.dirname(inner).replace(os.sep, "/"),
+                                 scope_body)
+                and any(_stem_named(s, scope_body)
+                        for s in {stem, _lang_normalized(stem)})):
+            by_convention.append(rel)
+            continue
         flags.append(f"{rel} not referenced from SKILL.md body or any bundled "
                      f"script - likely undiscoverable (verify: dynamic access "
                      f"cannot be detected statically)")
-    return flags
+    if by_convention:
+        shown = ", ".join(by_convention[:4])
+        more = (f" (+{len(by_convention) - 4} more)"
+                if len(by_convention) > 4 else "")
+        notes.append(
+            f"{len(by_convention)} conditional file(s) reachable by documented "
+            f"convention - the body lists the stem and shows a "
+            f"<dir>/<name>.<ext> path for the directory, so they are NOT "
+            f"flagged undiscoverable: {shown}{more}")
+    return flags, notes
 
 
 # --------------------------------------------------------------------- main
@@ -350,6 +562,7 @@ def measure(target, method, model):
     body_text = ""
     ref_texts = {}
     nested_bodies = {}  # dir rel-path -> body of the SKILL.md it carries
+    auto_invocation = True   # frontmatter disable-model-invocation: true flips it
 
     if target.is_file():
         paths = [target]
@@ -377,8 +590,19 @@ def measure(target, method, model):
             fm, body = parse_frontmatter(text)
             body_text = body
             fm_name = (re.search(r"^name:\s*(.+)$", fm, re.M) or [None, ""])[1].strip()
-            dm = re.search(r"^description:\s*(.+?)(?=^\w+:|\Z)", fm, re.M | re.DOTALL)
+            # `[\w-]+:` not `\w+:` - the next key is routinely HYPHENATED
+            # (disable-model-invocation, allowed-tools), and a `\w+`-only
+            # terminator swallowed it into the description: the measured
+            # description then carried "disable-model-invocation: true" as
+            # prose, inflating its length and offering marker words the author
+            # never wrote. Indented continuation lines of a YAML block scalar
+            # still do not match, so multi-line descriptions are unaffected.
+            dm = re.search(r"^description:\s*(.+?)(?=^[\w-]+:|\Z)", fm,
+                           re.M | re.DOTALL)
             fm_desc = re.sub(r"\s+", " ", dm.group(1)).strip() if dm else ""
+            auto_invocation = not re.search(
+                r"^disable-model-invocation:\s*[\"']?(true|yes)[\"']?\s*$",
+                fm, re.M | re.I)
             for part_name, part_text, tier in (
                     ("SKILL.md#frontmatter", fm, "metadata"),
                     ("SKILL.md#body", body, "body")):
@@ -427,7 +651,9 @@ def measure(target, method, model):
                      if f.get("tier") in ("body", "conditional")}
     context_texts = {p: t for p, t in file_texts.items()
                      if p in context_tiers or p == "SKILL.md"}
-    dups, sibs = duplicate_pairs(context_texts)
+    bundles = declared_bundles(body_text,
+                               [p for p in context_texts if p != "SKILL.md"])
+    dups, sibs, bundle_pairs = duplicate_pairs(context_texts, bundles)
 
     def tier_sum(tier, key):
         return sum(f.get(key, 0) for f in files if f.get("tier") == tier)
@@ -443,6 +669,36 @@ def measure(target, method, model):
             "tokens_claude_high": tier_sum(tier, "tokens_claude_high"),
         }
 
+    flags, informational = structural_flags(
+        fm_name, fm_desc, body_text, ref_texts, script_blob, nested_bodies,
+        auto_invocation)
+
+    # The compiled-bundle finding is downgraded to an informational line, never
+    # dropped silently: the reader still learns the bundle exists and what it
+    # costs, and can still decide to stop shipping it.
+    for b in sorted(bundles):
+        n = sum(1 for d in bundle_pairs if d.get("bundle") == b)
+        if n:
+            informational.append(
+                f"{b} is declared in SKILL.md as a compiled/complete bundle; "
+                f"{n} pair(s) against its constituents are reported as "
+                f"compiled_bundle_pairs, not as duplication findings "
+                f"(intentional, documented duplication - the reader loads the "
+                f"bundle OR the parts, never both)")
+    runtime_cfg = sorted(
+        f["path"] for f in files
+        if f.get("tier") == "artifact"
+        and (NON_CONTEXT_FILE.match(os.path.basename(f["path"]))
+             or (Path(f["path"]).suffix.lower() in RUNTIME_CONFIG_EXT
+                 and any(part.lower() in RUNTIME_CONFIG_DIRS
+                         for part in Path(f["path"]).parts[:-1]))))
+    if runtime_cfg:
+        informational.append(
+            f"{len(runtime_cfg)} file(s) classified 'artifact' (shipped, but "
+            f"never loaded into model context - build/runtime metadata): "
+            + ", ".join(runtime_cfg[:6])
+            + (f" (+{len(runtime_cfg) - 6} more)" if len(runtime_cfg) > 6 else ""))
+
     report = {
         "target": str(target),
         "token_method": counter.method,
@@ -453,8 +709,10 @@ def measure(target, method, model):
         "tier_totals": totals,
         "duplicates": dups,
         "bilingual_sibling_pairs": sibs,
-        "flags": structural_flags(fm_name, fm_desc, body_text, ref_texts,
-                                  script_blob, nested_bodies),
+        "compiled_bundle_pairs": bundle_pairs,
+        "declared_bundles": sorted(bundles),
+        "flags": flags,
+        "informational": informational,
         "notes": [
             "metadata tier is loaded in EVERY session; body on trigger; "
             "conditional on demand; scripts execute at ~zero context cost.",
@@ -463,6 +721,10 @@ def measure(target, method, model):
             "the undiscoverable-reference flag.",
             "bilingual_sibling_pairs are intentional translations, not "
             "duplication to remove.",
+            "compiled_bundle_pairs are a documented all-in-one rendering vs. "
+            "its constituents - overlap is the point, not waste.",
+            "'informational' explains every suppression this run applied; a "
+            "suppressed check is never silently dropped.",
             "latency: not measured; any latency statement derived from this "
             "report must be labeled projected.",
         ],
@@ -516,10 +778,18 @@ def main():
     if report["bilingual_sibling_pairs"]:
         print(f"\nBILINGUAL SIBLINGS ({len(report['bilingual_sibling_pairs'])} "
               f"pair(s)) - intentional translations, NOT duplication [measured]")
+    if report["compiled_bundle_pairs"]:
+        print(f"\nCOMPILED BUNDLE ({len(report['compiled_bundle_pairs'])} "
+              f"pair(s) vs. {', '.join(report['declared_bundles'])}) - "
+              f"documented all-in-one rendering, NOT duplication [measured]")
     if report["flags"]:
         print(f"\nFLAGS ({len(report['flags'])}):")
         for i, fl in enumerate(report["flags"], 1):
             print(f"  {i}. {fl}")
+    if report["informational"]:
+        print(f"\nINFORMATIONAL ({len(report['informational'])}) - not findings:")
+        for i, nt in enumerate(report["informational"], 1):
+            print(f"  {i}. {nt}")
     if args.json_out:
         print(f"\nJSON written: {args.json_out}")
 
