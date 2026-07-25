@@ -9,6 +9,29 @@ It is built for the case where the obvious approach fails: asking a model to "sh
 this prompt" reliably produces something shorter, and gives you no way to know what it
 quietly broke.
 
+## What you get from one run
+
+Point it at a skill directory and it answers three questions you probably cannot answer
+today:
+
+**1. What does this actually cost?** Not "how big is the folder." A package has tiers, and  <!-- no-claim -->
+only some are billed when the skill fires: the description loads every session, the body
+loads on every trigger, `references/` load only when an instruction points at them, and
+scripts are executed — never read into context at all. Most packages are dominated by text
+that costs nothing per invocation, which means most hand-optimization effort goes to the
+wrong file. The harness separates them.
+
+**2. What is silently broken?** The most common real finding is not waste — it is a
+`references/` file that nothing points at. That is not dead weight you can delete for a
+saving; it is a capability you believe you shipped and the model can never reach. The
+pilot run on a 53-file skill found five of them.
+
+**3. What is safe to change?** Every proposed edit carries its rule, its evidence, its
+risk scores, and its rollback. Safety spans are refused outright rather than compressed.
+
+And when the answer is "this is already fine," it says so and stops — see the −0.7% pilot
+below, published at that value.
+
 ## What makes this different from asking a model to shorten a prompt
 
 - **It can tell you not to.** Several rules exist only to *stop* an optimization —
@@ -32,30 +55,30 @@ quietly broke.
 Author new skills from scratch. Guarantee a savings percentage in advance. Run live model
 evaluations without your explicit budget approval. Optimize harmful targets.
 
-## Results, honestly
-
-**There is no validated claim that this tool improves your skills.** The evaluation that
-would establish it was run, and came back **inconclusive** — the full reason, including
-the protocol defect that caused it, is in [`docs/RESULTS.md`](docs/RESULTS.md).
-
-What *is* supported:
+## What is proven
 
 | | |
 |---|---|
-| Critical cases — safety, refusal, prompt injection | **16/16 pass**, zero failures, across both versions tested |
-| Test suite | **74/74**, with every test mutation-verified — deliberately broken to confirm it fails |
-| Package release gates | **10/10** |
-| False positives on a real 29-skill portfolio | **105 flags → 36** after fixing seven causes |
+| **It finds real bugs.** It caught one in its own package: the check that stops a rule citing a nonexistent source crashed in every *installed* copy, because it resolved a path that only exists in a development tree — so the gate was decorative exactly where the tool runs. | verified from an orphaned copy |
+| **It does not break safety text.** Safety, refusal, and prompt-injection cases: **16/16 pass**, zero failures, on every version tested. No embedded instruction was ever followed. | [grading record](docs/data/grading-record-2026-07-25.json) |
+| **Its findings are mostly real.** On a live 29-skill portfolio, output went from 105 flags to **36** once seven false-positive causes were fixed — a tool that cries wolf twice in three findings gets uninstalled, so this was treated as a defect. | [`docs/RESULTS.md`](docs/RESULTS.md) |
+| **Its own checks actually work.** **74/74** tests, every one mutation-verified — deliberately broken to confirm it fails. **10/10** release gates enforced mechanically, not by convention. | reproducible in one command |
 
-The most useful thing it did was **find a real defect in itself**: the check that stops a
-rule from citing a nonexistent source crashed with `FileNotFoundError` in every
-*installed* copy, because it resolved a path that exists only in a development tree. The
-gate was decorative exactly where the tool runs. That is the class of problem this
-approach is for.
+## What is not proven
 
-**And a result that is not flattering:** a whole-scenario pilot optimization measured
-**−0.7%** — effectively nothing. It is published at that value. Skills that trigger
-rarely save little no matter how well they are optimized.
+**That its optimizations measurably improve quality.** The paired A/B evaluation that
+would have established this was run, and returned **inconclusive** — one arm reconstructed
+stand-in targets while the other declined to, a divergence caused by guidance issued
+mid-run rather than by anything under test. The full account, including the protocol
+defect that caused it, is in [`docs/RESULTS.md`](docs/RESULTS.md).
+
+One shipped change — enumerating a target's obligations before editing — appeared in only
+**2 of 24** outputs. It ships as procedure, not as a demonstrated capability.
+
+And a whole-scenario pilot optimization measured **−0.7%**: effectively nothing. It is
+published at that value rather than swapped for a more flattering slice. Skills that
+trigger rarely save little no matter how well they are optimized — which is exactly the
+answer you want before spending a week on one.
 
 ## Quick start
 
