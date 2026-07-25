@@ -89,13 +89,38 @@ rules:
   - id: R-02
     name: progressive-disclosure
     layer: skill-content
-    tier: 1
-    description: Move rarely-needed detail out of the always/trigger-loaded tiers (frontmatter, SKILL.md body) into conditionally-loaded references/.
-    mechanism: Context is a finite attention budget; metadata loads every session and body on every trigger, while references bill only when read.
+    tier: 2   # demoted from 1 on 2026-07-25 - see tier_change below
+    description: Move rarely-needed detail out of the always/trigger-loaded tiers (frontmatter, SKILL.md body) into conditionally-loaded references/ - but only with a stated read-rate estimate and the break-even that follows from it.
+    mechanism: Context is a finite attention budget; metadata loads every session and body on every trigger, while references bill only when read. The saving is entirely contingent on that last clause.
+    tier_change:
+      from: 1
+      to: 2
+      date: '2026-07-25'
+      why: >-
+        This rule was Tier 1 - applied in EVERY profile including `conservative`, whose stated
+        purpose is "accuracy-critical or regulated domain / little or no eval data" - on
+        `practitioner` evidence. Round 2 found that its only quantitative vendor support states a
+        98.7% reduction with no model, no benchmark, no methodology, no trial count, and never uses
+        the word "measured"; and that the other cited page contains no quantitative claim at all,
+        describing the mechanism as "trusting that Claude will read forms.md only when filling out
+        a form". Meanwhile this project's OWN measurement found relocated material read in 8 of 8
+        runs against a 74% break-even, turning a measured -17.2% trigger-path cut into +2.3% MORE
+        expensive per run. A rule whose benefit depends on an unmeasured behavioural rate does not
+        belong in the profile chosen when there is no eval data.
+      what_changes_for_users: >-
+        Under `conservative` this rule no longer fires automatically. Under `balanced` and
+        `aggressive` it still fires, now gated by its validation_test like every other Tier-2 rule.
     target: input
-    applies_when: Body exceeds ~500 lines / ~5k tokens, or contains content needed only in specific sub-flows.
-    do_not_apply_when: The content gates correctness of EVERY invocation (core procedure, output contract, safety boundaries) - keep those in the body.
-    expected_benefit: Body-size reduction on every trigger; largest single input-side lever for bloated skills.
+    applies_when: Body exceeds ~500 lines / ~5k tokens, or contains content needed only in specific sub-flows, AND a read-rate estimate for the moved block can be stated.
+    do_not_apply_when: >-
+      The content gates correctness of EVERY invocation (core procedure, output contract, safety
+      boundaries) - keep those in the body. Also do not apply when the block's honest read-condition
+      would equal the skill's own trigger condition: a block needed whenever the skill fires belongs
+      in the body. Also do not apply when no read-rate can be estimated at all.
+    expected_benefit: >-
+      Body-size reduction on every trigger, REALISED ONLY at read rates below the computed
+      break-even. Report as [behavior-dependent] with the break-even rate stated, never as a flat
+      percentage - the trigger-path number is not the saving.
     quality_risk: 1  # model may fail to read a reference it needs - mitigated by R-03
     safety_risk: 1  # never move safety text out of the loaded tier (R-S1)
     maintainability_risk: 1
@@ -103,8 +128,27 @@ rules:
     evidence_confidence: practitioner
     priority: {frequency: 3, applicability: 3, savings: 3, confidence: 0.5, risk_penalty: 3, score: 10.5}
     sources: [S-D10, S-D09]
-    contradicting_evidence: none known
-    validation_test: Every moved block is reachable via a pointer with a read-condition; trigger-path walkthrough still covers the behavioral contract.
+    source_claims:
+      S-D10: >-
+        Establishes the three-level loading model qualitatively - metadata pre-loaded at startup,
+        SKILL.md read on relevance, bundled files navigated "only as needed" - and scripts running
+        without being loaded. Page opened 2026-07-25: it contains NO quantitative claim of any kind,
+        so it supports the MECHANISM and no effect size. Its own phrasing for the conditional tier
+        is "trusting that Claude will read forms.md only when filling out a form".
+      S-D09: >-
+        Supports minimalism as a principle - "the minimal set of information that fully outlines
+        your expected behavior", context as "a precious, finite resource". Does not quantify a
+        disclosure saving.
+    contradicting_evidence: >-
+      This project's own case study: a section moved verbatim out of `frontend-design` cut the
+      trigger path -17.2% and was then measured as read in 8 of 8 runs, against a break-even
+      computed in advance at 74%. At the observed rate the change made the skill +2.3% MORE
+      expensive per run and was reverted. n=8 on one skill with a disclosed workload skew, but it
+      is the only direct measurement anyone has, and it points the other way.
+    validation_test: >-
+      Every moved block is reachable via a pointer with a read-condition; trigger-path walkthrough
+      still covers the behavioral contract; AND a read-rate estimate is stated with the break-even
+      it implies. If the estimate cannot be made, the rule does not apply.
     rollback: Move the section back into the body.
 
   - id: R-03

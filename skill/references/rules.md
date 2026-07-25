@@ -158,20 +158,6 @@ Every tool/search/retry loop in the skill has an explicit termination condition 
 - **Validation:** Edge case "source never found" terminates within bound; success rate on normal cases unchanged.
 - **Rollback:** Remove the bound lines.
 
-### R-02 · progressive-disclosure  (score 10.5)
-
-Move rarely-needed detail out of the always/trigger-loaded tiers (frontmatter, SKILL.md body) into conditionally-loaded references/.
-
-- **Mechanism:** Context is a finite attention budget; metadata loads every session and body on every trigger, while references bill only when read.
-- **Target:** input
-- **Apply when:** Body exceeds ~500 lines / ~5k tokens, or contains content needed only in specific sub-flows.
-- **Do NOT apply when:** The content gates correctness of EVERY invocation (core procedure, output contract, safety boundaries) - keep those in the body.
-- **Expected benefit:** Body-size reduction on every trigger; largest single input-side lever for bloated skills.
-- **Risks (0-3):** quality 1 · safety 1 · maintainability 1 · portability 0
-- **Evidence:** S-D10, S-D09 (practitioner) · contra: none known
-- **Validation:** Every moved block is reachable via a pointer with a read-condition; trigger-path walkthrough still covers the behavioral contract.
-- **Rollback:** Move the section back into the body.
-
 ### R-03 · read-conditions-on-pointers  (score 9.0)
 
 Every references/ pointer carries an explicit "read only when X" condition.
@@ -215,6 +201,20 @@ Move >15-line embedded code blocks into scripts/ that execute instead of being r
 - **Rollback:** Re-inline the block.
 
 ## Tier 2 — Balanced/Aggressive, each application test-gated
+
+### R-02 · progressive-disclosure  (score 10.5)
+
+Move rarely-needed detail out of the always/trigger-loaded tiers (frontmatter, SKILL.md body) into conditionally-loaded references/ - but only with a stated read-rate estimate and the break-even that follows from it.
+
+- **Mechanism:** Context is a finite attention budget; metadata loads every session and body on every trigger, while references bill only when read. The saving is entirely contingent on that last clause.
+- **Target:** input
+- **Apply when:** Body exceeds ~500 lines / ~5k tokens, or contains content needed only in specific sub-flows, AND a read-rate estimate for the moved block can be stated.
+- **Do NOT apply when:** The content gates correctness of EVERY invocation (core procedure, output contract, safety boundaries) - keep those in the body. Also do not apply when the block's honest read-condition would equal the skill's own trigger condition: a block needed whenever the skill fires belongs in the body. Also do not apply when no read-rate can be estimated at all.
+- **Expected benefit:** Body-size reduction on every trigger, REALISED ONLY at read rates below the computed break-even. Report as [behavior-dependent] with the break-even rate stated, never as a flat percentage - the trigger-path number is not the saving.
+- **Risks (0-3):** quality 1 · safety 1 · maintainability 1 · portability 0
+- **Evidence:** S-D10, S-D09 (practitioner) · contra: This project's own case study: a section moved verbatim out of `frontend-design` cut the trigger path -17.2% and was then measured as read in 8 of 8 runs, against a break-even computed in advance at 74%. At the observed rate the change made the skill +2.3% MORE expensive per run and was reverted. n=8 on one skill with a disclosed workload skew, but it is the only direct measurement anyone has, and it points the other way.
+- **Validation:** Every moved block is reachable via a pointer with a read-condition; trigger-path walkthrough still covers the behavioral contract; AND a read-rate estimate is stated with the break-even it implies. If the estimate cannot be made, the rule does not apply.
+- **Rollback:** Move the section back into the body.
 
 ### R-12 · prune-irrelevant-context  (score 8.0)
 
