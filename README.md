@@ -80,6 +80,30 @@ published at that value rather than swapped for a more flattering slice. Skills 
 trigger rarely save little no matter how well they are optimized — which is exactly the
 answer you want before spending a week on one.
 
+## Tried on real skills
+
+Run against three of the most-installed public skills, at pinned commits. The **trigger path**
+is `frontmatter + body` — the tier billed on every single invocation.
+
+| skill | installs | before | after | |
+|---|---|---|---|---|
+| `improve-codebase-architecture` | 538K | 1,540–1,673 | 1,247–1,356 | **−19.0%** |
+| `frontend-design` | 702K | 1,887–2,051 | 1,563–1,700 | **−17.2%** |
+| `react-best-practices` | 578K | 2,026–2,202 | 1,888–2,052 | **−6.8%** |
+
+`[estimated]`. No prose was compressed or reworded — every change is a verbatim move or a
+delete-with-citation, so each one is auditable line by line.
+
+Two things worth more than the percentages. On `react-best-practices` the single biggest target
+— a block that is **74% of the trigger path** — was measured and then **deliberately left
+alone**, because its honest read-condition turned out to be the skill's own trigger condition.
+And on `improve-codebase-architecture` the process surfaced a real latent bug: one card field
+was called **Benefits** in the body and **Wins** in the reference file.
+
+**Quality preservation is not yet verified** — a blinded A/B is running, and until it lands no
+claim is made that these changes preserve behavior. Full detail, including what was refused and
+why: [`docs/CASE-STUDIES.md`](docs/CASE-STUDIES.md).
+
 ## Quick start
 
 ```bash
@@ -120,6 +144,7 @@ open, and every design decision states what it rejected and why.
 
 | | |
 |---|---|
+| [`docs/CASE-STUDIES.md`](docs/CASE-STUDIES.md) | Run against three skills with 1.8M installs between them — what changed, what was refused, and why |
 | [`docs/RESULTS.md`](docs/RESULTS.md) | What was measured, what was estimated, what is unproven — with limitations beside the numbers, not in a footnote |
 | [`docs/DECISIONS.md`](docs/DECISIONS.md) | 11 design decisions, each with its reasoning and what was rejected |
 | [`docs/EVIDENCE.md`](docs/EVIDENCE.md) | All 42 sources, and which rule each one supports |
