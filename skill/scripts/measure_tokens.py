@@ -1,42 +1,54 @@
 #!/usr/bin/env python3
-"""Deterministic token/cost measurement for Agent Skills and prompt packages.
+"""Deterministic offline token proxies plus explicit Anthropic preflight counts.
 
 Part of the token-efficient-skill-optimizer. Extends the tier model of
 token_audit.py (Anthropic anthropic-skills plugin, token-efficient-skill-builder)
-with: a real-tokenizer ladder, per-file tier classification, duplicate-content
-detection, and mandatory honesty labels on every number.
+with per-file tier classification, duplicate-content detection, and mandatory
+provenance labels on every number.
 
-HONESTY CONTRACT (enforced by validate_report.py downstream):
-  * bytes / lines / words            -> label "measured"  (exact, deterministic)
-  * tokens via Anthropic count-tokens API -> "measured"   (exact for the named model)
-  * tokens via tiktoken o200k_base   -> "estimated"       (tiktoken UNDERCOUNTS Claude
-        tokens by ~15-20% on typical text per Anthropic guidance; we report the raw
-        count AND a Claude-adjusted range raw*1.15 .. raw*1.25)
-  * tokens via chars/words heuristic -> "estimated (wide bounds)"
+HONESTY CONTRACT:
+  * bytes / lines / words            -> label "exact_local_scan"
+  * Anthropic count-tokens API        -> "provider_preflight_estimate"
+  * tiktoken / chars+words proxies    -> "local_proxy_estimate"
+
+The count-tokens endpoint estimates the input side of one complete structured
+request. It is not an observed bill and it does not provide output, cache, or
+full-run usage. It is reachable only through the explicit network-only CLI
+mode; ``auto`` is always offline and never consults ANTHROPIC_API_KEY.
 
 Determinism: file walk is sorted, JSON uses sort_keys, no timestamps are emitted
 unless --stamp is passed. Two runs on the same input are byte-identical.
 
 Usage:
     python measure_tokens.py <skill_dir_or_file> [--json OUT.json]
-        [--method auto|api|tiktoken|heuristic] [--model claude-opus-4-8] [--stamp]
+        [--method auto|tiktoken|heuristic] [--stamp]
+    python measure_tokens.py --method anthropic-api --allow-network
+        --request-json REQUEST.json [--model EXACT_MODEL] [--json OUT.json]
 
 Exit codes: 0 ok, 1 usage error, 2 target not found.
 """
 
 import argparse
+import datetime
+import hashlib
 import json
 import os
 import re
 import sys
+import urllib.error
+import urllib.request
 from pathlib import Path
+
+from artifact_io import atomic_write_text, reject_output_collisions
+from eval_runner import sha256_path
 
 # ---------------------------------------------------------------- tier model
 # Tier semantics (context-loading cost classes):
 #   metadata     - frontmatter name+description: loaded EVERY session
 #   body         - SKILL.md body: loaded on trigger
 #   conditional  - references/, templates/, examples/, agents/, docs: loaded on demand
-#   script       - scripts/: executed, ~zero context cost unless the model reads it
+#   script       - scripts/: source need not be loaded when executed; invocation
+#                  and output consume context, and source consumes context if read
 TIER_BY_DIR = {
     "references": "conditional",
     "templates": "conditional",
@@ -53,23 +65,26 @@ TIER_BY_DIR = {
 TEXT_EXT = {".md", ".txt", ".yaml", ".yml", ".json", ".jsonl", ".py", ".sh",
             ".js", ".ts", ".csv", ".xml", ".html", ".toml", ".cfg", ""}
 
-# Text files that are NOT model context: dependency/build metadata, human-facing
-# docs, and rendered demo artifacts. Counting these as "conditional context"
-# inflates the context surface and produces bogus "undiscoverable" flags.
+# Text files outside the ordinary automatic skill path: dependency/build
+# metadata, human-facing docs, and rendered demo artifacts. They still consume
+# context if explicitly read; classifying them as automatic "conditional
+# context" inflates the estimated trigger surface and produces false routing
+# flags.
 # (Found 2026-07-24 auditing a real skill: 28 of 31 flags were this false
 # positive, and the conditional tier was overstated ~3x.)
 NON_CONTEXT_DIRS = {"demos", "demo", "dist", "build", "coverage", "screenshots"}
 NON_CONTEXT_FILE = re.compile(
     r"^(package(-lock)?\.json|readme(\.[a-z]{2})?\.md|license.*|changelog.*|"
-    r"version|tsconfig\.json|requirements\.txt|pyproject\.toml|makefile|"
+    r"version|tsconfig\.json|requirements(?:-lock)?\.txt|pyproject\.toml|makefile|"
     r"test-prompts\.json|\.?eslintrc.*|\.gitignore|provenance\.md|"
     r"metadata\.json|"
     r"contributing\.md|codeowners|notice)$", re.I)
 
 # Runtime-config files: shipped so some OTHER runtime can register, label or
-# gate the skill. They are never loaded into model context, so counting them as
-# conditional context both inflates the surface and produces an "undiscoverable"
-# flag for a file nothing is ever meant to open. (Measured 2026-07-25 on
+# gate the skill. They are not assumed to enter ordinary skill context, though
+# reading them consumes context. Counting them as automatic conditional context
+# both inflates the surface and produces an "undiscoverable" flag for a file the
+# audited runtime does not ordinarily ask the model to open. (Observed 2026-07-25 on
 # mattpocock/improve-codebase-architecture: agents/openai.yaml is 166 B of
 # display_name + allow_implicit_invocation, and was 1 of that skill's 3 flags.)
 # Scoped to CONFIG extensions on purpose: a Markdown brief under agents/ is a
@@ -121,11 +136,19 @@ ATX_HEADING_RE = re.compile(r"^#{1,6}[ \t]", re.M)
 # would be laundered as "compilation overlap".
 BUNDLE_CONSTITUENT_MIN_RATIO = 0.20
 
-# tiktoken->Claude adjustment range. Basis: Anthropic's token-counting guidance
-# states tiktoken undercounts Claude tokens by ~15-20% on typical text (more on
-# code / non-English). Claude_estimate ~= tiktoken * [1.15, 1.25].
-CLAUDE_ADJ_LOW = 1.15
-CLAUDE_ADJ_HIGH = 1.25
+ANTHROPIC_API_REVISION = "2023-06-01"
+ANTHROPIC_COUNT_TOKENS_URL = (
+    "https://api.anthropic.com/v1/messages/count_tokens")
+# Stable raw-body fields from Anthropic's generated count-tokens request type.
+# SDK conveniences such as ``output_format`` are transformed into
+# ``output_config`` before transport, while ``user_profile_id`` is a beta
+# header, not request content. Supporting either requires a separate explicit
+# interface; keeping this body list closed prevents arbitrary payload fields
+# from being silently altered or forwarded as though they were counted.
+ANTHROPIC_COUNT_FIELDS = {
+    "model", "messages", "system", "tools", "tool_choice", "thinking",
+    "cache_control", "output_config",
+}
 
 
 def classify_tier(rel):
@@ -161,64 +184,305 @@ def parse_frontmatter(text):
 
 # ------------------------------------------------------------ token counting
 class TokenCounter:
-    """Ladder: api (measured) > tiktoken (estimated) > heuristic (estimated)."""
+    """Offline proxy ladder: tiktoken when available, otherwise a heuristic."""
 
-    def __init__(self, method, model):
-        self.model = model
+    def __init__(self, method, model=None):
+        if method in ("api", "anthropic-api"):
+            raise ValueError(
+                "Anthropic preflight counting is request-shaped, not per-file; "
+                "use --method anthropic-api --allow-network --request-json")
+        if method not in ("auto", "tiktoken", "heuristic"):
+            raise ValueError(f"unsupported offline token method: {method}")
+        self.requested_method = method
         self.method = None
         self.label = None
+        self.metric_class = "local_proxy_estimate"
+        self.tokenizer = None
+        self.language_limitations = None
         self._enc = None
-        if method in ("auto", "api") and os.environ.get("ANTHROPIC_API_KEY"):
-            self.method = "api"
-            self.label = (
-                f"measured (Anthropic count-tokens API, model {model})")
-        if self.method is None and method in ("auto", "tiktoken", "api"):
+        if method in ("auto", "tiktoken"):
             try:
                 import tiktoken  # noqa: deferred import so heuristic path has no dep
                 self._enc = tiktoken.get_encoding("o200k_base")
                 self.method = "tiktoken"
                 self.label = (
-                    "estimated (tiktoken o200k_base; tiktoken undercounts Claude "
-                    f"tokens ~15-20%, Claude-adjusted range = raw x{CLAUDE_ADJ_LOW}"
-                    f"..x{CLAUDE_ADJ_HIGH})")
+                    "local_proxy_estimate (tiktoken o200k_base; this is not a "
+                    "Claude token count and no cross-tokenizer multiplier is applied)")
+                self.tokenizer = "tiktoken:o200k_base"
+                self.language_limitations = (
+                    "Counts are exact only for o200k_base serialization. Error "
+                    "relative to another provider/model depends on language, "
+                    "Unicode normalization, structured data, and code.")
             except ImportError:
-                pass
+                if method == "tiktoken":
+                    raise ValueError(
+                        "explicit --method tiktoken requires the tiktoken "
+                        "package; use --method auto to allow heuristic fallback")
         if self.method is None:
             self.method = "heuristic"
-            self.label = ("estimated (heuristic chars/3.5 cross-checked with "
-                          "words*1.3; wide bounds)")
+            self.label = (
+                "local_proxy_estimate (heuristic chars/3.5 cross-checked with "
+                "words*1.3; wide bounds)")
+            self.tokenizer = "heuristic:chars_words_v2"
+            self.language_limitations = (
+                "Character/word heuristics have uncalibrated error for "
+                "multilingual text, Unicode normalization, structured data, "
+                "and code; do not compare them with provider counts.")
 
     def count(self, text):
-        """Return dict with raw count + claude_range (low, high)."""
-        if self.method == "api":
-            n = self._count_api(text)
-            return {"raw": n, "claude_low": n, "claude_high": n}
+        """Return a local estimate and its method-specific uncertainty bounds."""
         if self.method == "tiktoken":
             n = len(self._enc.encode(text, disallowed_special=()))
-            return {"raw": n,
-                    "claude_low": round(n * CLAUDE_ADJ_LOW),
-                    "claude_high": round(n * CLAUDE_ADJ_HIGH)}
+            return {"raw": n, "estimate": n, "low": n, "high": n}
         by_chars = max(1, round(len(text) / 3.5))
         by_words = max(1, round(len(text.split()) * 1.3))
         lo, hi = sorted((by_chars, by_words))
-        return {"raw": round((lo + hi) / 2),
-                "claude_low": round(lo * 0.8), "claude_high": round(hi * 1.4)}
+        low, high = round(lo * 0.8), round(hi * 1.4)
+        return {"raw": round((low + high) / 2),
+                "estimate": round((low + high) / 2),
+                "low": low, "high": high}
 
-    def _count_api(self, text):
-        import urllib.request
-        req = urllib.request.Request(
-            "https://api.anthropic.com/v1/messages/count_tokens",
-            data=json.dumps({
-                "model": self.model,
-                "messages": [{"role": "user", "content": text or " "}],
-            }).encode(),
-            headers={
-                "x-api-key": os.environ["ANTHROPIC_API_KEY"],
-                "anthropic-version": "2023-06-01",
-                "content-type": "application/json",
-            })
-        with urllib.request.urlopen(req, timeout=60) as r:
-            return json.loads(r.read())["input_tokens"]
+
+def unavailable(reason):
+    """Typed absence used for fields the preflight endpoint cannot observe."""
+    return {"metric_class": "unavailable", "reason": reason}
+
+
+def _measurement_claim(
+        claim_id, *, value, evidence_class, usage_semantics, denominator,
+        source_sha256, display, method, tokenizer, language_limitations,
+        provider="unavailable", model="unavailable",
+        measurement_date="unavailable", api_surface="unavailable",
+        api_revision="unavailable", request_sha256="unavailable",
+        source_path=None):
+    """Build one producer-specific, exact-display measurement claim."""
+    return {
+        "claim_schema": "token_measurement_claim_v2",
+        "claim_id": claim_id,
+        "metric_version": 2,
+        "calculation_version": 2,
+        "value": value,
+        "unit": "tokens",
+        "denominator": denominator,
+        "evidence_class": evidence_class,
+        "usage_semantics": usage_semantics,
+        "provider": provider,
+        "model": model,
+        "measurement_date": measurement_date,
+        "api_surface": api_surface,
+        "api_revision": api_revision,
+        "request_sha256": request_sha256,
+        "method": method,
+        "tokenizer": tokenizer,
+        "language_limitations": language_limitations,
+        "source_path": source_path,
+        "source_sha256": source_sha256,
+        "runtime_validation_status": "runtime_unverified",
+        "eligible_for_measured_claim": False,
+        "display_binding_version": 1,
+        "display_bindings": [display],
+    }
+
+
+def attach_measurement_claims(report):
+    """Attach recomputable local claims or a request-bound preflight claim."""
+    report["artifact_type"] = "token_measurement_v2"
+    report["artifact_schema_version"] = 2
+    claims = {}
+    if report["metric_class"] == "provider_preflight_estimate":
+        claim_id = "measurement.estimated_input_tokens"
+        value = report["estimated_input_tokens"]
+        claims[claim_id] = _measurement_claim(
+            claim_id,
+            value=value,
+            evidence_class="provider_preflight_estimate",
+            usage_semantics=report["usage_semantics"],
+            denominator={
+                "kind": "complete_structured_request",
+                "value": report["request_sha256"],
+            },
+            source_sha256=report["request_sha256"],
+            display=(
+                f"Anthropic preflight input: {value} tokens [estimated]"),
+            method="anthropic-api",
+            tokenizer="provider:anthropic_count_tokens",
+            language_limitations=(
+                "Provider count applies only to the exact hashed request and "
+                "model; it is not observed usage or billed output."),
+            provider=report["provider"],
+            model=report["model"],
+            measurement_date=report["measurement_date"],
+            api_surface=report["api_surface"],
+            api_revision=report["api_revision"],
+            request_sha256=report["request_sha256"],
+        )
+        report["claims"] = claims
+        return report
+
+    source_sha = sha256_path(report["target"])
+    report["source_sha256"] = source_sha
+    unavailable_tiers = {
+        row.get("tier")
+        for row in report["files"]
+        if isinstance(row.get("text_status"), dict)
+        and row["text_status"].get("metric_class") == "unavailable"
+    }
+    total_value = sum(
+        row["tokens_estimate"] for row in report["tier_totals"].values())
+    total_class = (
+        "unavailable" if unavailable_tiers else "local_proxy_estimate")
+    total_label = (
+        "not measured" if unavailable_tiers else "estimated")
+    total_id = "measurement.total.tokens_estimate"
+    claims[total_id] = _measurement_claim(
+        total_id,
+        value=total_value,
+        evidence_class=total_class,
+        usage_semantics=report["usage_semantics"],
+        denominator={"kind": "target_snapshot", "value": source_sha},
+        source_sha256=source_sha,
+        display=(
+            f"Static target proxy: {total_value} tokens [{total_label}]"),
+        method=report["token_method"],
+        tokenizer=report["proxy_tokenizer"],
+        language_limitations=report["language_limitations"],
+        source_path=report["target"],
+    )
+    for tier, totals in report["tier_totals"].items():
+        claim_id = f"measurement.tier.{tier}.tokens_estimate"
+        tier_unavailable = tier in unavailable_tiers
+        tier_class = (
+            "unavailable" if tier_unavailable else "local_proxy_estimate")
+        tier_label = "not measured" if tier_unavailable else "estimated"
+        claims[claim_id] = _measurement_claim(
+            claim_id,
+            value=totals["tokens_estimate"],
+            evidence_class=tier_class,
+            usage_semantics=report["usage_semantics"],
+            denominator={
+                "kind": "target_tier_snapshot",
+                "value": {"tier": tier, "source_sha256": source_sha},
+            },
+            source_sha256=source_sha,
+            display=(
+                f"Static {tier} proxy: {totals['tokens_estimate']} tokens "
+                f"[{tier_label}]"),
+            method=report["token_method"],
+            tokenizer=report["proxy_tokenizer"],
+            language_limitations=report["language_limitations"],
+            source_path=report["target"],
+        )
+    report["claims"] = claims
+    return report
+
+
+def _load_anthropic_request(path, cli_model=None):
+    """Load and validate one complete count-tokens request without logging it."""
+    def reject_constant(value):
+        raise ValueError(f"non-finite JSON constant is forbidden: {value}")
+
+    request_path = Path(path)
+    try:
+        raw = request_path.read_bytes()
+    except OSError as exc:
+        raise ValueError(f"cannot read request JSON: {exc.strerror or exc}") from None
+    try:
+        payload = json.loads(raw, parse_constant=reject_constant)
+    except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
+        # Only location/type is surfaced: never quote nearby request content.
+        line = getattr(exc, "lineno", "?")
+        column = getattr(exc, "colno", "?")
+        raise ValueError(
+            f"request JSON is invalid at line {line}, column {column}") from None
+    if not isinstance(payload, dict):
+        raise ValueError("request JSON root must be an object")
+    unknown = sorted(set(payload) - ANTHROPIC_COUNT_FIELDS)
+    if unknown:
+        raise ValueError(
+            "request JSON has fields unsupported by the count-tokens surface: "
+            + ", ".join(unknown))
+    if not isinstance(payload.get("messages"), list):
+        raise ValueError("request JSON must contain a messages array")
+    request_model = payload.get("model")
+    if request_model is not None and (
+            not isinstance(request_model, str) or not request_model.strip()):
+        raise ValueError("request model must be a non-empty exact model string")
+    if cli_model and request_model and cli_model != request_model:
+        raise ValueError(
+            "--model does not match request JSON model; refusing to substitute")
+    model = cli_model or request_model
+    if not model:
+        raise ValueError(
+            "exact model is required in request JSON or via --model")
+    payload["model"] = model
+    # These exact bytes are submitted and hashed. sort_keys makes the hash
+    # stable across inconsequential object-key ordering in the input file.
+    submitted = json.dumps(
+        payload, ensure_ascii=False, sort_keys=True,
+        separators=(",", ":"), allow_nan=False).encode("utf-8")
+    return payload, submitted
+
+
+def measure_anthropic_request(request_json, model=None, allow_network=False):
+    """Return an input-only provider estimate for one structured request."""
+    if not allow_network:
+        raise ValueError(
+            "network counting requires --allow-network; no request was sent")
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if not api_key:
+        raise ValueError(
+            "ANTHROPIC_API_KEY is required for explicit network counting")
+    payload, submitted = _load_anthropic_request(request_json, model)
+    req = urllib.request.Request(
+        ANTHROPIC_COUNT_TOKENS_URL,
+        data=submitted,
+        headers={
+            "x-api-key": api_key,
+            "anthropic-version": ANTHROPIC_API_REVISION,
+            "content-type": "application/json",
+        })
+    try:
+        with urllib.request.urlopen(req, timeout=60) as response:
+            response_payload = json.loads(response.read())
+    except urllib.error.HTTPError as exc:
+        # Provider response bodies can contain request-derived details. Do not
+        # print them; the HTTP status is sufficient for a safe failure.
+        raise ValueError(
+            f"Anthropic count-tokens request failed with HTTP {exc.code}") from None
+    except urllib.error.URLError as exc:
+        raise ValueError(
+            f"Anthropic count-tokens request failed: {exc.reason}") from None
+    except (KeyError, TypeError, json.JSONDecodeError):
+        raise ValueError(
+            "Anthropic count-tokens response was not valid JSON usage data") from None
+    count = response_payload.get("input_tokens")
+    if isinstance(count, bool) or not isinstance(count, int) or count < 0:
+        raise ValueError(
+            "Anthropic count-tokens response had an invalid input_tokens value")
+    report = {
+        "schema_version": 2,
+        "metric_class": "provider_preflight_estimate",
+        "usage_semantics": "preflight_input_only",
+        "provider": "anthropic",
+        "model": payload["model"],
+        "api_surface": "POST /v1/messages/count_tokens",
+        "api_revision": ANTHROPIC_API_REVISION,
+        "measurement_date": datetime.datetime.now(
+            datetime.timezone.utc).date().isoformat(),
+        "request_sha256": hashlib.sha256(submitted).hexdigest(),
+        "request_bytes": len(submitted),
+        "estimated_input_tokens": count,
+        "output_tokens": unavailable("provider_preflight_input_only"),
+        "observed_usage": unavailable("no_model_run_performed"),
+        "cache_usage": unavailable("count_tokens_does_not_report_cache_usage"),
+        "total_cost_usd": unavailable("no_observed_usage"),
+        "notes": [
+            "The submitted request body is not persisted in this report.",
+            "Token counting is a provider preflight estimate and may differ "
+            "from actual usage.",
+        ],
+    }
+    return attach_measurement_claims(report)
 
 
 # ------------------------------------------------------- duplicate detection
@@ -278,7 +542,7 @@ def declared_bundles(body, candidates):
 
 
 def duplicate_pairs(file_texts, bundles=frozenset()):
-    """Cross-file shared word-8-gram report. [measured] - exact set math.
+    """Cross-file shared word-8-gram report; deterministic exact set math.
 
     Returns (real_duplicates, bilingual_sibling_pairs, compiled_bundle_pairs).
     Language-suffixed siblings are reported separately: they are intentional
@@ -288,9 +552,10 @@ def duplicate_pairs(file_texts, bundles=frozenset()):
     rendering of the package overlaps every constituent BY DESIGN, so those
     pairs are reported informationally instead of as findings.
 
-    Callers pass CONTEXT files only. Duplication inside artifacts (demo HTML,
-    build metadata) costs zero context tokens, so reporting it as an
-    optimization finding is noise - it was 427 of 437 pairs on that same skill.
+    Callers pass modeled CONTEXT files only. Artifacts such as demo HTML and
+    build metadata do not enter the modeled context unless explicitly read, so
+    treating their duplication as a context-optimization finding is noise. It
+    was 427 of 437 pairs on that same skill.
     """
     grams = {p: word_ngrams(t) for p, t in file_texts.items()}
     out, siblings, bundled = [], [], []
@@ -476,7 +741,8 @@ def structural_flags(name, desc, body, ref_texts, script_blob="",
         flags.append(f"{len(big_blocks)} code block(s) >15 lines in body - move to scripts/")
     for para in re.split(r"\n\s*\n", body):
         if CONCRETE_REF_RE.search(para) and not READ_CONDITION_RE.search(para):
-            flags.append("a references/ pointer has no read-condition ('read only when...')")
+            flags.append(
+                "a references/ pointer lacks a task-specific read condition")
             break
     by_convention = []
     for rel, rtext in sorted(ref_texts.items()):
@@ -561,6 +827,7 @@ def measure(target, method, model):
     fm_name = fm_desc = ""
     body_text = ""
     ref_texts = {}
+    unavailable_text_files = []
     nested_bodies = {}  # dir rel-path -> body of the SKILL.md it carries
     auto_invocation = True   # frontmatter disable-model-invocation: true flips it
 
@@ -579,11 +846,27 @@ def measure(target, method, model):
         rel = str(p.relative_to(root)) if p != root else p.name
         if p.suffix.lower() not in TEXT_EXT:
             files.append({"path": rel, "tier": "asset", "bytes": p.stat().st_size,
-                          "note": "binary/unknown ext - bytes only [measured]"})
+                          "note": "binary/unknown ext - bytes only "
+                                  "[exact local scan]"})
             continue
         try:
-            text = p.read_text(encoding="utf-8", errors="replace")
+            raw = p.read_bytes()
         except OSError:
+            continue
+        try:
+            text = raw.decode("utf-8")
+        except UnicodeDecodeError:
+            tier = classify_tier(rel)
+            files.append({
+                "path": rel,
+                "tier": tier,
+                "bytes": len(raw),
+                "text_status": unavailable("invalid_utf8"),
+                "note": (
+                    "raw bytes counted exactly; token estimate unavailable "
+                    "because strict UTF-8 decoding failed"),
+            })
+            unavailable_text_files.append(rel)
             continue
         top = p.relative_to(root).parts[0] if p != root and len(p.relative_to(root).parts) > 1 else ""
         if p.name == "SKILL.md" and top == "":
@@ -613,8 +896,14 @@ def measure(target, method, model):
                     "lines": len(part_text.splitlines()),
                     "words": len(part_text.split()),
                     "tokens_raw": t["raw"],
-                    "tokens_claude_low": t["claude_low"],
-                    "tokens_claude_high": t["claude_high"],
+                    "tokens_estimate": t["estimate"],
+                    "tokens_lower_bound": t["low"],
+                    "tokens_upper_bound": t["high"],
+                    # Compatibility aliases through v1.x consumers. They no
+                    # longer contain a Claude adjustment and must not be
+                    # interpreted as Claude-model counts.
+                    "tokens_claude_low": t["low"],
+                    "tokens_claude_high": t["high"],
                 })
             file_texts["SKILL.md"] = text
             continue
@@ -626,17 +915,21 @@ def measure(target, method, model):
         t = counter.count(text)
         files.append({
             "path": rel, "tier": tier,
-            "bytes": len(text.encode("utf-8")),
+            "bytes": len(raw),
             "lines": len(text.splitlines()),
             "words": len(text.split()),
             "tokens_raw": t["raw"],
-            "tokens_claude_low": t["claude_low"],
-            "tokens_claude_high": t["claude_high"],
+            "tokens_estimate": t["estimate"],
+            "tokens_lower_bound": t["low"],
+            "tokens_upper_bound": t["high"],
+            # Deprecated v1 compatibility aliases; no Claude conversion.
+            "tokens_claude_low": t["low"],
+            "tokens_claude_high": t["high"],
         })
         file_texts[rel] = text
         # Only true conditional-context files can be "undiscoverable"; build
         # metadata, human docs and demo artifacts are classified 'artifact'
-        # by classify_tier() and never reach this flag.
+        # by classify_tier() and are outside this conditional-routing check.
         if tier == "conditional":
             ref_texts[rel] = text
 
@@ -646,7 +939,8 @@ def measure(target, method, model):
         t for p, t in file_texts.items()
         if Path(p).suffix.lower() in (".py", ".js", ".mjs", ".sh", ".ts"))
 
-    # Duplication only matters where it is billed: context tiers.
+    # Duplication is evaluated only in modeled context tiers. Conditional files
+    # are not assumed to load on every run.
     context_tiers = {f["path"] for f in files
                      if f.get("tier") in ("body", "conditional")}
     context_texts = {p: t for p, t in file_texts.items()
@@ -665,6 +959,10 @@ def measure(target, method, model):
             "files": sum(1 for f in files if f.get("tier") == tier),
             "bytes": tier_sum(tier, "bytes"),
             "tokens_raw": tier_sum(tier, "tokens_raw"),
+            "tokens_estimate": tier_sum(tier, "tokens_estimate"),
+            "tokens_lower_bound": tier_sum(tier, "tokens_lower_bound"),
+            "tokens_upper_bound": tier_sum(tier, "tokens_upper_bound"),
+            # Deprecated v1 compatibility aliases; no Claude conversion.
             "tokens_claude_low": tier_sum(tier, "tokens_claude_low"),
             "tokens_claude_high": tier_sum(tier, "tokens_claude_high"),
         }
@@ -683,8 +981,8 @@ def measure(target, method, model):
                 f"{b} is declared in SKILL.md as a compiled/complete bundle; "
                 f"{n} pair(s) against its constituents are reported as "
                 f"compiled_bundle_pairs, not as duplication findings "
-                f"(intentional, documented duplication - the reader loads the "
-                f"bundle OR the parts, never both)")
+                f"(intentional, documented duplication - the skill intends "
+                f"either the bundle or the parts; runtime reads must be observed)")
     runtime_cfg = sorted(
         f["path"] for f in files
         if f.get("tier") == "artifact"
@@ -695,16 +993,33 @@ def measure(target, method, model):
     if runtime_cfg:
         informational.append(
             f"{len(runtime_cfg)} file(s) classified 'artifact' (shipped, but "
-            f"never loaded into model context - build/runtime metadata): "
+            f"outside the modeled context unless explicitly read - "
+            f"build/runtime metadata): "
             + ", ".join(runtime_cfg[:6])
             + (f" (+{len(runtime_cfg) - 6} more)" if len(runtime_cfg) > 6 else ""))
 
     report = {
+        "schema_version": 2,
         "target": str(target),
+        "metric_class": counter.metric_class,
+        "usage_semantics": "static_component_proxy",
         "token_method": counter.method,
         "token_label": counter.label,
-        "structural_label": "measured (exact bytes/lines/words)",
-        "model_for_api_method": model,
+        "proxy_tokenizer": counter.tokenizer,
+        "language_limitations": counter.language_limitations,
+        "structural_label": "exact_local_scan (not observed usage)",
+        "token_estimate_status": (
+            unavailable("invalid_utf8_text_files")
+            if unavailable_text_files else
+            {"status": "complete_for_decoded_text_files"}),
+        "unavailable_text_files": unavailable_text_files,
+        "model_for_api_method": None,
+        "deprecated_fields": {
+            "tokens_claude_low": (
+                "compatibility alias of tokens_lower_bound; not a Claude count"),
+            "tokens_claude_high": (
+                "compatibility alias of tokens_upper_bound; not a Claude count"),
+        },
         "files": files,
         "tier_totals": totals,
         "duplicates": dups,
@@ -714,11 +1029,17 @@ def measure(target, method, model):
         "flags": flags,
         "informational": informational,
         "notes": [
-            "metadata tier is loaded in EVERY session; body on trigger; "
-            "conditional on demand; scripts execute at ~zero context cost.",
-            "'artifact' = text that is NOT model context (build metadata, human "
-            "docs, rendered demos). Excluded from the context surface and from "
-            "the undiscoverable-reference flag.",
+            "Modeled skill architecture: discovery metadata is preloaded, the "
+            "body loads on a recognized trigger, and conditional files consume "
+            "context when read; verify runtime-specific behavior.",
+            "Script source consumes context when read. Executing a script may "
+            "avoid loading its source, but invocation and returned output still "
+            "consume context.",
+            "'artifact' = text outside this static scan's modeled context "
+            "(build metadata, human docs, rendered demos) unless explicitly "
+            "read. It is excluded from the undiscoverable-reference flag.",
+            "Local proxy tokens are not Claude counts. No universal "
+            "cross-tokenizer multiplier is applied.",
             "bilingual_sibling_pairs are intentional translations, not "
             "duplication to remove.",
             "compiled_bundle_pairs are a documented all-in-one rendering vs. "
@@ -729,29 +1050,85 @@ def measure(target, method, model):
             "report must be labeled projected.",
         ],
     }
-    return report
+    return attach_measurement_claims(report)
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("target")
+    ap.add_argument("target", nargs="?")
     ap.add_argument("--json", dest="json_out")
     ap.add_argument("--method", default="auto",
-                    choices=["auto", "api", "tiktoken", "heuristic"])
-    ap.add_argument("--model", default="claude-opus-4-8")
+                    choices=["auto", "anthropic-api", "api", "tiktoken",
+                             "heuristic"])
+    ap.add_argument("--allow-network", action="store_true",
+                    help="required safety opt-in for --method anthropic-api")
+    ap.add_argument("--request-json",
+                    help="complete structured request for Anthropic preflight")
+    ap.add_argument("--model", default=None,
+                    help="exact provider model; must match request JSON if both")
     ap.add_argument("--stamp", action="store_true",
                     help="include a run timestamp (breaks byte-determinism)")
     args = ap.parse_args()
 
-    report = measure(args.target, args.method, args.model)
-    if args.stamp:
+    if args.json_out:
+        protected = (
+            [args.request_json]
+            if args.method in ("anthropic-api", "api") else
+            [args.target]
+        )
+        try:
+            reject_output_collisions(
+                [args.json_out], protected, forbid_inside_dirs=True)
+        except ValueError as exc:
+            ap.error(str(exc))
+
+    if args.method in ("anthropic-api", "api"):
+        if args.target:
+            ap.error(
+                "a skill target is not accepted in anthropic-api mode; pass "
+                "the complete request only with --request-json")
+        if not args.request_json:
+            ap.error("--request-json is required for anthropic-api mode")
+        try:
+            report = measure_anthropic_request(
+                args.request_json, args.model, args.allow_network)
+        except ValueError as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            sys.exit(1)
+    else:
+        if not args.target:
+            ap.error("target is required for offline measurement")
+        if args.allow_network or args.request_json:
+            ap.error(
+                "--allow-network and --request-json are valid only with "
+                "--method anthropic-api")
+        try:
+            report = measure(args.target, args.method, args.model)
+        except ValueError as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            sys.exit(1)
+
+    if args.stamp and args.method not in ("anthropic-api", "api"):
         import datetime
         report["generated_at"] = datetime.datetime.now(
             datetime.timezone.utc).isoformat()
 
     if args.json_out:
-        Path(args.json_out).write_text(
-            json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        atomic_write_text(
+            args.json_out,
+            json.dumps(report, indent=2, sort_keys=True) + "\n")
+
+    if args.method in ("anthropic-api", "api"):
+        print("=" * 72)
+        print("ANTHROPIC TOKEN PREFLIGHT")
+        print(f"model: {report['model']}")
+        print("metric class: provider_preflight_estimate")
+        print(f"estimated input tokens: {report['estimated_input_tokens']}")
+        print(f"request sha256: {report['request_sha256']}")
+        print("output/cache/full-run cost: unavailable (no model run)")
+        if args.json_out:
+            print(f"\nJSON written: {args.json_out}")
+        return
 
     # human summary
     w = 72
@@ -764,24 +1141,26 @@ def main():
         t = report["tier_totals"][tier]
         if not t["files"]:
             continue
-        rng = (f"{t['tokens_claude_low']}-{t['tokens_claude_high']}"
-               if t["tokens_claude_low"] != t["tokens_claude_high"]
-               else str(t["tokens_claude_low"]))
+        rng = (f"{t['tokens_lower_bound']}-{t['tokens_upper_bound']}"
+               if t["tokens_lower_bound"] != t["tokens_upper_bound"]
+               else str(t["tokens_estimate"]))
         print(f"  {tier:<12} {t['files']:>3} files  {t['bytes']:>8} B  "
-              f"~{rng} tokens [{'measured' if report['token_method'] == 'api' else 'estimated'}]")
+              f"~{rng} proxy tokens [estimated]")
     if report["duplicates"]:
         print(f"\nDUPLICATE CONTENT ({len(report['duplicates'])} pair(s), "
-              f"shared {NGRAM_N}-word grams) [measured]:")
+              f"shared {NGRAM_N}-word grams) [exact local scan]:")
         for d in report["duplicates"][:10]:
             print(f"  {d['file_a']} <-> {d['file_b']}: {d['shared_8grams']} "
                   f"({d['overlap_ratio_of_smaller']:.0%} of smaller)")
     if report["bilingual_sibling_pairs"]:
         print(f"\nBILINGUAL SIBLINGS ({len(report['bilingual_sibling_pairs'])} "
-              f"pair(s)) - intentional translations, NOT duplication [measured]")
+              f"pair(s)) - intentional translations, NOT duplication "
+              "[exact local scan]")
     if report["compiled_bundle_pairs"]:
         print(f"\nCOMPILED BUNDLE ({len(report['compiled_bundle_pairs'])} "
               f"pair(s) vs. {', '.join(report['declared_bundles'])}) - "
-              f"documented all-in-one rendering, NOT duplication [measured]")
+              f"documented all-in-one rendering, NOT duplication "
+              "[exact local scan]")
     if report["flags"]:
         print(f"\nFLAGS ({len(report['flags'])}):")
         for i, fl in enumerate(report["flags"], 1):

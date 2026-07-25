@@ -1,39 +1,72 @@
 # Measurement Reference (tier semantics + token ladder)
 
+## Contents
+
+- [Context tiers](#context-tiers-what-loads-when)
+- [Measurement classes](#measurement-classes-always-disclosed)
+- [Cost model](#cost-model)
+- [Duplicate detection](#duplicate-detection)
+- [Reachability](#reachability-the-undiscoverable-flag)
+- [What is outside the modeled context](#what-is-outside-the-modeled-context)
+- [Trigger surface](#trigger-surface)
+- [Suppressions](#suppressions-are-always-stated)
+- [What is not measurable statically](#what-is-not-measurable-statically)
+
 ## Context tiers (what loads when)
 | Tier | Content | Billed |
 |---|---|---|
 | metadata | frontmatter name+description | every session, always |
 | body | SKILL.md body | on every trigger (incl. false-positives) |
 | conditional | references/ templates/ examples/ agents/ | only when read; needs read-conditions to be selective |
-| script | scripts/ | ~zero context; executes instead of loading |
-| asset | binaries | not context |
+| script | scripts/ | source can stay outside context when executed; invocation/output still enter context |
+| asset | binaries | outside the static text scan; tool/rendered content may still enter context |
 
 Optimization is tier-aware: a token moved from body to conditional is not
-deleted — it stops being billed on triggers that don't need it. A token moved
-into a script stops being billed at all.
+deleted — it stops entering context on triggers that do not read it. Moving code
+into a script avoids source loading only when the runtime executes it without
+reading it; invocation and bounded output still count.
 
-## Token ladder (auto-selected by measure_tokens.py, always disclosed)
-1. **api** — Anthropic `count_tokens` endpoint (needs ANTHROPIC_API_KEY).
-   Exact for the named Claude model → label `measured`.
-2. **tiktoken** — o200k_base. NOT Claude's tokenizer; Anthropic guidance says it
-   undercounts Claude tokens ~15–20% on typical text (more on code/non-English).
-   The harness reports raw + a Claude-adjusted range (×1.15–×1.25) → label
-   `estimated`. Never present the raw tiktoken number as a Claude count.
-3. **heuristic** — chars/3.5 cross-checked with words×1.3, wide interval →
-   label `estimated (wide bounds)`.
+## Measurement classes (always disclosed)
+1. **local proxy** — `auto`, `tiktoken`, or heuristic static package scan.
+   Always offline and labeled `local_proxy_estimate`; no universal conversion to
+   Claude tokens is applied.
+2. **provider preflight** — explicit `--method anthropic-api --allow-network
+   --request-json REQUEST.json`. Counts the complete structured request once for
+   an exact model and labels the input result `provider_preflight_estimate`.
+   It records provider, model, API surface/revision, measurement date, and the
+   request SHA-256 without logging the request body. Its semantics are
+   `preflight_input_only`: output, total run usage, cache segmentation, and cost
+   remain typed unavailable.
+3. **observed usage** — comes only from a completed adapter/runtime result under
+   the v2 usage schema. The current offline runner remains
+   `runtime_unverified`, so a hard-coded adapter result is not sufficient for a
+   human `[measured]` claim.
 
 Rung comparisons are invalid across rungs (see benchmark-protocol.md).
 
+Both measurement modes emit claim-specific records under `/claims`. A local
+scan binds the exact target snapshot and is recomputed by
+`validate_report.py`; provider preflight binds the exact request SHA-256 while
+persisting no request body. Use the claim's exact `display_bindings` text, then
+append `evidence: measurement.json#/claims/<claim-id>`. This prevents an
+unrelated measurement file or an altered displayed number from satisfying the
+report gate.
+
 ## Cost model
-`cost_model.py` = input-side context cost only, per scenario (sessions ×
-trigger-rate × ref-read-rate), as a RANGE per named model from the dated
-pricing snapshot. It does not model output generation, retries, or latency —
-those need live runs or stay projected. Cache columns assume the provider's
-published multipliers and a stable prefix ≥ the model's cacheable minimum.
+`cost_model.py` has separate observed and modeled contracts. Observed mode
+prices disjoint uncached/read/write/output buckets from a completed run.
+Scenario mode additionally requires stable-prefix size, exact model minimum,
+TTL, cold writes, hits, misses, dynamic suffix, and output assumptions. Missing
+or mixed semantics return `unavailable`; no whole-request cache multiplier is
+applied. Cost and context-window occupancy are reported separately.
+The paired evaluator rejects adapter-provided cost and emits no cost claims;
+cost must be recomputed through this model. When `cost_model.py --json` returns
+an available result, it emits `/claims/cost.total_usd`; the validator reloads
+the hash-bound input and effective-dated pricing profile and reruns decimal
+arithmetic before accepting its exact `[estimated]` display binding.
 
 ## Duplicate detection
-Cross-file shared word-8-grams (exact set arithmetic → `measured`). High
+Cross-file shared word-8-grams (exact local scan; never `[measured]` usage). High
 overlap is a lead, not a verdict — semantic review decides whether the
 duplication is load-bearing (R-01 vs R-10 vs deliberate variants).
 
@@ -56,11 +89,12 @@ than 70 literal paths; flagging all 70 penalised the better design.
 Both guards still bite: a bare `references/` mention is not a pointer (depth
 guard), and a stem the body never lists is still flagged.
 
-## What is never context
+## What is outside the modeled context
 `artifact` tier: build metadata, human docs, rendered demos, and **runtime
 config** — `metadata.json`, plus config-format files under `agents/`, which are
-another runtime's manifest. Markdown under `agents/` is a sub-agent prompt and
-stays context.
+another runtime's manifest. The static scan excludes these unless explicitly
+read; it does not claim they can never enter a future model context. Markdown
+under `agents/` is a sub-agent prompt and stays in a context tier.
 
 ## Trigger surface
 Trigger phrasing counts from a literal marker (`use when`, 触发词, `השתמש`) **or**
