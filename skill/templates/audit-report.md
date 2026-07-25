@@ -1,14 +1,18 @@
 # Audit — <target name> (<date>)
 
 ## Measurement basis
-<token ladder rung + label; structural = measured; harness command used> <!-- no-claim -->
+<token ladder rung + label; exact local structure is not model usage; harness command used>
 
-## Harness data
-- <path to measure_tokens JSON>
+## Evidence
+- supporting local proxy: `evidence: measurement.json#/claims/<claim-id>`
+- observed claim, if any: `evidence: report.json#/claims/<claim-id>`
 
 ## Context footprint by tier
-| Tier | Files | Bytes [measured] | Tokens [<label>] | When loaded |
+| Tier | Files | Bytes [not model usage] | Bound token claim | When loaded |
 |---|---:|---:|---:|---|
+
+Use one exact measurement claim display string plus its JSON pointer per tier;
+do not place unbound numeric token text in the table.
 
 ## Findings (ranked by rule priority)
 1. <finding> — rule <R-XX>, evidence <S-ids>. <numbers with labels>.

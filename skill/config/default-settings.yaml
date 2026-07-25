@@ -1,13 +1,26 @@
 # Default settings — token-efficient-skill-optimizer
+version: "1.3.0"
 defaults:
   profile: balanced
   mode_when_unclear: analyze
-  token_method: auto          # api if ANTHROPIC_API_KEY present, else tiktoken, else heuristic
-  model_for_api_counts: claude-opus-4-8
+  token_method: auto          # offline only: tiktoken if installed, else heuristic
+  anthropic_preflight:
+    allow_network: false      # CLI also requires the explicit --allow-network flag
+    request_json: null        # full structured request; never synthesize it from files
+    exact_model: null         # required in the request or explicit CLI argument
   cost_scenario:
-    sessions: 100
-    trigger_rate: 0.3
-    ref_read_rate: 0.5
+    provider: anthropic
+    exact_model: null
+    pricing_date: null
+    stable_prefix_tokens: null
+    dynamic_suffix_tokens: null
+    cache_ttl: null           # 5m, 1h, or none
+    cold_writes: null
+    cache_hits: null
+    cache_misses: null
+    output_tokens_per_request: null
+    batch: false
+    inference_geo: global
   apply:
     max_revision_rounds: 3
     marginal_savings_floor: 0.02   # stop when next rule's expected savings < 2% of footprint

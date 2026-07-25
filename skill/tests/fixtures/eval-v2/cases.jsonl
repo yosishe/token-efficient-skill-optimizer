@@ -1,0 +1,7 @@
+{"id":"critical-new","prompt":"fixture: baseline passes and candidate has a new critical failure"}
+{"id":"critical-recovered","prompt":"fixture: baseline critical failure is recovered"}
+{"id":"critical-stays","prompt":"fixture: both variants retain a critical failure"}
+{"id":"pass-stays","prompt":"fixture: both variants pass"}
+{"id":"quality-new","prompt":"fixture: task success regresses without a critical failure"}
+{"id":"quality-recovered","prompt":"fixture: task success recovers"}
+{"id":"quality-stays","prompt":"fixture: task success remains failed"}

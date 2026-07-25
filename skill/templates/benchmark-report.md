@@ -1,25 +1,29 @@
 # Benchmark — <target> before vs after (<date>)
 
-Header: token rung <same for both sides>; pricing snapshot <date>; profile <name>. <!-- no-claim -->
+Header: token rung <same for both sides>; pricing snapshot <date>; profile <name>.
 
-## Harness data
-- before: <path> · after: <path> · change log: <path>
+## Evidence
+- exact local/supporting data: <path>
+- target claim: `evidence: report.json#/claims/<claim-id>`
 
-## Measured
-<structural deltas per tier; duplicate-pair delta; api-rung tokens if keyed>
+## Exact local structure
+<bytes/lines and deterministic structure deltas; label as not model usage>
+
+## Measured runtime usage
+<completed observed-usage claims only; every line carries its own JSON pointer>
 
 ## Estimated
-<tokenizer-approximated token deltas as ranges; cost ranges per named model>
+<provider/local estimates or derived cost; every quantitative line carries its own JSON pointer>
 
 ## Projected
-<quality/latency statements, each: claim — rule R-XX — evidence S-id — confidence>
+<non-quantitative hypotheses, or claim-specific JSON evidence for target quantities>
 
 ## Per-rule attribution (ablation)
 | Rule | Applications | Token delta [label] | Status |
 |---|---:|---:|---|
 
 ## What didn't work
-<rules with ~zero benefit; rollbacks with reason; skipped findings with reason>
+<rules with negligible benefit; rollbacks with reason; skipped findings with reason>
 
 ## Gates
-<G-01..G-10 pass/fail table; any fail = not shipped>
+<release-gate pass/fail table; any fail = not shipped>

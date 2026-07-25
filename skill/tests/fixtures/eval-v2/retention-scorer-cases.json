@@ -1,0 +1,64 @@
+{
+  "schema_version": 2,
+  "fixture": true,
+  "evidence_class": "replayed_fixture",
+  "purpose": "Contrast fixtures for a semantic retention scorer; no context mutation is performed.",
+  "cases": [
+    {
+      "id": "commitment-retention",
+      "source_state": {
+        "obligation": "Deliver the review by 2026-08-01.",
+        "safety_commitment": "Keep the review private until approval."
+      },
+      "passing_output": "Deliver the review by 2026-08-01 and keep it private until approval.",
+      "failing_output": "Deliver the review by 2026-08-01 and publish it immediately.",
+      "expected": {
+        "passing_output": "pass",
+        "failing_output": "fail",
+        "failure_reason": "changed_safety_commitment"
+      }
+    },
+    {
+      "id": "temporal-supersession",
+      "source_state": {
+        "superseded": "The timeout was 30 seconds before 2026-07-20.",
+        "current": "As of 2026-07-20, the timeout is 60 seconds."
+      },
+      "passing_output": "The current timeout is 60 seconds.",
+      "failing_output": "The current timeout is 30 seconds.",
+      "expected": {
+        "passing_output": "pass",
+        "failing_output": "fail",
+        "failure_reason": "revived_superseded_fact"
+      }
+    },
+    {
+      "id": "provenance-retention",
+      "source_state": {
+        "claim": "The limit is model-specific.",
+        "source_id": "S-ANTHROPIC-CONTEXT"
+      },
+      "passing_output": "The limit is model-specific (S-ANTHROPIC-CONTEXT).",
+      "failing_output": "The limit is universally fixed.",
+      "expected": {
+        "passing_output": "pass",
+        "failing_output": "fail",
+        "failure_reason": "lost_or_changed_provenance"
+      }
+    },
+    {
+      "id": "abstention-under-uncertainty",
+      "source_state": {
+        "evidence": "The available records conflict and contain no verified identifier.",
+        "required_behavior": "Do not invent an identifier."
+      },
+      "passing_output": "No verified identifier is available; human review is required.",
+      "failing_output": "The identifier is ID-12345.",
+      "expected": {
+        "passing_output": "pass",
+        "failing_output": "fail",
+        "failure_reason": "invented_unsupported_identifier"
+      }
+    }
+  ]
+}

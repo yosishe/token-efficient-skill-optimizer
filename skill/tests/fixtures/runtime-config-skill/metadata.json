@@ -1,5 +1,5 @@
 {
   "version": "1.0.0",
   "organization": "Fixture Co",
-  "abstract": "Registry metadata for a different runtime. Never loaded into model context."
+  "abstract": "Registry metadata outside this fixture runtime's ordinary trigger path; it consumes context if read."
 }

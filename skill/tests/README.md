@@ -60,7 +60,8 @@ new assertions were mutation-verified before shipping.
 
 ```bash
 python scripts/run_tests.py            # the deterministic suite
-python scripts/validate_package.py .   # the ten release gates, as a CI check
+python scripts/validate_package.py .   # all current package checks
+python -m unittest discover -s tests -p 'test_v2.py' -v
 ```
 
 The suite is **mutation-verified**: every test has been confirmed to fail when the behavior
@@ -69,7 +70,8 @@ has twice shipped tests that turned out to assert nothing, and both times mutati
 caught it rather than review.
 
 `fixtures/` holds deterministic inputs for the runner: the good/bad reports intentionally
-satisfy and violate the validator, the language fixtures (`zh-skill`, `he-skill`,
+satisfy and violate the validator, `eval-v2/` covers canonical accounting,
+pairwise transitions, and source-linked semantic-retention scoring, the language fixtures (`zh-skill`, `he-skill`,
 `bilingual-skill`) exercise the multilingual heuristics, and several contain deliberately
 unreachable files. Each fixture directory is a self-contained mini package with its own
 `SKILL.md`, so the harness resolves its references against that file rather than the outer one.
@@ -84,8 +86,15 @@ python scripts/eval_report.py <run.jsonl>
 ```
 
 `eval_runner.py` executes a seeded randomized paired schedule and hashes both variants, the
-cases, and the adapter into a run header. `eval_report.py` produces paired deltas with a
-bootstrap CI that returns null below 5 paired observations rather than inventing an interval,
-and reports `higher_token_cases` as a first-class output.
+cases, the exact case/trial/variant schedule, and the adapter into a run header.
+`eval_report.py` re-reads the bound case files, rejects missing-both-arms and equal-count
+substitutions, suppresses token deltas across provider/model/API mismatches, and returns a
+null bootstrap CI below 5 unique cases rather than treating repeated trials as independent
+task samples. The committed `v2-test-manifest.json` binds the exact deterministic test
+inventory, and CI rejects skipped, missing, renamed, or unexpected v2 tests. A
+target-specific quantitative claim must bind one machine-readable claim as
+`evidence: report.json#/claims/<claim-id>`; a generic Harness-data file is supporting
+material, not claim evidence. Generated display slots are hash-recomputed and exact-bound,
+so swapping the mean with another number from the same claim fails validation.
 
 `live_eval_adapter.py` remains available for emitting a skill-creator-compatible `evals.json`.

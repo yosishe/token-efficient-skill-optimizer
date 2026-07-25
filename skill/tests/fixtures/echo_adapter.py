@@ -43,7 +43,9 @@ REGRESSION_BUCKET = 5
 
 # An invented rate. It is NOT any provider's published price and must never be
 # copied into a cost model; scripts/cost_model.py owns real pricing snapshots.
-_FAKE_USD_PER_KTOK = 0.003
+EVIDENCE_CLASS = "replayed_fixture"
+QUALITY_EVIDENCE_CLASS = "replayed_fixture"
+SAFETY_EVIDENCE_CLASS = "replayed_fixture"
 
 
 def _digest(*parts):
@@ -101,8 +103,6 @@ def run_case(*, variant_path, case, trial, config, variant=None):
     success_roll = _digest(case_id, "success", name, trial) % 100
     task_success = 0.0 if success_roll < 7 else 1.0
     critical_failure = _digest(case_id, "critical", name, trial) % 41 == 0
-    billable = input_tokens + output_tokens + tool_result_tokens
-
     return {
         "task_success": task_success,
         "critical_failure": critical_failure,
@@ -113,7 +113,6 @@ def run_case(*, variant_path, case, trial, config, variant=None):
         "tool_calls": tool_calls,
         "retries": retries,
         "latency_ms": latency_ms,
-        "cost_usd": round(billable / 1000.0 * _FAKE_USD_PER_KTOK, 6),
         # Never observed by this fixture - must render as "not observed",
         # never as 0.
         "cached_input_tokens": None,
