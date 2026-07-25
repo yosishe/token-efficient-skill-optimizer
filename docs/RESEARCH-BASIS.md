@@ -52,12 +52,25 @@ retrieval-style tasks; it says nothing about whether a given instruction in your
 distractor or a load-bearing constraint. Nothing here justifies removing text on length grounds
 alone.
 
-**Disclosure.** This is the single most-cited source in the registry and it is a **vendor-adjacent
-technical report, not peer-reviewed** — Chroma sells retrieval infrastructure, and a finding that
-"more context hurts" is commercially convenient for them. Methodology, code, and tasks are
-published, which mitigates the conflict without erasing it. It is used because the direction
-replicates across four independent model families, which is harder to explain by vendor incentive
-than by mechanism.
+**Disclosure.** This is a **vendor-adjacent technical report, not peer-reviewed** — Chroma sells
+retrieval infrastructure, and a finding that "more context hurts" is commercially convenient for
+them. Methodology, code, and tasks are published, which mitigates the conflict without erasing it.
+It is used because the direction replicates across four independent model families, which is
+harder to explain by vendor incentive than by mechanism. It is cited by 3 rules.
+
+**A larger disclosure, which this one led to.** An earlier draft of this file called Context Rot
+"the single most-cited source in the registry." That was wrong, and checking it surfaced something
+more worth knowing: the two most-cited sources are not papers at all. They are
+`S-D09` *Effective context engineering for AI agents* (7 rules) and `S-D10` *Equipping agents for
+the real world with Agent Skills* (6 rules) — both **Anthropic engineering reports**, classified in
+the catalog as `anecdotal` evidence.
+
+So the honest shape of this evidence base is: **the peer-reviewed literature supplies the
+mechanisms, and provider engineering documentation supplies the most rule-level guidance.** That is
+a real limitation, not a footnote. Provider documentation describes how one vendor's system behaves
+and is written by people with an interest in it being adopted. It earns its weight here because
+this tool targets that vendor's skill format specifically — but a reader should know that the most
+load-bearing sources in the registry are not academic.
 
 ## 2. Models commit early and do not recover
 
