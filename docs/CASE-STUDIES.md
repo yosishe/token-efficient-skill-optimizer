@@ -24,11 +24,14 @@ a lean body can be cheaper per invocation than a 30 KB package that inlines ever
 
 ## Results
 
-| skill | author | installs | trigger path before | after | change |
-|---|---|---|---|---|---|
-| `improve-codebase-architecture` | Matt Pocock | 538,600 | 1,540–1,673 | 1,247–1,356 | **−19.0%** |
-| `frontend-design` | Anthropic | 702,100 | 1,887–2,051 | 1,563–1,700 | **−17.2%** |
-| `react-best-practices` | Vercel | 578,100 | 2,026–2,202 | 1,888–2,052 | **−6.8%** |
+| skill | author | installs | trigger path before | after | change | verdict |
+|---|---|---|---|---|---|---|
+| `improve-codebase-architecture` | Matt Pocock | 538,600 | 1,540–1,673 | 1,247–1,356 | **−19.0%** | kept |
+| `react-best-practices` | Vercel | 578,100 | 2,026–2,202 | 1,888–2,052 | **−6.8%** | kept |
+| `frontend-design` | Anthropic | 702,100 | 1,887–2,051 | 1,563–1,700 | −17.2% | **reverted — see below** |
+
+Two of the three shipped. **The third was reverted by its own evaluation**, and that is the
+most useful result in this document.
 
 Token figures are `[estimated]` — a tokenizer proxy with a disclosed Claude adjustment
 (×1.15–1.25). Byte counts are `[measured]`. Both arms measured with the same harness build.
@@ -131,18 +134,76 @@ false positives in the tool, since fixed. That work is documented in the reposit
 
 ---
 
-## What is NOT established
+## The evaluation, and what it changed
 
-**Quality preservation has not yet been verified.** A blinded paired A/B evaluation is running —
-12 tasks across the three skills, 2 trials per side, one grader who sees only `Output 1` /
-`Output 2` — with three cases chosen specifically to fail if the relocated material became
-unreachable. **Until it completes, no claim is made that these optimizations preserve behavior.**
+A blinded paired A/B: 12 tasks, 2 trials per side, **24 paired observations**. One grader saw
+only `Output 1` / `Output 2`, sides randomized per packet, no version information. Thresholds
+were frozen before the run.
 
-The evaluation protocol was frozen before any run, and its blocking threshold is stated in
-advance: if a case shows the optimized version failing to reach relocated content, the change is
-**reverted**, not explained.
+**No quality regression.**
 
-Static token counts are structure. They are not evidence that a skill still works.
+| | original | optimized |
+|---|---|---|
+| mean quality (0–4) | 3.875 | 3.833 |
+| head-to-head | 3 wins | **4 wins**, 17 ties |
+
+The −0.04 difference is well inside the pre-declared −0.25 non-inferiority threshold, and the
+optimized side won marginally more head-to-head comparisons. Per skill:
+
+- **`improve-codebase-architecture` — 4.00 vs 4.00, and every one of its eight paired deltas
+  was exactly zero.** All seven report card fields — Files, Problem, Solution, Wins,
+  Before/After diagram, Recommendation strength, Top recommendation — appeared in both arms.
+  The relocated specification survived intact.
+- **`react-best-practices` — 3.75 vs 3.75, mean delta 0.00.** The per-case deltas were
+  `[−1, 0, 0, +1, 0, 0, +1, −1]`: symmetric noise that cancels exactly.
+
+**Reachability, checked from the runners' own file-access records:**
+
+- The relocated report spec was read in **both arms** on the case that needed it.
+- On a case that did *not* need it, the **original** opened the reference file unnecessarily and
+  the **optimized** version correctly skipped it — the explicit read-condition prevented a read
+  the original was making anyway.
+- `react-best-practices` never opened the relocated index, because its condition was never met,
+  and cited a comparable number of rule files in both arms. No capability was lost.
+
+## Why `frontend-design` was reverted
+
+The relocated writing guidance was reachable — read in **8 of 8** design runs. That is exactly
+the problem.
+
+The break-even had been computed in advance: the move pays only if that guidance is needed in
+**fewer than 74%** of runs. The estimate going in was 50–65%. The measured rate was **100%**.
+
+| read-rate | net per run |
+|---|---|
+| **100% (observed)** | **+44 tokens · +2.3%** `[estimated]` |
+| 74% (break-even) | −52 tokens `[estimated]` |
+| 50% | −140 tokens `[estimated]` |
+
+At the observed rate the optimization makes the skill **more expensive**, before even counting
+the read round-trip. So `−17.2%` was a true measurement of the trigger path and a misleading
+measurement of anything that matters.
+
+The frozen protocol said revert rather than explain, so it is reverted. Note what did *not*
+happen: the quality data would have let it through — the design arm's only real regression was
+a single case that scored `−2` in one trial and `+1` in the other on the identical task, which
+is variance, and it had no causal link to the relocated copywriting material (every design
+output in both arms wrote real interface copy). **It was killed by economics, not by quality.**
+
+This is the case worth reading twice. `−17.2%` is precisely the kind of number that gets
+published: correctly measured, honestly derived, and wrong about the thing a reader would
+conclude from it.
+
+## What this still does not establish
+
+24 paired observations, 12 tasks, one grader, on tasks written by the same person who
+commissioned the optimizations. It detects blunt regressions and lost reachability. It cannot
+establish that quality is identical, and it does not generalize to workloads unlike these.
+
+Two case-design flaws, disclosed: `C-12` referenced an ADR file absent from the fixture tree,
+and the design cases skew toward tasks requiring interface copy. Both applied identically to
+both arms, so the comparison holds, but the second is why the 100% read-rate should be read as
+"on a copy-heavy workload" rather than as a universal figure.
 
 ## Reproducing
 

@@ -85,24 +85,28 @@ answer you want before spending a week on one.
 Run against three of the most-installed public skills, at pinned commits. The **trigger path**
 is `frontmatter + body` — the tier billed on every single invocation.
 
-| skill | installs | before | after | |
-|---|---|---|---|---|
-| `improve-codebase-architecture` | 538K | 1,540–1,673 | 1,247–1,356 | **−19.0%** |
-| `frontend-design` | 702K | 1,887–2,051 | 1,563–1,700 | **−17.2%** |
-| `react-best-practices` | 578K | 2,026–2,202 | 1,888–2,052 | **−6.8%** |
+| skill | installs | before | after | | |
+|---|---|---|---|---|---|
+| `improve-codebase-architecture` | 538K | 1,540–1,673 | 1,247–1,356 | **−19.0%** | kept |
+| `react-best-practices` | 578K | 2,026–2,202 | 1,888–2,052 | **−6.8%** | kept |
+| `frontend-design` | 702K | 1,887–2,051 | 1,563–1,700 | −17.2% | **reverted** |
 
 `[estimated]`. No prose was compressed or reworded — every change is a verbatim move or a
-delete-with-citation, so each one is auditable line by line.
+delete-with-citation, so each is auditable line by line.
 
-Two things worth more than the percentages. On `react-best-practices` the single biggest target
-— a block that is **74% of the trigger path** — was measured and then **deliberately left
-alone**, because its honest read-condition turned out to be the skill's own trigger condition.
-And on `improve-codebase-architecture` the process surfaced a real latent bug: one card field
-was called **Benefits** in the body and **Wins** in the reference file.
+**Quality was then measured, not assumed.** A blinded paired A/B, 24 paired observations, sides
+randomized, thresholds frozen before the run: original **3.875** vs optimized **3.833** on a 0–4
+scale — inside the pre-declared −0.25 threshold, with 17 ties and the optimized side marginally
+ahead head-to-head. On `improve-codebase-architecture` every one of the eight paired deltas was
+**exactly zero** and all seven report fields survived relocation.
 
-**Quality preservation is not yet verified** — a blinded A/B is running, and until it lands no
-claim is made that these changes preserve behavior. Full detail, including what was refused and
-why: [`docs/CASE-STUDIES.md`](docs/CASE-STUDIES.md).
+**The third one was reverted by its own evaluation, and it is the most useful result here.** The
+relocated material turned out to be read in **8 of 8** runs. Break-even had been computed in
+advance at 74%, so at the observed rate the change makes the skill **+2.3% more expensive**. The
+quality data would have let it through; the economics killed it. `−17.2%` was correctly measured
+and misleading about everything a reader would infer from it.
+
+Full detail, including what was refused and why: [`docs/CASE-STUDIES.md`](docs/CASE-STUDIES.md).
 
 ## Quick start
 
