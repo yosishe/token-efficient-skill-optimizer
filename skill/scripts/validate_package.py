@@ -391,7 +391,43 @@ def check_rules(root, rep):
         if "sources" in rule and not isinstance(rule.get("sources"), list):
             violations.append(f"{rid}: sources must be a list")
 
+        # G-11 citation-SUPPORT. C03 proves a cited id resolves; that is the weaker property.
+        # Three rules were found citing sources that said nothing about their claim, so where a
+        # rule declares source_claims the gate enforces that the mapping is CONSISTENT with its
+        # sources and that no claim is a placeholder. Coverage across the whole registry is
+        # reported as a note, not asserted - a gate that claimed full coverage it does not have
+        # would be exactly the decoration this check exists to remove.
+        claims = rule.get("source_claims")
+        if claims is not None:
+            if not isinstance(claims, dict):
+                violations.append(f"{rid}: source_claims must be a mapping of source id -> claim")
+            else:
+                srcs = set(rule.get("sources") or [])
+                for sid, text in claims.items():
+                    if sid not in srcs:
+                        violations.append(
+                            f"{rid}: source_claims names {sid}, which the rule does not cite")
+                    if is_empty(text) or len(str(text).strip()) < 40:
+                        violations.append(
+                            f"{rid}: source_claims[{sid}] is empty or too short to be a claim")
+                    elif "TODO" in str(text) or "TBD" in str(text):
+                        violations.append(
+                            f"{rid}: source_claims[{sid}] is a placeholder, not a claim")
+
     rep.counts["rules"] = len(rules)
+    # G-11 coverage, reported honestly rather than asserted. Backfilling the remaining rules means
+    # re-opening each source and reading what it actually supports - a re-verification, not a
+    # formatting pass - so the number is published as a ratchet instead of being hidden.
+    empirical = [r for r in rules
+                 if isinstance(r, dict) and r.get("rationale_type") != "constraint"]
+    with_claims = [r for r in empirical if r.get("source_claims")]
+    if len(with_claims) < len(empirical):
+        rep.notes.append(
+            f"G-11 citation-support coverage: {len(with_claims)}/{len(empirical)} empirical rules "
+            f"declare source_claims. The remainder cite sources whose SUPPORT has not been "
+            f"re-verified; C03 proves only that those ids resolve. Backfill is tracked here, "
+            f"not assumed.")
+    rep.counts["source_claims"] = f"{len(with_claims)}/{len(empirical)}"
     rep.add("C02", "rule-schema", violations,
             f"{len(rules)} rules x {len(RULE_FIELDS)} fields")
     return rules

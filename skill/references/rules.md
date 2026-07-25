@@ -4,6 +4,90 @@ Registry version 1.0.0. Evidence ids resolve in `output/research/sources.yaml` (
 
 ## Tier 1 — apply in every profile (high confidence, low risk)
 
+### R-24 · structural-edits-are-behavioural  (score 999)
+
+Treat relocation, reordering, whitespace normalisation and heading changes as behavioural interventions requiring validation - not as cosmetic changes exempt from testing.
+
+- **Mechanism:** Semantics-preserving edits are not behaviour-preserving. 24% of SINGLE atomic formatting changes move accuracy by >=5 points with wording held identical, and adding one space flipped 500+ predictions on a classification suite. A "verbatim move" is not exempt: the studies' perturbations also preserve wording exactly.
+- **Target:** input
+- **Apply when:** Any Apply run that relocates, reorders or renormalises text - i.e. almost every Apply run.
+- **Do NOT apply when:** never - this rule constrains HOW other rules are validated, it does not itself remove tokens.
+- **Expected benefit:** No token benefit. Prevents a class of silent regression that static token counts cannot see. [projected]
+- **Risks (0-3):** quality 0 · safety 0 · maintainability 1 · portability 0
+- **Evidence:** S-R01, S-R03, S-R02 (moderate) · contra: S-R04 finds much of the measured sensitivity is an artifact of rigid answer matching: SD collapses 0.28 -> 0.005 and rank correlation rises 0.30 -> 0.92 under semantics-aware scoring (Sec 3.2). The conflict is real and unresolved for skill files, which neither side studies. This rule is therefore justified as PRECAUTION UNDER DISAGREEMENT, not as settled science.
+- **Validation:** Benchmark mode runs the sham-optimized negative controls; a cosmetic-only change must show no measurable difference, or the harness is measuring noise.
+- **Rollback:** Downgrade to advisory if sham controls and semantics-aware scoring show no relocation effect across >=5 packages.
+
+### R-28 · size-the-evaluation-before-running-it  (score 999)
+
+Run a power analysis BEFORE collecting evaluation data; report SD and a confidence interval, never a bare mean; cluster standard errors when items are grouped by package.
+
+- **Mechanism:** A non-inferiority conclusion is a claim about an interval bound, not a point estimate. An underpowered run cannot distinguish "no regression" from "no ability to see one", and reporting its point estimate as non-inferiority is the error the label vocabulary exists to prevent everywhere else.
+- **Target:** reporting
+- **Apply when:** Any evaluation that will state a quality delta or a non-inferiority verdict.
+- **Do NOT apply when:** never, for quality claims. Static token comparisons are deterministic and are exempt.
+- **Expected benefit:** No token effect. Prevents reporting an unresolvable comparison as a result. Sizing depends on the paired-difference SD, which this project has never reported. [projected]
+- **Risks (0-3):** quality 0 · safety 0 · maintainability 1 · portability 0
+- **Evidence:** S-R19, S-R24, S-R20 (strong) · contra: Cost - a correctly sized run is several times more expensive than an underpowered one. The alternative is not cheaper, it is uninformative.
+- **Validation:** Re-analyse any existing grading record and publish its SD and CI; if the interval is not reported, the verdict is not established.
+- **Rollback:** If a reported SD is <=0.35, a smaller sample may suffice and the requirement relaxes to reporting the interval.
+
+### R-29 · judge-hygiene  (score 999)
+
+Score every pair in BOTH orders and aggregate; use at least two graders with reported agreement; use a grader from a different model family than the generator; report human agreement on a subsample.
+
+- **Mechanism:** Judge reliability is at its WORST precisely where an optimizer operates - comparing two outputs intended to be quality-equivalent. Order effects alone can be larger than the effect under test, and the direction of the bias is judge-specific, so no fixed offset corrects it.
+- **Target:** ['quality', 'reporting']
+- **Apply when:** Any live quality evaluation using an LLM judge.
+- **Do NOT apply when:** Deterministic checks (token counts, contract verifiers) - no judge, no bias.
+- **Expected benefit:** No token effect. Removes a bias larger than the signal being sought. [projected]
+- **Risks (0-3):** quality 0 · safety 0 · maintainability 1 · portability 0
+- **Evidence:** S-R22, S-R21, S-R23, S-R25 (strong) · contra: S-R21 and S-R25 disagree on whether self-preference is established. Retained rather than resolved. Cost - both-orders judging roughly doubles judge spend.
+- **Validation:** Measure the order-swap conflict rate on the target's own case family; if it is under 5%, the swap requirement can be relaxed for that family with the measurement published.
+- **Rollback:** Single-order judging, with the conflict rate reported as an unmeasured threat to validity.
+
+### R-32 · cache-minimum-guard  (score 999)
+
+Before recommending any size reduction, check whether the result falls below the target model's minimum cacheable prefix. If it does, report that caching will silently switch off and the change may be COST-NEGATIVE.
+
+- **Mechanism:** Providers refuse to cache a prefix shorter than a per-model minimum and return NO ERROR when they do. An optimizer that successfully shrinks a prompt past that line turns caching off, and since cache reads bill at 0.1x input, the token reduction can be swamped by the lost discount. This is a failure the tool can cause BY SUCCEEDING at its stated goal.
+- **Target:** cost
+- **Apply when:** The target sits inside a cached prefix and a reduction would cross the model's minimum.
+- **Do NOT apply when:** No caching in use, or the prefix stays comfortably above the minimum after the change.
+- **Expected benefit:** Prevents an optimization from increasing billed cost. Pure guard - it removes no tokens. [cache-dependent]
+- **Risks (0-3):** quality 0 · safety 0 · maintainability 1 · portability 1
+- **Evidence:** S-C01, S-C03 (provider) · contra: none known
+- **Validation:** Given a target near the minimum, the harness must emit the warning; given one far above it, it must not. Both directions tested.
+- **Rollback:** n/a - a guard that only adds a warning.
+
+### R-33 · token-counts-are-not-portable  (score 999)
+
+Stamp every token figure with the model and tokenizer it was measured with, and refuse before/after comparisons that cross a tokenizer boundary.
+
+- **Mechanism:** A tokenizer change moves counts for the SAME TEXT by roughly 30% within a single vendor's own model line. A before/after measured across such a boundary is void, and an absolute token claim that does not name its tokenizer cannot be checked.
+- **Target:** reporting
+- **Apply when:** always, for any token figure.
+- **Do NOT apply when:** never.
+- **Expected benefit:** No token effect. Prevents void comparisons and uncheckable claims. [projected]
+- **Risks (0-3):** quality 0 · safety 0 · maintainability 0 · portability 0
+- **Evidence:** S-C02 (provider) · contra: none known
+- **Validation:** A before/after pair measured on models either side of a tokenizer boundary must be refused, not silently reported.
+- **Rollback:** n/a - a reporting constraint.
+
+### R-34 · model-the-output-side-or-declare-it-unscored  (score 999)
+
+Either price output tokens from measured evaluation transcripts, or have every output-targeting rule declare itself unscored. Never let a dollar figure silently cover only the input side.
+
+- **Mechanism:** Output bills at roughly 5-6x input on current published rates, while the cost model covers the input side only. That is honest as far as it goes, but the registry ranks an OUTPUT-side rule highest of all non-safety rules, so the highest-ranked rule is the one the cost figure cannot express. A reader sees a dollar number and assumes it is the bill.
+- **Target:** ['reporting', 'cost']
+- **Apply when:** Any cost figure emitted for a target whose rules touch output length or reasoning budget.
+- **Do NOT apply when:** Input-only optimizations with no output-contract change - then the input-side figure IS the change.
+- **Expected benefit:** No token effect. Removes a structural bias in which the ranked-highest rule cannot be priced. [projected]
+- **Risks (0-3):** quality 0 · safety 0 · maintainability 1 · portability 0
+- **Evidence:** S-C02, S-C04 (provider) · contra: Output-token deltas cannot be measured without live runs, so the declare-unscored branch will often be the operative one. That is still an improvement on a dollar figure that silently omits the larger half.
+- **Validation:** A cost report for a target with an output-contract change must either include measured output tokens or carry an explicit "output side not modeled" line.
+- **Rollback:** n/a - a reporting constraint.
+
 ### R-08 · filter-tool-results  (score 25.0)
 
 Filter/summarize/structure tool and sub-agent outputs before they re-enter the model's context; return compact summaries, not raw dumps.
@@ -230,6 +314,20 @@ Plan and batch independent tool calls instead of serial call-observe-call loops;
 - **Validation:** Dependency-ordered cases still sequence correctly; permission gates still fire.
 - **Rollback:** Restore serial ordering.
 
+### R-25 · benchmark-across-prompt-variants  (score 3.0)
+
+Evaluate before/after across a SET of semantically equivalent prompt surfaces and report the interval, not a single-variant point estimate.
+
+- **Mechanism:** Single-prompt evaluation cannot separate an optimization's effect from the spread across equivalent phrasings, which can be larger than the effect and can even invert rankings.
+- **Target:** ['reporting', 'quality']
+- **Apply when:** Any Benchmark or Validate run that will state a quality delta.
+- **Do NOT apply when:** Static-only comparisons that make no quality claim at all.
+- **Expected benefit:** Converts an uninterpretable single-run delta into an interval. No token effect. [projected]
+- **Risks (0-3):** quality 0 · safety 0 · maintainability 1 · portability 0
+- **Evidence:** S-R02, S-R04 (strong) · contra: Cost - the variant count multiplies eval spend, which is the standing objection.
+- **Validation:** Compare the single-variant and multi-variant conclusions on the same optimization; if they disagree, the single-variant one was not safe to report.
+- **Rollback:** Reduce to 3 variants if spread is consistently below the decision threshold.
+
 ### R-16 · adaptive-output-budgets  (score 2.4)
 
 Scale output/reasoning budgets by task complexity class rather than one global cap.
@@ -258,6 +356,34 @@ Use schema-constrained output only where parse-failure retries are a real observ
 - **Validation:** A/B parse-rate + task-quality with and without schema on the target's cases.
 - **Rollback:** Drop the schema, keep a format instruction.
 
+### R-26 · contract-items-become-verifiers  (score 2.2)
+
+Convert each enumerated behavioural-contract item (C-01, C-02, ...) into a deterministic checker and compare prompt-level strict compliance before vs after.
+
+- **Mechanism:** Verifiable constraints can be checked by a short program without a judge, which turns the contract-ID procedure from narrative into a gate.
+- **Target:** ['quality', 'reporting']
+- **Apply when:** Apply mode, once the contract has been enumerated.
+- **Do NOT apply when:** Contract items that are genuinely procedural or semantic and have no mechanical form - those stay reviewer-checked and are reported as such.
+- **Expected benefit:** No token effect. Makes contract preservation falsifiable. [projected]
+- **Risks (0-3):** quality 0 · safety 0 · maintainability 1 · portability 0
+- **Evidence:** S-R18 (moderate) · contra: Only checkable FORM is verifiable this way. A lenient checker inflates apparent compliance, which is exactly how an optimizer could accidentally certify a regression.
+- **Validation:** Delete one contract item deliberately; the checker must fail. An unfailable checker is decoration.
+- **Rollback:** Keep as a partial gate if fewer than 60% of contract items are mechanically checkable.
+
+### R-27 · dependency-aware-contract-scoring  (score 2.2)
+
+Score contract items through their dependency structure - a failed prerequisite invalidates its dependents - rather than counting an aggregate pass rate.
+
+- **Mechanism:** A skill file is a composed instruction. Deleting or relocating one constraint can silently void every downstream constraint that depended on it, and an aggregate pass-rate hides exactly that.
+- **Target:** ['quality', 'reporting']
+- **Apply when:** Any target whose constraints have prerequisites or ordering.
+- **Do NOT apply when:** Flat, independent constraint sets - then aggregate scoring loses nothing.
+- **Expected benefit:** No token effect. Catches a failure class aggregate scoring cannot see. [projected]
+- **Risks (0-3):** quality 0 · safety 0 · maintainability 1 · portability 0
+- **Evidence:** S-R18 (moderate) · contra: none known
+- **Validation:** Inject a prerequisite deletion; every dependent item must be marked failed, not just the prerequisite.
+- **Rollback:** Revert to flat per-item scoring.
+
 ### R-14 · example-set-pruning  (score 2.0)
 
 Keep few-shot examples that demonstrably prevent failures; drop examples that do not change outcomes; consider dynamic selection over static blocks.
@@ -285,6 +411,34 @@ Cache full responses for repeated semantically-equivalent queries; serve hits wi
 - **Evidence:** S-C09 (moderate) · contra: none known
 - **Validation:** Hit-precision audit on a sample; stale/personalized classes excluded from cache keys.
 - **Rollback:** Disable cache lookup; all queries go to the model.
+
+### R-30 · condition-example-pruning-on-model-capability  (score 0.2)
+
+Gate the aggressive form of example pruning (R-14) on the target model class. On weaker or older models, default to KEEPING examples.
+
+- **Mechanism:** On capable instruction-tuned models doing reasoning, exemplars are largely inert for accuracy and their surviving job - anchoring output format - is usually achievable with a short format instruction. On weaker models the same exemplars produce significant gains, so the pruning decision inverts with target capability.
+- **Target:** input
+- **Apply when:** R-14 is eligible AND the target model class is known.
+- **Do NOT apply when:** The target model class is unknown or the skill is deployed across mixed tiers - then keep examples and say why.
+- **Expected benefit:** Avoids a regression class R-14 alone cannot see. Savings are those of R-14 when it applies. [behavior-dependent]
+- **Risks (0-3):** quality 1 · safety 0 · maintainability 0 · portability 2
+- **Evidence:** S-R09, S-R08, S-R06 (moderate) · contra: S-R06 is a null result about LABELS in classification prompts, not a licence to delete demonstrations. S-R09's finding depends on the authors' own correction of an answer-extraction bias.
+- **Validation:** With-vs-without evaluation on the TARGET's model tier, not a proxy.
+- **Rollback:** Restore the examples; revert to unconditional R-14.
+
+### R-31 · example-selection-must-not-break-the-prefix  (score 0.2)
+
+When example selection is dynamic, keep most of the example block fixed and cacheable and vary only a small constant slice per query.
+
+- **Mechanism:** Per-query example selection changes the prompt prefix on every request, which destroys the cacheable prefix. A "smarter" prompt can therefore cost MORE than a dumb static one - a direct conflict between R-14 (dynamic selection) and R-05 (stable prefix) that the registry did not previously record.
+- **Target:** cost
+- **Apply when:** The workflow selects examples per query AND the provider bills cache reads below input.
+- **Do NOT apply when:** No caching available, or the prompt is unique from byte 0 anyway.
+- **Expected benefit:** Avoids a cost increase caused by an optimization. Cited as roughly 2x cheaper at 50 shots and 10x at 200 versus uncached similarity selection. [cache-dependent]
+- **Risks (0-3):** quality 1 · safety 0 · maintainability 1 · portability 1
+- **Evidence:** S-R10 (moderate) · contra: The cost figure is the authors' estimate, not measured, and comes from two Gemini models only.
+- **Validation:** Assert cache_read_input_tokens > 0 with and without dynamic selection; if selection zeroes the cache reads, the saving is negative.
+- **Rollback:** Static example block.
 
 ## Tier 3 — Aggressive only, explicit opt-in, mandatory benchmark
 

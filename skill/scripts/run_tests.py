@@ -178,6 +178,39 @@ def main():
           m2.returncode != 0 or "not-applicable" in (m2.stdout + m2.stderr),
           "cross-check tolerates it; validate_package C02 is the backstop that must reject it")
 
+    # 3c. G-11 citation-support. The gate cannot verify that a source SAYS what a rule claims -
+    # no gate can - but it can refuse a claim that is a placeholder or that names a source the
+    # rule does not cite. Both abuses are mutated in, because a gate nobody can fail is decoration.
+    def package_check(mutate):
+        with tempfile.TemporaryDirectory() as td:
+            pkg = Path(td) / "skill"
+            shutil.copytree(SKILL, pkg, ignore=shutil.ignore_patterns("__pycache__", ".venv"))
+            doc = yaml.safe_load((pkg / "rules" / "rules.yaml").read_text(encoding="utf-8"))
+            mutate(doc["rules"])
+            (pkg / "rules" / "rules.yaml").write_text(yaml.safe_dump(doc, sort_keys=False),
+                                                      encoding="utf-8")
+            return run([str(SKILL / "scripts" / "validate_package.py"), str(pkg)])
+
+    def placeholder_claim(rules):
+        for x in rules:
+            if x.get("source_claims"):
+                x["source_claims"] = {k: "TODO backfill this later, it is fine for now honestly"
+                                      for k in x["source_claims"]}
+                return
+    def orphan_claim(rules):
+        for x in rules:
+            if x.get("source_claims"):
+                x["source_claims"]["S-NOT-CITED"] = (
+                    "a claim attached to a source this rule does not actually cite at all")
+                return
+
+    p1 = package_check(placeholder_claim)
+    t("MUTATION: G-11 rejects a placeholder standing in for a claim",
+      p1.returncode != 0, (p1.stdout + p1.stderr).strip()[-70:])
+    p2 = package_check(orphan_claim)
+    t("MUTATION: G-11 rejects a claim naming a source the rule does not cite",
+      p2.returncode != 0, (p2.stdout + p2.stderr).strip()[-70:])
+
     # 4. validator on fixtures
     good = run([str(SKILL / "scripts" / "validate_report.py"),
                 str(SKILL / "tests" / "fixtures" / "report-good.md"),
