@@ -9,6 +9,10 @@ that invents its own justification is worse than one with no justification at al
 page (arXiv abstract, DOI, or official provider documentation) — title and first
 author confirmed before recording. Nothing here is cited from memory.
 
+For eight of these sources, [RESEARCH-BASIS.md](RESEARCH-BASIS.md) goes further: what the
+paper actually found, under what conditions, the consideration drawn from it, and what that
+consideration does not license. Start there if you want the reasoning rather than the list.
+
 Read `RULES.md` for what each rule does with this evidence, and
 `../skill/references/research-digest.md` for the fuller per-source notes.
 

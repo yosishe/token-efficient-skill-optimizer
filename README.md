@@ -62,7 +62,7 @@ evaluations without your explicit budget approval. Optimize harmful targets.
 | **It finds real bugs.** It caught one in its own package: the check that stops a rule citing a nonexistent source crashed in every *installed* copy, because it resolved a path that only exists in a development tree — so the gate was decorative exactly where the tool runs. | verified from an orphaned copy |
 | **It does not break safety text.** Safety, refusal, and prompt-injection cases: **16/16 pass**, zero failures, on every version tested. No embedded instruction was ever followed. | [grading record](docs/data/grading-record-2026-07-25.json) |
 | **Its findings are mostly real.** On a live 29-skill portfolio, output went from 105 flags to **36** once seven false-positive causes were fixed — a tool that cries wolf twice in three findings gets uninstalled, so this was treated as a defect. | [`docs/RESULTS.md`](docs/RESULTS.md) |
-| **Its own checks actually work.** **74/74** tests, every one mutation-verified — deliberately broken to confirm it fails. **10/10** release gates enforced mechanically, not by convention. | reproducible in one command |
+| **Its own checks actually work.** **88/88** tests, every one mutation-verified — deliberately broken to confirm it fails. **10/10** release gates enforced mechanically, not by convention. | reproducible in one command |
 
 ## What is not proven
 
@@ -151,6 +151,7 @@ open, and every design decision states what it rejected and why.
 | [`docs/CASE-STUDIES.md`](docs/CASE-STUDIES.md) | Run against three skills with 1.8M installs between them — what changed, what was refused, and why |
 | [`docs/RESULTS.md`](docs/RESULTS.md) | What was measured, what was estimated, what is unproven — with limitations beside the numbers, not in a footnote |
 | [`docs/DECISIONS.md`](docs/DECISIONS.md) | 11 design decisions, each with its reasoning and what was rejected |
+| [`docs/RESEARCH-BASIS.md`](docs/RESEARCH-BASIS.md) | Eight papers in depth — what each found, in what setting, the consideration taken from it, and what it explicitly does **not** license |
 | [`docs/EVIDENCE.md`](docs/EVIDENCE.md) | All 42 sources, and which rule each one supports |
 | [`docs/RULES.md`](docs/RULES.md) | The registry, with per-rule risk scores |
 | [`research/`](research/) | The raw corpus — full records, the synthesis, and what the research could **not** establish |

@@ -15,6 +15,12 @@ that would establish a quality improvement was run and came back **inconclusive*
 If you are looking for a percentage to quote, this page will disappoint you. That is
 deliberate.
 
+**Two different evaluations are easy to confuse.** This page covers the one comparing *two
+versions of this tool*, which was confounded and returned inconclusive. A separate, later
+evaluation applied the tool to three heavily-installed third-party skills and **did** conclude —
+including reverting one optimization that failed its own economics. That one is in
+[CASE-STUDIES.md](CASE-STUDIES.md).
+
 ---
 
 ## What was measured
@@ -46,8 +52,8 @@ confirmed it is still flagged, so the fix removed noise and not the check.
 
 | gate | result |
 |---|---|
-| Test suite | 74/74 |
-| Mutation verification | 23 mutations, 23 caught, 0 missed |
+| Test suite | 88/88 |
+| Mutation verification | 47 mutations, 47 caught, 0 missed |
 | Package validator | 10/10 checks, 0 violations |
 | Citation cross-check | 27 rules, all evidence ids resolve |
 | Clean standalone install, no parent project | all of the above pass |
