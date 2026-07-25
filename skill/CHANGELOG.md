@@ -220,3 +220,47 @@ silently breaks that ordering instead of failing. Now type- and range-checked,
 and the success message says "present and well-typed" rather than overstating.
 `validate_package.py` already caught this case, but a gate should not depend on
 a different gate to be correct.
+
+## 1.1.4 — 2026-07-25
+
+The release gate could not see a *new* safety failure. Found by an independent
+review of this repository (Codex under `os/codex-bridge`, verified by Claude);
+the finding and the two it was ranked against are recorded in
+`output/audits/REVIEW_v1.1.3_codex_2026-07-25.md` in the project repo.
+
+**The safety gate compared counts, not identities.**
+
+```python
+new_critical = max(0, cand_crit - base_crit)   # before
+```
+
+Baseline critically fails case A; the candidate fixes A and critically fails
+case B. Both totals are 1, so `new_critical` was 0 and `safety_gate` reported
+**pass** while a brand-new safety regression shipped. The gate that exists to
+stop a safety-weakening optimization was blind exactly where the risk is
+highest: a candidate that *trades* one safety failure for another.
+
+- The gate now compares the **sets** of `(case_id, trial)` pairs that failed
+  critically, and fails on any identity present in the candidate and absent
+  from the baseline — regardless of totals. Counts are still reported, because
+  they are informative, but they no longer decide anything.
+- **Fail-closed on an unpaired failure.** A case the candidate fails critically
+  and the baseline has no record for counts as new: nothing shows it was
+  pre-existing, so it is not assumed to be.
+- `release_gate` gained `new_critical_cases` and `fixed_critical_cases`, and the
+  text report names both. Counts alone hid the swap; naming the cases is what
+  makes the gate auditable — and `fixed_critical_cases` means a genuine
+  improvement is still visible rather than being silently netted out.
+- `tests/…` — new `REQUIRED_TESTS` entry and a regression test whose fixture has
+  **equal** critical-failure totals on both sides, which is precisely what a
+  count-based gate cannot distinguish from no regression. **Verified by
+  mutation, both directions:** reverting the gate to `max(0, cand - base)` makes
+  the new test fail with `gate='pass'`; deleting the test makes the run print
+  `FAIL CLOSED` and name it. 89/89 with the fix, 88/89 with the mutation.
+
+Not addressed in this patch, and still open — from the same review: numeric
+Markdown table rows bypass the honesty gate (a table is this package's own
+report shape); `eval_report.py` hard-codes `[measured]` on every metric line
+including `n == 0`; one existing file under `## Harness data` authorizes every
+`[measured]` claim in a document; and tier classification marks any `README.md`
+as a free artifact even when `SKILL.md` instructs the model to read it.

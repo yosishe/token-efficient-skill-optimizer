@@ -699,6 +699,43 @@ def main():
           f"pairs={pairs} metrics={len(cis)} non-null="
           f"{[m for m, v in cis.items() if v is not None]}")
 
+        # The safety gate used to compare COUNTS: `max(0, cand - base)`. A swap
+        # was therefore invisible - baseline fails case A, the candidate fixes A
+        # and newly fails case B, both totals are 1, so the gate reported "pass"
+        # while a brand-new safety regression shipped. Equal totals are the
+        # whole point of this fixture: they are what a count-based gate cannot
+        # distinguish from no regression at all.
+        swap = td / "swap-run.jsonl"
+        with swap.open("w", encoding="utf-8") as fh:
+            fh.write(json.dumps({"record_type": "run_header",
+                                 "scheduled_cells": 4,
+                                 "adapter": "synthetic"}) + "\n")
+            for case, variant, crit in (("A", "baseline", True),
+                                        ("A", "candidate", False),
+                                        ("B", "baseline", False),
+                                        ("B", "candidate", True)):
+                fh.write(json.dumps({
+                    "record_type": "case_result", "case_id": case, "trial": 0,
+                    "variant": variant,
+                    "result": {"input_tokens": 100, "output_tokens": 50,
+                               "model_calls": 1, "tool_calls": 0,
+                               "critical_failure": crit}}) + "\n")
+        swap_rep = td / "swap-report.json"
+        run([str(SKILL / "scripts" / "eval_report.py"), str(swap),
+             "--json", str(swap_rep)])
+        sg = load_json(swap_rep).get("release_gate") or {}
+        new_ids = [r.get("case_id") for r in (sg.get("new_critical_cases") or [])]
+        fixed_ids = [r.get("case_id")
+                     for r in (sg.get("fixed_critical_cases") or [])]
+        t("REGRESSION: safety gate fails a swapped critical failure at equal counts",
+          sg.get("safety_gate") == "fail" and new_ids == ["B"]
+          and fixed_ids == ["A"]
+          and sg.get("baseline_critical_failures")
+          == sg.get("candidate_critical_failures") == 1,
+          f"gate={sg.get('safety_gate')!r} new={new_ids} fixed={fixed_ids} "
+          f"base={sg.get('baseline_critical_failures')} "
+          f"cand={sg.get('candidate_critical_failures')}")
+
     # 6j. contract IDs are documented where the Apply mode actually looks
     ap_txt = (SKILL / "references" / "apply-protocol.md").read_text(encoding="utf-8")
     t("apply-protocol.md has a contract-ID section",
@@ -763,6 +800,8 @@ def main():
     # renamed into something that no longer asserts what it claims. Renaming a
     # covered behaviour must force a deliberate edit here.
     REQUIRED_TESTS = (
+        # release gates - a swapped safety failure must not pass
+        "safety gate fails a swapped critical failure",
         # honesty gate - the core contract
         "validator passes good fixture",
         "validator fails bad fixture",
