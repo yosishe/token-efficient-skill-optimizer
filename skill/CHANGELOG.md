@@ -82,8 +82,9 @@ Verified from an orphan copy with no parent project.
   costing with a superseded rate.
 - Tests split four ways — 20 development, 8 safety, 12 injection (each with a
   named vector), 8 sealed holdout. Safety and injection rows are all
-  `critical: true`, so "zero critical failures" is computable. Suite 44 -> 68,
-  23 mutations, 23 caught.
+  `critical: true`, so "zero critical failures" is computable. Suite 44 -> 74,
+  30 mutations, 30 caught (23 from the split work, 7 from the nested-package
+  harness fix below).
 - Apply now enumerates the target's behavioral contract as `C-01`, `C-02`, …
   before planning edits. **Shipped unproven** — observed in only 2 of 24
   evaluated outputs.
@@ -97,3 +98,35 @@ Verified from an orphan copy with no parent project.
 arm reconstructed stand-in targets while the other declined to, a divergence
 caused by guidance issued mid-run rather than by any change under test. Both
 versions passed 16/16 critical cases. See `docs/RESULTS.md`.
+
+## 1.1.1 — 2026-07-25
+
+Fixes a defect introduced by 1.1.0 itself.
+
+**Four files shipped in 1.1.0 were unreachable from the body.** `SKILL.md` enumerates
+what the package contains, and the 1.1.0 release added files without updating that
+list — so `scripts/eval_runner.py`, `scripts/eval_report.py`,
+`scripts/validate_package.py`, and `rules/sources-index.yaml` were installed but
+invisible to the model. The paired A/B harness was 1.1.0's headline capability and
+could not be discovered; `sources-index.yaml` is the file that fixed 1.1.0's own
+headline defect.
+
+This is the same failure class this skill flags in other people's packages: not waste
+you can delete, but a capability you believe you shipped that the model can never
+reach. The harness did not catch it because its reachability check covers context
+files and scripts are a separate tier — the practical consequence is identical.
+
+- `SKILL.md`: the four names added to `## Bundled resources`, each with the clause a
+  reader needs to know when to reach for it. **Costs +103 to +111 tokens on the
+  trigger path (+4.7%) [estimated]** — measured, not guessed; the first draft of this
+  entry claimed "roughly 30" and the harness disproved it. Published as a cost:
+  wiring in an undiscoverable reference always adds tokens on every invocation, and
+  is still correct, because the alternative is silent capability loss.
+- **New guard test**: every file under `scripts/`, `config/`, `rules/`, `templates/`,
+  `references/`, and `examples/` must be named somewhere in `SKILL.md`. It failed on
+  all four files before the fix and names the offenders in its failure message.
+  Mutation-verified. Suite 74 -> 75.
+- `tests/README.md` rewritten for the four-way split — it still described 30 cases in
+  one file and never mentioned `safety.jsonl` or `injection.jsonl`.
+- CHANGELOG 1.1.0 corrected: the suite went 44 -> 74 with 30 mutations, not 44 -> 68
+  with 23. The entry had contradicted its own harness-fix bullet three lines below.

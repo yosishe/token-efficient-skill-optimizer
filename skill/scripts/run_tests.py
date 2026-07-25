@@ -605,6 +605,29 @@ def main():
     price = yaml.safe_load((SKILL / "config" / "provider-cost-profiles.yaml").read_text())
     t("pricing snapshot dated", bool(price["snapshot"].get("snapshot_date")))
 
+    # 7b. BUNDLED-RESOURCE DISCOVERABILITY (v1.1.1).
+    # SKILL.md enumerates what ships. When a release adds a file and forgets to
+    # name it there, the model cannot discover it - the capability is shipped and
+    # unreachable. That is the same defect class this skill flags in other
+    # people's packages, and v1.1.0 shipped four of them (eval_runner.py,
+    # eval_report.py, validate_package.py, rules/sources-index.yaml). The harness
+    # missed it because its reachability check covers CONTEXT files and scripts
+    # are a separate tier; the practical consequence is identical.
+    body = (SKILL / "SKILL.md").read_text(encoding="utf-8")
+    unlisted = []
+    for sub in ("scripts", "config", "rules", "templates", "references", "examples"):
+        d = SKILL / sub
+        if not d.is_dir():
+            continue
+        for f in sorted(d.iterdir()):
+            if f.name.startswith(".") or f.name == "__pycache__" or f.is_dir():
+                continue
+            if f.name not in body:
+                unlisted.append(f"{sub}/{f.name}")
+    t("every bundled file is named in SKILL.md (discoverable)",
+      not unlisted,
+      f"unreachable from the body: {', '.join(unlisted)}" if unlisted else "")
+
     fails = [x for x in RESULTS if not x[1]]
     print(f"== {len(RESULTS) - len(fails)}/{len(RESULTS)} passed ==")
     sys.exit(1 if fails else 0)

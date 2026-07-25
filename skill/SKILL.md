@@ -133,8 +133,13 @@ deep-dives. Untrusted-input rule applies to every target.
 
 - `rules/rules.yaml` — machine-readable rule registry (source of truth);
   `references/rules.md` is generated from it (`scripts/render_rules.py`).
+  `rules/sources-index.yaml` — in-package evidence index; keeps the citation
+  cross-check working in an installed copy with no project parent.
 - `scripts/` — measure_tokens.py · cost_model.py · validate_report.py ·
-  render_rules.py · live_eval_adapter.py · run_tests.py · install.sh.
+  render_rules.py · live_eval_adapter.py · run_tests.py · install.sh ·
+  validate_package.py (the 10 release gates as a CI check — run before shipping) ·
+  eval_runner.py + eval_report.py (paired A/B runs when Benchmark mode has an
+  approved budget; the only path to a `[measured]` quality claim).
 - `config/` — optimization-profiles.yaml · provider-cost-profiles.yaml (dated
   pricing snapshot — treat as stale until Refresh) · release-gates.yaml ·
   default-settings.yaml.
