@@ -418,16 +418,27 @@ def check_rules(root, rep):
     # G-11 coverage, reported honestly rather than asserted. Backfilling the remaining rules means
     # re-opening each source and reading what it actually supports - a re-verification, not a
     # formatting pass - so the number is published as a ratchet instead of being hidden.
+    # G-11 is now ENFORCING, not reporting. It reported coverage while the backfill was
+    # outstanding; the debt was paid on 2026-07-25 and the ratchet closed behind it. A gate that
+    # stays advisory after its debt is cleared is how the debt comes back.
     empirical = [r for r in rules
                  if isinstance(r, dict) and r.get("rationale_type") != "constraint"]
-    with_claims = [r for r in empirical if r.get("source_claims")]
-    if len(with_claims) < len(empirical):
+    without = [r.get("id", "?") for r in empirical if not r.get("source_claims")]
+    for rid in without:
+        violations.append(
+            f"{rid}: cites sources but declares no source_claims - state what each source "
+            f"underwrites, with a locator. C03 proves only that the id resolves.")
+    rep.counts["source_claims"] = f"{len(empirical) - len(without)}/{len(empirical)}"
+    # Provenance is reported, never asserted: a claim written from the round-1 catalog record is a
+    # weaker chain than one written from a page opened in round 2, and the difference is published.
+    prov = Counter(r.get("claims_provenance", "unstated")
+                   for r in empirical if r.get("source_claims"))
+    if prov:
         rep.notes.append(
-            f"G-11 citation-support coverage: {len(with_claims)}/{len(empirical)} empirical rules "
-            f"declare source_claims. The remainder cite sources whose SUPPORT has not been "
-            f"re-verified; C03 proves only that those ids resolve. Backfill is tracked here, "
-            f"not assumed.")
-    rep.counts["source_claims"] = f"{len(with_claims)}/{len(empirical)}"
+            "G-11 claim provenance: "
+            + ", ".join(f"{n} {k}" for k, n in sorted(prov.items(), key=lambda x: -x[1]))
+            + ". `round-1-corpus-record` means the claim comes from the catalog entry, which was "
+              "primary-verified when collected but was NOT re-opened in round 2.")
     rep.add("C02", "rule-schema", violations,
             f"{len(rules)} rules x {len(RULE_FIELDS)} fields")
     return rules

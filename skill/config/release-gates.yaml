@@ -45,8 +45,12 @@ gates:
       actually cites and states what that source underwrites, with a locator; no
       placeholders. G-09 proves a cited id RESOLVES, which is the weaker property -
       three rules were found citing sources that said nothing about their claim.
-      Coverage across the registry is REPORTED as a note, never asserted: a gate that
-      claimed coverage it does not have is the decoration this check exists to remove.
+      ENFORCING since 2026-07-25: every empirical rule must declare source_claims, and
+      each rule states claims_provenance - whether the claim comes from a page opened in
+      round 2 or from the round-1 catalog record, which was primary-verified when
+      collected but not re-opened. Coverage was reported while the backfill was
+      outstanding; the ratchet closed behind it, because a gate left advisory after its
+      debt is cleared is how the debt comes back.
   - id: G-12
     name: constraint-rules-need-no-source
     check: >-

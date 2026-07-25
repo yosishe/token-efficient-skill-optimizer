@@ -352,7 +352,7 @@ Use schema-constrained output only where parse-failure retries are a real observ
 - **Do NOT apply when:** Deep-reasoning outputs where S-D04-class degradation risk outweighs parse safety; provider forbids combining with other needed features.
 - **Expected benefit:** Net of retry savings minus schema overhead minus quality delta - must be measured, not assumed.
 - **Risks (0-3):** quality 2 · safety 0 · maintainability 1 · portability 1
-- **Evidence:** S-D04 (moderate) · contra: S-D04's magnitude is contested by an industry rebuttal (unfetched; recorded as caveat) - hence A/B, not a blanket rule.
+- **Evidence:** S-R17, S-R15, S-R14, S-D04 (moderate) · contra: S-D04's magnitude is contested by an industry rebuttal (unfetched; recorded as caveat) - hence A/B, not a blanket rule.
 - **Validation:** A/B parse-rate + task-quality with and without schema on the target's cases.
 - **Rollback:** Drop the schema, keep a format instruction.
 
@@ -524,7 +524,7 @@ Never compress instructions into abbreviations, arrow-chains, or invented notati
 - **Do NOT apply when:** never.
 - **Expected benefit:** n/a - constraint.
 - **Risks (0-3):** quality 0 · safety 0 · maintainability 0 · portability 0
-- **Evidence:** S-A08 (moderate) · contra: none known
+- **Evidence:** S-A08, S-R01, S-R03 (moderate) · contra: S-R04 argues much of the measured format sensitivity is an artifact of rigid answer matching rather than a property of models (SD 0.28 -> 0.005 under a semantics-aware scorer). It does not rescue invented notation - the maintainability half of this rule stands regardless of how the quality half resolves - but it means the quality argument should not be overstated.
 - **Validation:** Reviewer readability pass; no invented notation in diffs.
 - **Rollback:** n/a.
 

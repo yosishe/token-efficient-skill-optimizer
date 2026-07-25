@@ -211,6 +211,25 @@ def main():
     t("MUTATION: G-11 rejects a claim naming a source the rule does not cite",
       p2.returncode != 0, (p2.stdout + p2.stderr).strip()[-70:])
 
+    # G-11 became ENFORCING once the backfill reached 37/37. That ratchet is the whole point:
+    # a gate left advisory after its debt is cleared is how the debt comes back. So the mutation
+    # is "a rule ships citing sources but explaining none" - which used to be tolerated.
+    def drop_claims(rules):
+        for x in rules:
+            if x.get("source_claims") and x.get("rationale_type") != "constraint":
+                del x["source_claims"]
+                return
+    p3 = package_check(drop_claims)
+    t("MUTATION: G-11 rejects an empirical rule that cites sources but explains none",
+      p3.returncode != 0, (p3.stdout + p3.stderr).strip()[-70:])
+    reg2 = yaml.safe_load((SKILL / "rules" / "rules.yaml").read_text(encoding="utf-8"))
+    emp = [x for x in reg2["rules"] if x.get("rationale_type") != "constraint"]
+    t("G-11: citation-support coverage is complete",
+      all(x.get("source_claims") for x in emp), f"{len(emp)} empirical rules")
+    t("G-11: every claim declares how its source was read",
+      all(x.get("claims_provenance") for x in emp if x.get("source_claims")),
+      "claims_provenance distinguishes a page opened in round 2 from a round-1 catalog record")
+
     # 4. validator on fixtures
     good = run([str(SKILL / "scripts" / "validate_report.py"),
                 str(SKILL / "tests" / "fixtures" / "report-good.md"),

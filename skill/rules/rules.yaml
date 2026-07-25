@@ -70,6 +70,7 @@ rules:
     evidence_confidence: moderate
     priority: {frequency: 3, applicability: 3, savings: 2, confidence: 0.8, risk_penalty: 1, score: 13.4}
     sources: [S-R05]
+    claims_provenance: round-2-primary-read
     source_claims:
       S-R05: >-
         Input length degrades reasoning with the reasoning content held constant (0.92 -> 0.68 mean
@@ -128,6 +129,7 @@ rules:
     evidence_confidence: practitioner
     priority: {frequency: 3, applicability: 3, savings: 3, confidence: 0.5, risk_penalty: 3, score: 10.5}
     sources: [S-D10, S-D09]
+    claims_provenance: round-2-primary-read
     source_claims:
       S-D10: >-
         Establishes the three-level loading model qualitatively - metadata pre-loaded at startup,
@@ -168,6 +170,13 @@ rules:
     evidence_confidence: practitioner
     priority: {frequency: 3, applicability: 3, savings: 2, confidence: 0.5, risk_penalty: 0, score: 9.0}
     sources: [S-D10]
+    claims_provenance: round-2-primary-read
+    source_claims:
+      S-D10: >-
+        Establishes that bundled files are navigated ''only as needed'' and that the conditional tier is
+        entered on the model''s own judgement - which is exactly why a pointer without a read-condition
+        is underspecified. Page opened 2026-07-25: it contains NO quantitative claim of any kind, so it
+        supports the MECHANISM of this rule and no effect size whatsoever.
     contradicting_evidence: none known
     validation_test: Harness flag "pointer has no read-condition" is clear after change.
     rollback: Trivial (text-only edit).
@@ -189,6 +198,15 @@ rules:
     evidence_confidence: practitioner
     priority: {frequency: 2, applicability: 2, savings: 3, confidence: 0.5, risk_penalty: 2, score: 4.0}
     sources: [S-D10]
+    claims_provenance: round-2-primary-read
+    source_claims:
+      S-D10: >-
+        Verbatim: ''Claude can run this script without loading either the script or the PDF into
+        context'', and code ''can serve as both executable tools and as documentation''. Supports the
+        mechanism. Page opened 2026-07-25 and it states NO token numbers, so the size of the saving is
+        uncited. NOTE the round-2 finding: the nearest academic work (CodeAct) measures the FORMAT OF
+        THE ACTION a model emits at inference, not where code lives at authoring time - no paper tests
+        this rule''s actual claim.
     contradicting_evidence: none known
     validation_test: Script runs green standalone; skill text points to it with a usage line.
     rollback: Re-inline the block.
@@ -210,6 +228,32 @@ rules:
     evidence_confidence: provider
     priority: {frequency: 2, applicability: 3, savings: 3, confidence: 1.0, risk_penalty: 2, score: 16.0}
     sources: [S-C01, S-C02, S-C03, S-C04, S-C07, S-C08]
+    claims_provenance: round-2-primary-read
+    source_claims:
+      S-C01: >-
+        The normative spec this rule depends on: caching is a strict prefix match, prefixes are built
+        tools -> system -> messages so a change at one level invalidates it and everything after, and
+        cache reads bill at 0.1x base input. Read 2026-07-25.
+      S-C02: >-
+        Supplies the multipliers the break-even arithmetic uses: 5m write 1.25x, 1h write 2x, read 0.1x.
+        At those rates a 5-minute prefix pays for itself after ONE read and a 1-hour prefix after two -
+        stated by the vendor on the page. Read 2026-07-25.
+      S-C03: >-
+        Shows the mechanism is cross-vendor: automatic prefix-hash routing, exact prefix match, and a
+        per-model minimum below which caching silently does not happen. The PARAMETERS differ from
+        S-C01; only the mechanism transfers.
+      S-C04: >-
+        Per-model rates that make the cache discount concrete on the second provider (cached input
+        listed at 0.10x input across the current family).
+      S-C07: >-
+        CAUTION, and it is why this claim exists: this source reports TIME-TO-FIRST-TOKEN, 8x-60x, not
+        cost and not tokens. It is cited for the MECHANISM of attention-state reuse only. Its numbers
+        must never enter a cost claim - the round-2 review flagged serving-latency figures being read as
+        savings as a live conflation risk.
+      S-C08: >-
+        Same caution. ''Up to 6.4x higher throughput'' is SERVING THROUGHPUT, a best case across
+        workloads, not a token or cost reduction. Cited for the mechanism that prefix sharing is a real
+        runtime optimization, which is what makes prefix stability worth designing for.
     contradicting_evidence: none known
     validation_test: Rendered prompt bytes identical across two runs; cache_read_input_tokens > 0 on second call when live-verified (else labeled projected).
     rollback: Reorder is reversible; no content is removed.
@@ -231,6 +275,22 @@ rules:
     evidence_confidence: moderate
     priority: {frequency: 3, applicability: 3, savings: 3, confidence: 0.8, risk_penalty: 1, score: 20.6}
     sources: [S-D01, S-D02, S-D03]
+    claims_provenance: round-1-corpus-record
+    source_claims:
+      S-D01: >-
+        Supports the DIRECTION only: verbose chain-of-thought output is partly redundant and concise
+        prompting maintains accuracy on the tested models. The corpus record states no percentages are
+        available at abstract level and explicitly warns against citing figures from it without a full-
+        text read; this rule therefore takes no number from it.
+      S-D02: >-
+        Supports that a prompt-level token budget compresses reasoning with only slight performance
+        reduction. Again no exact percentages at abstract level - the corpus record says so - so no
+        figure is drawn from it.
+      S-D03: >-
+        The only source here carrying a number: draft-style reasoning ''matches or surpasses CoT in
+        accuracy while using as little as only 7.6% of the tokens'' (arXiv abstract), i.e. up to ~92%
+        output-token reduction. That is this rule''s expected_benefit figure, and it is a best case in
+        the authors'' setups - projected conservatively, never promised.
     contradicting_evidence: S-D05 shows under-reasoning harms agentic tasks - budgets must scale with complexity.
     validation_test: Output on representative tasks still meets the behavioral contract; long-form-required cases keep their budget.
     rollback: Remove/loosen the budget lines.
@@ -252,6 +312,17 @@ rules:
     evidence_confidence: moderate
     priority: {frequency: 2, applicability: 3, savings: 3, confidence: 0.8, risk_penalty: 1, score: 13.4}
     sources: [S-D05, S-D08]
+    claims_provenance: round-2-primary-read
+    source_claims:
+      S-D05: >-
+        Carries the number in this rule''s expected_benefit: selecting lower-overthinking solutions
+        improved performance ~30% while cutting computational cost 43% (abstract), and overthinking
+        scores correlate inversely with task performance. Supports bounding a loop, not merely
+        shortening it.
+      S-D08: >-
+        Verbatim, confirmed by opening the page 2026-07-25: ''it''s also common to include stopping
+        conditions (such as a max number of iterations) to maintain control.'' Prescriptive guidance
+        with no measurements - it supports the practice, not any effect size.
     contradicting_evidence: none known
     validation_test: Edge case "source never found" terminates within bound; success rate on normal cases unchanged.
     rollback: Remove the bound lines.
@@ -273,6 +344,25 @@ rules:
     evidence_confidence: strong
     priority: {frequency: 3, applicability: 3, savings: 3, confidence: 1.0, risk_penalty: 2, score: 25.0}
     sources: [S-B08, S-B09, S-B03, S-D09]
+    claims_provenance: round-2-primary-read
+    source_claims:
+      S-B08: >-
+        The compression figure this rule quotes: retrieved context compressed to as low as 6% of its
+        tokens with minimal loss on language modeling and open-domain QA (abstract). Also supplies the
+        empty-summary guard - when retrieval adds nothing, add nothing.
+      S-B09: >-
+        Sharpens WHAT to filter: related-but-irrelevant documents, the kind dense retrievers rank
+        highly, are actively harmful. Read with care - the same abstract reports random irrelevant
+        documents IMPROVING accuracy up to 35%, a setting-dependent result that argues against naive
+        similarity-threshold filtering rather than for it.
+      S-B03: >-
+        Supports passing a focused slice rather than everything: performance degrades with input length
+        even on trivially simple tasks, and ''even a single distractor reduces performance relative to
+        the baseline''. Vendor-adjacent technical report with published methodology, not peer-reviewed.
+      S-D09: >-
+        Source of the operational figure in expected_benefit: sub-agents ''often 1,000-2,000 tokens''
+        for their returned summary. Page opened 2026-07-25 - this is an illustrative figure in an
+        engineering post, not a controlled measurement.
     contradicting_evidence: S-B06 - query-BLIND filtering hurts faithfulness; filters must be task/query-aware.
     validation_test: Downstream answers on cases needing tool detail remain correct; grounding/citations preserved.
     rollback: Pass through raw output again.
@@ -294,6 +384,14 @@ rules:
     evidence_confidence: practitioner
     priority: {frequency: 3, applicability: 3, savings: 2, confidence: 0.5, risk_penalty: 0, score: 9.0}
     sources: [S-D10]
+    claims_provenance: round-2-primary-read
+    source_claims:
+      S-D10: >-
+        Verbatim: ''Claude will use these when deciding whether to trigger the skill in response to its
+        current task'', and the name+description are pre-loaded into the system prompt at startup. That
+        establishes the description is the routing surface and the only always-loaded text. Page opened
+        2026-07-25: NO quantitative claim, so the cost of a false fire is reasoned from the tier model,
+        not measured here.
     contradicting_evidence: none known
     validation_test: Trigger queries fire; near-miss queries do not (run each ~3x if live; else reviewer walkthrough, labeled projected).
     rollback: Restore prior description (keep both under version control).
@@ -317,6 +415,7 @@ rules:
     evidence_confidence: moderate
     priority: {frequency: 2, applicability: 3, savings: 2, confidence: 0.8, risk_penalty: 3, score: 6.6}
     sources: [S-R18, S-R01]
+    claims_provenance: round-2-primary-read
     source_claims:
       S-R18: >-
         Instructions that COMPOSE multiple constraints are followed markedly worse as composition
@@ -358,6 +457,21 @@ rules:
     evidence_confidence: moderate
     priority: {frequency: 2, applicability: 2, savings: 3, confidence: 0.8, risk_penalty: 4, score: 5.6}
     sources: [S-B05, S-B03, S-D09]
+    claims_provenance: round-1-corpus-record
+    source_claims:
+      S-B05: >-
+        The 39% figure this rule''s mechanism cites: average performance drop across six generation
+        tasks when the same instructions are delivered multi-turn rather than single-turn (abstract),
+        attributed to increased unreliability rather than lost aptitude. Simulated conversations,
+        preprint.
+      S-B03: >-
+        Supports that a focused prompt can beat full history - Claude models showed ''the most
+        pronounced gap between focused and full prompt performance'' on LongMemEval. That is the quality
+        half of this rule; the billing half is arithmetic.
+      S-D09: >-
+        Defines the practice: compaction as ''taking a conversation nearing the context window limit,
+        summarizing its contents, and reinitiating a new context window with the summary''. Page opened
+        2026-07-25. Prescriptive, unmeasured.
     contradicting_evidence: none known
     validation_test: Post-summary probe - commitments/constraints/decisions from early turns still answerable.
     rollback: Disable summarization flag; resend full history.
@@ -379,6 +493,29 @@ rules:
     evidence_confidence: strong
     priority: {frequency: 2, applicability: 2, savings: 3, confidence: 1.0, risk_penalty: 4, score: 8.0}
     sources: [S-B01, S-B02, S-B04, S-B07, S-B09]
+    claims_provenance: round-1-corpus-record
+    source_claims:
+      S-B01: >-
+        The position half: multi-document QA accuracy 75.8% at position 0, 63.2% at the last position,
+        53.8% in the middle with 20 documents, and worst-case middle performance falls BELOW the 56.1%
+        closed-book baseline (full text, Sec 2.3 / Fig. 5). More context can be worse than none.
+      S-B02: >-
+        Effective context is a fraction of nominal: at 32K tokens 11 of 13 models drop below 50% of
+        their short-context baselines, GPT-4o from 99.3% to 69.7% (abstract). Rules out ''just rely on
+        the long window''.
+      S-B04: >-
+        The length half, and the strongest form of it: performance declines 13.9%-85% as input grows
+        DESPITE perfect retrieval (abstract). Note the range is enormous and highly model/task
+        dependent, so it justifies cutting tokens as an objective but predicts no particular size of
+        gain.
+      S-B07: >-
+        Query-aware compression plus reordering gave up to +21.4% on NaturalQuestions with ~4x fewer
+        tokens (abstract) - the datapoint behind this rule''s ''quality can improve'' clause. CAUTION:
+        S-B07 and S-A02 are the SAME WORK (LongLLMLingua, arXiv 2310.06839) recorded twice in the
+        round-1 catalog; R-21 cites it under the other id.
+      S-B09: >-
+        Identifies the class to prune first - semantically similar but irrelevant content - and cautions
+        that a larger top-k of ''high-scoring'' chunks is not safer.
     contradicting_evidence: S-B09 - random irrelevant padding sometimes HELPS; effects setting-dependent, so validate per target.
     validation_test: Grounded-answer spot set unchanged or improved after pruning.
     rollback: Restore pruned context source list.
@@ -400,6 +537,18 @@ rules:
     evidence_confidence: moderate
     priority: {frequency: 2, applicability: 2, savings: 2, confidence: 0.8, risk_penalty: 2, score: 4.4}
     sources: [S-B08, S-B10, S-B09]
+    claims_provenance: round-1-corpus-record
+    source_claims:
+      S-B08: >-
+        Compression of retrieved documents to ~6% of tokens with minimal loss (abstract) - the basis for
+        compressing before insertion rather than concatenating top-k.
+      S-B10: >-
+        The negative result that sets the default: ''the computational costs associated with semantic
+        chunking are not justified by consistent performance gains'' (abstract). Directional only - the
+        corpus record states the abstract carries no headline numbers.
+      S-B09: >-
+        Supports deduplicating and lowering k on the grounds that high-ranked near-misses hurt, not that
+        volume alone does.
     contradicting_evidence: none known
     validation_test: Recall on a held-out answerable set does not drop beyond tolerance.
     rollback: Restore original k/chunking.
@@ -421,6 +570,17 @@ rules:
     evidence_confidence: practitioner
     priority: {frequency: 2, applicability: 2, savings: 2, confidence: 0.5, risk_penalty: 2, score: 2.0}
     sources: [S-D09, S-D10]
+    claims_provenance: round-2-primary-read
+    source_claims:
+      S-D09: >-
+        Verbatim, page opened 2026-07-25: ''we recommend working to curate a set of diverse, canonical
+        examples that effectively portray the expected behavior of the agent.'' Supports CURATION. It
+        does not describe the with-vs-without discrimination test this rule actually prescribes.
+      S-D10: >-
+        Supports moving rarely-needed material out of the loaded tiers, which is the disposal route for
+        a dropped example. Page opened 2026-07-25: no quantitative claim. NOTE: the round-2 evidence for
+        this rule is far stronger and lives in R-30 and R-31 - example-count ceilings, the redundancy
+        result, the capability inversion, and the conflict with R-05.
     contradicting_evidence: none known
     validation_test: With-vs-without eval per example set (trigger + task success); examples that flip outcomes stay.
     rollback: Restore dropped examples.
@@ -442,6 +602,20 @@ rules:
     evidence_confidence: strong
     priority: {frequency: 2, applicability: 2, savings: 3, confidence: 1.0, risk_penalty: 6, score: 6.0}
     sources: [S-C05, S-C06, S-C10]
+    claims_provenance: round-1-corpus-record
+    source_claims:
+      S-C05: >-
+        The cascade upper bound: ''match the performance of the best individual LLM (e.g. GPT-4) with up
+        to 98% cost reduction'' on the evaluated benchmarks (abstract). A best case in their setup, and
+        this rule''s expected_benefit says so.
+      S-C06: >-
+        Routing ''significantly reduces costs - by over 2 times in certain cases'' while maintaining
+        quality, and shows transfer across model pairs, which is what makes a config-driven router
+        plausible rather than bespoke.
+      S-C10: >-
+        Training-free self-verification as the escalation trigger: ''reducing computational cost by over
+        50% for comparable performance'' across five models and five datasets (abstract). Matters here
+        because it needs no router-training corpus.
     contradicting_evidence: Router calibration drifts when the model/price lineup changes (S-C06 transfer helps but is not free).
     validation_test: Routed-subtask quality within tolerance of strong-model baseline on a sample; escalation path fires on hard cases.
     rollback: Pin all subtasks back to the strong model.
@@ -463,6 +637,19 @@ rules:
     evidence_confidence: moderate
     priority: {frequency: 2, applicability: 2, savings: 2, confidence: 0.8, risk_penalty: 4, score: 2.4}
     sources: [S-D02, S-D03, S-D05]
+    claims_provenance: round-1-corpus-record
+    source_claims:
+      S-D02: >-
+        Supports sizing a budget rather than capping globally: a well-chosen prompt-level token budget
+        compresses reasoning with only slight performance reduction. No exact percentages at abstract
+        level per the corpus record.
+      S-D03: >-
+        Shows how far the output side can compress when the budget fits the task - as little as 7.6% of
+        the tokens at matched or better accuracy (abstract).
+      S-D05: >-
+        The counterweight that makes this rule adaptive rather than aggressive: over-tight reasoning
+        harms agentic tasks, and curbing overthinking helped by ~30% at 43% less compute only because it
+        targeted the overthinking, not the reasoning.
     contradicting_evidence: none known
     validation_test: Hard-class tasks keep quality at their budget; easy-class budget cuts show no contract violations.
     rollback: Revert to single global budget.
@@ -484,6 +671,13 @@ rules:
     evidence_confidence: moderate
     priority: {frequency: 2, applicability: 2, savings: 2, confidence: 0.8, risk_penalty: 3, score: 3.4}
     sources: [S-D06]
+    claims_provenance: round-1-corpus-record
+    source_claims:
+      S-D06: >-
+        The figures in this rule''s expected_benefit: versus a sequential ReAct loop, up to 3.7x latency
+        speedup, up to 6.7x cost savings, and up to ~9% accuracy improvement (abstract). All are ''up
+        to'' best cases on parallelizable tasks - the gain shrinks toward zero as dependencies increase,
+        which is what do_not_apply_when encodes.
     contradicting_evidence: none known
     validation_test: Dependency-ordered cases still sequence correctly; permission gates still fire.
     rollback: Restore serial ordering.
@@ -504,7 +698,29 @@ rules:
     portability_risk: 1
     evidence_confidence: moderate
     priority: {frequency: 2, applicability: 2, savings: 2, confidence: 0.8, risk_penalty: 4, score: 2.4}
-    sources: [S-D04]
+    sources: [S-R17, S-R15, S-R14, S-D04]
+    claims_provenance: round-2-primary-read
+    source_claims:
+      S-D04: >-
+        The degradation result, now read in full text during round 2: strict JSON-mode cost GSM8K
+        accuracy 76.6%->49.3% (GPT-3.5) and 86.5%->23.4% (Claude-3-Haiku), Table 9. CORRECTION to the
+        round-1 record, which called this a preprint and said numbers required a full-text read: it is
+        peer-reviewed at EMNLP 2024 INDUSTRY TRACK, and its own tables contain cells where restriction
+        HELPS (Gemini +11.6pp on Last Letters, Claude +12.7pp on Shuffled Objects) plus structure
+        helping on every classification task tested (Table 10).
+      S-R15: >-
+        Same work as S-D04, recorded in round 2 with the corrected venue, the full-text table numbers,
+        and the cells that go the other way. Cite this id in preference to S-D04.
+      S-R14: >-
+        The contradiction, on the same three tasks: constrained decoding IMPROVED accuracy (GSM8K
+        80.1%->83.8%, Last Letters 50.7%->54.0%, Shuffle Objects 52.6%->55.9%, Table 8). Preprint,
+        single 8B model, no variance reported, and authored by maintainers of the framework it reports
+        as best - the conflict of interest is part of the citation.
+      S-R17: >-
+        The mechanism that resolves the contradiction and the record this rule should lead with: harm
+        comes from grammar RESTRICTIVENESS leaving no room for intermediate reasoning, not from
+        structure as such. Its Proposition 3.1 is a formal proof for finite output grammars. Actionable
+        form: give the schema a reasoning field rather than forbidding structure.
     contradicting_evidence: S-D04's magnitude is contested by an industry rebuttal (unfetched; recorded as caveat) - hence A/B, not a blanket rule.
     validation_test: A/B parse-rate + task-quality with and without schema on the target's cases.
     rollback: Drop the schema, keep a format instruction.
@@ -526,6 +742,14 @@ rules:
     evidence_confidence: moderate
     priority: {frequency: 1, applicability: 2, savings: 3, confidence: 0.8, risk_penalty: 5, score: 0.9}
     sources: [S-C09]
+    claims_provenance: round-1-corpus-record
+    source_claims:
+      S-C09: >-
+        Supports the mechanism - a semantic cache short-circuits the model call entirely on a hit, which
+        is the only tier that saves output tokens. CAUTION: its published figure, ''increase response
+        speed 2-10 times when the cache is hit'', is LATENCY, not cost, and no single cost percentage is
+        claimed. The cost saving on a hit is the whole call by construction, and the hit rate is a
+        property of the workload, not of the cache.
     contradicting_evidence: none known
     validation_test: Hit-precision audit on a sample; stale/personalized classes excluded from cache keys.
     rollback: Disable cache lookup; all queries go to the model.
@@ -547,6 +771,19 @@ rules:
     evidence_confidence: practitioner
     priority: {frequency: 2, applicability: 2, savings: 3, confidence: 0.5, risk_penalty: 1, score: 5.0}
     sources: [S-D07, S-D08, S-D09]
+    claims_provenance: round-2-primary-read
+    source_claims:
+      S-D07: >-
+        Both figures in this rule''s mechanism, confirmed verbatim on the page 2026-07-25: ''multi-agent
+        systems use about 15x more tokens than chats'' and ''token usage by itself explains 80% of the
+        variance''. SCOPE, which the rule text does not carry: the 80% is reported for the BrowseComp
+        evaluation specifically, and both are a vendor''s measurements of its own system.
+      S-D08: >-
+        Supports preferring the simplest architecture that works and adding multi-step complexity only
+        when it demonstrably improves outcomes. Page opened 2026-07-25: prescriptive, no measurements.
+      S-D09: >-
+        Supplies the return-size cap: sub-agents ''often 1,000-2,000 tokens'' of distilled summary
+        rather than transcripts. Illustrative figure in an engineering post.
     contradicting_evidence: none known
     validation_test: Parallelizable benchmark case retains its multi-agent path; serial case runs single-agent.
     rollback: Remove the caps.
@@ -570,6 +807,32 @@ rules:
     evidence_confidence: strong  # for the ratio-quality curve; safety risk is experimental-tier
     priority: {frequency: 1, applicability: 2, savings: 3, confidence: 1.0, risk_penalty: 7, score: -1.0}
     sources: [S-A01, S-A02, S-A03, S-A06, S-A07, S-A08]
+    claims_provenance: round-1-corpus-record
+    source_claims:
+      S-A01: >-
+        The headline ceiling: ''up to 20x compression with little performance loss'' on GSM8K, BBH,
+        ShareGPT and Arxiv-March23 (abstract). No per-task deltas are given, so ''little'' is
+        unquantified - which is why this rule caps far below 20x.
+      S-A02: >-
+        Compression can INCREASE accuracy when it is query-aware: up to +21.4% on NaturalQuestions with
+        4x fewer tokens, 94.0% cost reduction on LooGLE (abstract). Same work as S-B07, duplicated in
+        the round-1 catalog.
+      S-A03: >-
+        The practical sweet spot this rule actually adopts: 2x-5x ratios, extractive so no content is
+        hallucinated, 1.6x-2.9x end-to-end latency speedup (abstract). Notably BELOW S-A01''s 20x
+        headline.
+      S-A06: >-
+        The decision map between hard/extractive and soft/model-specific families. Survey, no new
+        experimental evidence - the corpus record states no numbers appear in its abstract.
+      S-A07: >-
+        Ranks the families: extractive compression often outperforms pruning and abstractive rewriting,
+        and enables up to 10x compression with minimal degradation (abstract). That 10x is the empirical
+        safe-zone boundary this rule refuses to target by default.
+      S-A08: >-
+        The reason this rule''s validation_test checks information preservation rather than task
+        accuracy alone: some SOTA compressors fail to preserve key details, and granularity control
+        recovered up to +23% downstream performance, +8 BERTScore in grounding, and 2.7x more entities
+        preserved (abstract).
     contradicting_evidence: S-A05 (extreme ratios lose 27-38% capability); S-A09/S-A10 (safety erosion, preprint).
     validation_test: Information-preservation check (entities, citations, constraints survive) + task eval at the chosen ratio; per-level constraint-compliance check.
     rollback: Serve the uncompressed originals (always retained).
@@ -591,6 +854,16 @@ rules:
     evidence_confidence: moderate
     priority: {frequency: 1, applicability: 1, savings: 3, confidence: 0.8, risk_penalty: 11, score: -8.6}
     sources: [S-A04, S-A05]
+    claims_provenance: round-1-corpus-record
+    source_claims:
+      S-A04: >-
+        The archetype, and the reason this rule exists to be REFUSED rather than applied: up to 26x
+        prompt compression and up to 40% FLOPs reduction, but the method requires modifying the target
+        model''s training, so it is unavailable for the portable markdown skills this tool optimizes.
+      S-A05: >-
+        Quantifies what extreme ratios actually cost: at 6x-480x the model retains 62.26%-72.89% of its
+        capability versus uncompressed prompts (abstract) - i.e. 27%-38% capability LOSS. That is the
+        number that makes this rule a documented refusal.
     contradicting_evidence: S-A05 quantifies severe capability retention limits at high ratios.
     validation_test: n/a - rule exists to justify refusal with citations.
     rollback: n/a.
@@ -612,6 +885,17 @@ rules:
     evidence_confidence: practitioner
     priority: {frequency: 1, applicability: 2, savings: 2, confidence: 0.5, risk_penalty: 4, score: -2.0}
     sources: [S-B05, S-B03]
+    claims_provenance: round-1-corpus-record
+    source_claims:
+      S-B05: >-
+        The reason this rule carries a commitments floor rather than a plain window: models do not
+        recover from a wrong turn - ''when LLMs take a wrong turn in a conversation, they get lost and
+        do not recover'' - so dropping the turn that contained a commitment is not recoverable by later
+        context.
+      S-B03: >-
+        Supports that a shorter focused context can outperform a longer one, which is what makes
+        truncation viable at all; it does not establish that unsummarized truncation is safe, which is
+        why this rule is tier 3.
     contradicting_evidence: S-B05 - models don't recover from lost early context; hence the commitments floor.
     validation_test: Probe for early-turn commitments after truncation; fail -> fall back to R-11.
     rollback: Restore full history resend.
@@ -651,6 +935,7 @@ rules:
     evidence_confidence: experimental  # stays experimental - see evidence_gap below
     priority: {frequency: 3, applicability: 3, savings: 0, confidence: 1.0, risk_penalty: 0, score: 999}  # ordering pin, not a computed score
     sources: [S-R26, S-R27, S-R28, S-A09, S-A10, S-D12]
+    claims_provenance: round-2-primary-read
     source_claims:
       S-R26: >-
         The only verified work that manipulates safety-prompt TEXT. Shortening it raised harmful
@@ -716,6 +1001,7 @@ rules:
     evidence_confidence: strong
     priority: {frequency: 3, applicability: 3, savings: 0, confidence: 1.0, risk_penalty: 0, score: 999}
     sources: [S-R29, S-R30, S-R31, S-D11, S-D12]
+    claims_provenance: round-2-primary-read
     source_claims:
       S-R29: >-
         Text arriving from a non-user channel routinely hijacks capable agents. Targeted ASR <25%
@@ -760,8 +1046,31 @@ rules:
     portability_risk: 0
     evidence_confidence: moderate
     priority: {frequency: 3, applicability: 3, savings: 0, confidence: 1.0, risk_penalty: 0, score: 999}
-    sources: [S-A08]
-    contradicting_evidence: none known
+    sources: [S-A08, S-R01, S-R03]
+    claims_provenance: round-2-primary-read
+    source_claims:
+      S-A08: >-
+        The silent-loss half: some state-of-the-art compressors fail to preserve key details of the
+        original prompt, and granularity control recovered up to +23% downstream performance, +8
+        BERTScore in grounding and 2.7x more entities preserved (abstract). Aggressive rewriting
+        loses entities and grounding without announcing it - which is why compressed instruction
+        text is unauditable, not merely ugly.
+      S-R01: >-
+        Round-2 upgrade, and a much closer fit than S-A08: invented notation IS a formatting change,
+        and 24% of single atomic formatting changes move accuracy by >=5 points with wording held
+        identical (Sec 4.3, Fig. 8), with a spread of up to 76 accuracy points across semantically
+        equivalent formats (abstract). Separators, casing and enumeration style - the exact
+        vocabulary of "compress it into arrows and abbreviations" - are what that study perturbs.
+      S-R03: >-
+        The sharpest single datapoint against treating notation as cosmetic: adding one leading or
+        trailing space produced over 500 prediction changes (Sec 3.1, Fig. 2). Recorded honestly -
+        that is prediction CHURN rather than demonstrated net accuracy loss, and it vanished on a
+        stack that strips input, so it is implementation-dependent.
+    contradicting_evidence: >-
+      S-R04 argues much of the measured format sensitivity is an artifact of rigid answer matching
+      rather than a property of models (SD 0.28 -> 0.005 under a semantics-aware scorer). It does
+      not rescue invented notation - the maintainability half of this rule stands regardless of how
+      the quality half resolves - but it means the quality argument should not be overstated.
     validation_test: Reviewer readability pass; no invented notation in diffs.
     rollback: n/a.
 
@@ -833,6 +1142,7 @@ rules:
     evidence_confidence: moderate
     priority: {frequency: 3, applicability: 3, savings: 0, confidence: 0.8, risk_penalty: 1, score: 999}  # ordering pin: constrains other rules
     sources: [S-R01, S-R03, S-R02]
+    claims_provenance: round-2-dossier-record
     source_claims:
       S-R01: 'Up to 76 accuracy points between semantically equivalent formats (LLaMA-2-13B, abstract); 24% of atomic changes move accuracy >=5 points, 11% under probability ranking (Sec 4.3, Fig. 8). Sensitivity persists across model size, shot count and instruction tuning (abstract).'
       S-R03: 'Adding one leading/trailing space produced over 500 prediction changes on ChatGPT (Sec 3.1, Fig. 2). Churn, not necessarily net accuracy loss - the paper is careful about this, and Llama-2 was unaffected because that stack strips input.'
@@ -862,6 +1172,7 @@ rules:
     evidence_confidence: strong
     priority: {frequency: 2, applicability: 2, savings: 0, confidence: 1.0, risk_penalty: 1, score: 3.0}
     sources: [S-R02, S-R04]
+    claims_provenance: round-2-dossier-record
     source_claims:
       S-R02: 'Across 6.5M instances, 20 LLMs and 39 tasks, paraphrased instructions produce very different absolute AND relative performance; Kendall W mostly below 0.85 (Sec 4.2, Table 4). Single-prompt evaluation supports almost no reliable claim.'
       S-R04: 'Variance across 12 equivalent templates collapses under a semantics-aware scorer (Sec 3.2), so the measured spread depends on the harness as well as the prompt - which is why the interval must be reported with its scoring method.'
@@ -886,6 +1197,7 @@ rules:
     evidence_confidence: moderate
     priority: {frequency: 2, applicability: 2, savings: 0, confidence: 0.8, risk_penalty: 1, score: 2.2}
     sources: [S-R18]
+    claims_provenance: round-2-dossier-record
     source_claims:
       S-R18: 'Rule-augmented evaluation - deterministic rules where mechanically checkable, LLM judge only for open-ended constraints - reaches 87.82% agreement with human annotation and beats every non-rule-augmented baseline (Sec 4, Table 4). That is the defensible bar for a before/after compliance harness.'
     contradicting_evidence: >-
@@ -911,6 +1223,7 @@ rules:
     evidence_confidence: moderate
     priority: {frequency: 2, applicability: 2, savings: 0, confidence: 0.8, risk_penalty: 1, score: 2.2}
     sources: [S-R18]
+    claims_provenance: round-2-dossier-record
     source_claims:
       S-R18: 'Performance drops sharply as composition complexity rises, "especially on Selection and Chain" compositions (Sec 5) - i.e. dependency-linked constraints are where models fail, and where independent per-constraint scoring overstates compliance.'
     contradicting_evidence: none known
@@ -940,6 +1253,7 @@ rules:
     evidence_confidence: strong
     priority: {frequency: 3, applicability: 3, savings: 0, confidence: 1.0, risk_penalty: 1, score: 999}  # ordering pin: constrains every quality claim
     sources: [S-R19, S-R24, S-R20]
+    claims_provenance: round-2-dossier-record
     source_claims:
       S-R19: 'The most common small human-eval design (3 workers x 100 items) is underpowered unless the true effect is >=0.2 on a [0,1] scale; detecting a 0.05 effect needs 10+ ratings per item across 100 items even under LOW rater variance (Sec 5.2, takeaways 1-2, p. 9271). Reported improvements routinely fall below the minimum detectable effect (Table 2, p. 9267).'
       S-R24: 'Pass@1 standard deviation across 20 seeds spans 5-15 percentage points, a single test item moves the metric 2.5-3.3pp on a 30-item benchmark, and the mean stabilises only at K>=30 runs (Sec 3.1, Figs. 1-3). Claimed improvements fell entirely inside the base model variance.'
@@ -968,6 +1282,7 @@ rules:
     evidence_confidence: strong
     priority: {frequency: 3, applicability: 2, savings: 0, confidence: 1.0, risk_penalty: 1, score: 999}  # ordering pin
     sources: [S-R22, S-R21, S-R23, S-R25]
+    claims_provenance: round-2-dossier-record
     source_claims:
       S-R22: 'GPT-4 changes its verdict on 46.3% of similar-quality pairs when the two responses are swapped, versus 5.0% on wide-gap pairs; conflict rate rises as the quality gap shrinks (Sec 2.2, Fig. 2, p. 9442). The direction of the bias is judge-specific - GPT-4 favours position one, ChatGPT position two.'
       S-R21: 'Judge-human agreement is 85% overall but that figure EXCLUDES ties, and it falls toward 70% as the win-rate gap narrows (Sec 4.2, Table 5, Fig. 2). GPT-4 order-swap consistency is 65.0%, rising to 77.5% with few-shot prompting (Sec 3.3-3.4).'
@@ -1000,6 +1315,7 @@ rules:
     evidence_confidence: moderate
     priority: {frequency: 2, applicability: 2, savings: 1, confidence: 0.8, risk_penalty: 3, score: 0.2}
     sources: [S-R09, S-R08, S-R06]
+    claims_provenance: round-2-dossier-record
     source_claims:
       S-R09: 'Zero-shot beats few-shot in most settings on recent strong models, and 50% of exemplar tokens replaced by "XXX" matches or slightly outperforms intact exemplars (Sec 6.1, Fig. 9). But the effect INVERTS for weaker and older models, which show significant gains from exemplars (Sec 5.2, Fig. 6).'
       S-R08: 'Every task tested has a ceiling past which more examples hurt, and the ceiling is dataset-specific within a task type - XSum declines beyond ~50 while XLSum improves monotonically (Secs 2.2, 3.1, 3.2). Repeated examples stay flat while distinct ones scale (Sec 4.6).'
@@ -1029,6 +1345,7 @@ rules:
     evidence_confidence: moderate
     priority: {frequency: 1, applicability: 2, savings: 2, confidence: 0.8, risk_penalty: 3, score: 0.2}
     sources: [S-R10]
+    claims_provenance: round-2-dossier-record
     source_claims:
       S-R10: 'Pinning most of the example block and varying only a small constant slice runs "nearly two times lower in 50-shot settings and ten times lower in 200-shot settings" than similarity-based selection (Sec 4.3). IMPORTANT: this is an attention-time-complexity argument plus proportional plots, NOT a measurement - the authors state costs are proportional "due to the proprietary nature of our LLMs" (Sec 4.1). Also: selection quality matters MOST at small example budgets (Sec 4.2), which is the regime an optimizer creates.'
     contradicting_evidence: The cost figure is the authors' estimate, not measured, and comes from two Gemini models only.
@@ -1057,6 +1374,7 @@ rules:
     evidence_confidence: provider
     priority: {frequency: 2, applicability: 2, savings: 0, confidence: 1.0, risk_penalty: 2, score: 999}  # ordering pin: a guard, not a saving
     sources: [S-C01, S-C03]
+    claims_provenance: round-2-dossier-record
     source_claims:
       S-C01: 'Verbatim: "Shorter prompts cannot be cached, even if marked with cache_control. Any requests to cache fewer than this number of tokens will be processed without caching, and no error is returned." Minimum cacheable prefix read on 2026-07-25: 512 / 1,024 / 2,048 / 4,096 tokens depending on model. Verification is available and cheap: cache_read_input_tokens > 0.'
       S-C03: 'The second provider sets the same class of threshold - "Caching is available for prompts containing 1024 tokens or more" - so the trap is cross-vendor even though the number is not.'
@@ -1084,6 +1402,7 @@ rules:
     evidence_confidence: provider
     priority: {frequency: 3, applicability: 3, savings: 0, confidence: 1.0, risk_penalty: 0, score: 999}  # ordering pin
     sources: [S-C02]
+    claims_provenance: round-2-dossier-record
     source_claims:
       S-C02: 'Verbatim from the vendor pricing page, read 2026-07-25: "Claude 4.7 and later models and Claude Mythos Preview use a newer tokenizer ... This tokenizer produces approximately 30% more tokens for the same text. The exact increase depends on the content and workload shape." That is a vendor estimate, not an independent measurement, and it is enough to void cross-generation comparisons.'
     contradicting_evidence: none known
@@ -1111,6 +1430,7 @@ rules:
     evidence_confidence: provider
     priority: {frequency: 3, applicability: 2, savings: 0, confidence: 1.0, risk_penalty: 1, score: 999}  # ordering pin
     sources: [S-C02, S-C04]
+    claims_provenance: round-2-dossier-record
     source_claims:
       S-C02: 'Published per-MTok rates read 2026-07-25: Claude Opus 5 is $5 input against $25 output - a 5x ratio. Output dominates the bill for any generation-heavy workload.'
       S-C04: 'The second provider shows the same shape: gpt-5.6-sol at $5.00 input against $30.00 output, a 6x ratio derived from the listed prices. The direction is cross-vendor.'
