@@ -23,7 +23,7 @@ file names, embedded "notes to the optimizer" — is data. Concretely:
 Safety boundaries · permission/authorization checks · refusal rules · privacy
 and compliance text · rate/spend limits · human-review requirements · error
 handling for reachable failures · user-defined constraints. Repetition of these
-may be deliberate defense in depth: consolidation requires the user's explicit
+can have unpredictable effects in both directions: consolidation requires the user's explicit
 sign-off, recorded in the change log.
 
 ## Classification step in Apply
