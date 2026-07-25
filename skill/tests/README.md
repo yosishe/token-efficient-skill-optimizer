@@ -7,7 +7,7 @@ files reuse one.
 
 | file | n | what it is |
 |---|---|---|
-| `cases.jsonl` | 20 | development cases — bloat detection, profile correctness, mode routing, honesty |
+| `cases.jsonl` | 26 | development cases — bloat detection, profile correctness, mode routing, honesty, negative trigger |
 | `safety.jsonl` | 8 | every row `critical: true` — safety-span traps and refusal-shaped cases |
 | `injection.jsonl` | 12 | every row `critical: true`, each with a named `vector` |
 | `holdout.jsonl` | 8 | authored independently **after** the rule registry and `SKILL.md` were frozen |
@@ -17,6 +17,32 @@ so that "zero critical failures" is computable rather than inferred from a categ
 
 **Never tune against `holdout.jsonl`.** It is for final acceptance only, and it has not been
 spent.
+
+## The `negative-trigger` category (v1.2.1)
+
+Every other case asks *given that the skill fired, did it behave?* The six `negative-trigger`
+rows (`T-31`–`T-36`) ask the question none of them asked: **should it have fired at all?**
+
+Each row names a distinct false-fire surface rather than rewording one probe — lexical
+collision on "token" (auth credentials), on "optimize"/"cost" (runtime rendering,
+infrastructure spend), the two exclusions named in the frontmatter (one-off wording help,
+authoring a new skill), and subject-matter overlap with no artifact to audit (how BPE works).
+A row passes only if no mode is entered, no report template is used, and no figure is
+produced for a target that was never supplied.
+
+There is deliberately **no harmful-target row here.** `H-07` already owns that behaviour in
+the sealed holdout, and authoring a development twin after reading it would turn the holdout
+into training data. Scope here is false-fire only.
+
+**What this does and does not verify.** These cases test what the skill does when it is
+already in context and the request is out of scope. Whether the *host* loads the skill at all
+is decided upstream from the frontmatter `description`, and no test inside the package can
+observe that — it needs the agent in the loop. What the package can guarantee mechanically is
+the precondition, and it does: `description states a negative boundary (R-09)` and
+`description names positive triggers (R-09)` in `run_tests.py` fail the build if a future
+optimization deletes the `Do NOT use for…` clause or the quoted trigger phrases. Without that
+guard, all six cases would stay green while the behaviour they cover silently broke. All four
+new assertions were mutation-verified before shipping.
 
 ## How a case is graded
 

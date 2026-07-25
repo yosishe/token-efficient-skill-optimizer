@@ -1,5 +1,44 @@
 # Changelog — token-efficient-skill-optimizer
 
+## 1.2.1 — 2026-07-25
+
+Test coverage only. No rule, mode, or output-contract change.
+
+**Six `negative-trigger` cases (`T-31`–`T-36`) added to `tests/cases.jsonl`** — the split
+goes 20 → 26, the pool floor 40 → 46. Every existing case asked *given that the skill fired,
+did it behave?* None asked **should it have fired at all?** That is this package's own R-09
+defect class: `T-07` flags a missing negative boundary in *other people's* frontmatter while
+carrying no case for its own. Each new row names a distinct false-fire surface rather than
+rewording one probe — lexical collision on "token" (auth credentials) and on
+"optimize"/"cost" (runtime rendering, infrastructure spend), the two exclusions named in the
+description (one-off wording help, authoring a new skill), and subject-matter overlap with no
+artifact to audit.
+
+**Deliberately no harmful-target row.** `H-07` owns that behaviour in the sealed holdout;
+authoring a development twin after reading it would convert the holdout into training data.
+
+**Two mechanical guards, because the six cases alone would be theatre.** Model-graded cases
+cannot see the thing they depend on: the frontmatter clause that makes not-firing possible.
+`description states a negative boundary (R-09)` and `description names positive triggers
+(R-09)` fail the build if an optimization deletes `Do NOT use for…` or the quoted trigger
+phrases to save ~40 tokens — exactly the edit G-08 exists to flag, now enforced on this
+package rather than only on its targets. Without them all six cases would stay green while
+the behaviour silently broke.
+
+All four new assertions were **mutation-verified**: deleting a case, duplicating a prompt,
+stripping `Do NOT use`, and stripping the quoted triggers each produced the specific expected
+FAIL. Suite 100 → 104. The three load-bearing names are pinned in `REQUIRED_TESTS`.
+
+**Honest limit, stated in `tests/README.md` and not papered over:** these cases test the
+skill's behaviour once it is already in context. Whether the *host* loads it at all is decided
+upstream from the description, and nothing inside the package can observe that — it needs the
+agent in the loop. The guards cover the precondition, not the routing decision.
+
+Prompted by the Skills IL catalog submission ([skills-il/developer-tools#27]
+(https://github.com/skills-il/developer-tools/pull/27)), whose checklist item "verified
+doesn't trigger on unrelated topics" was the first reviewer to ask for evidence rather than a
+claim — and could not be ticked honestly.
+
 ## 1.2.0 — 2026-07-25
 
 Round-2 research applied. Full evidence base and reasoning:
