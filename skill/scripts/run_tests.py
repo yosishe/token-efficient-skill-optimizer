@@ -127,6 +127,57 @@ def main():
     r = run([str(SKILL / "scripts" / "render_rules.py"), "--check-only"])
     t("rule-registry cross-check", r.returncode == 0, r.stdout.strip()[:80])
 
+    # 3b. G-12, and the two ways it could be abused.
+    # The exemption lets a rule declare itself a NORM and cite nothing. That is only safe if the
+    # gate still rejects (a) an empirical rule that simply omits its sources, and (b) a rule that
+    # claims the exemption while still advertising an evidence grade. Both are checked by mutating
+    # a real registry, because an exemption nobody can fail is decoration - the exact failure this
+    # project has already been bitten by once.
+    reg = yaml.safe_load((SKILL / "rules" / "rules.yaml").read_text(encoding="utf-8"))
+    constraint_rules = [x for x in reg["rules"]
+                        if x.get("rationale_type") == "constraint"]
+    t("G-12: at least one rule declares itself a constraint",
+      bool(constraint_rules),
+      ", ".join(x["id"] for x in constraint_rules))
+    t("G-12: every declared constraint cites nothing and grades nothing",
+      all(not x.get("sources") and x.get("evidence_confidence") == "not-applicable"
+          for x in constraint_rules),
+      "a constraint that still carries an evidence grade is a contradiction")
+
+    with tempfile.TemporaryDirectory() as td:
+        mutant_dir = Path(td) / "rules"
+        mutant_dir.mkdir(parents=True)
+        (Path(td) / "rules" / "sources-index.yaml").write_text(
+            (SKILL / "rules" / "sources-index.yaml").read_text(encoding="utf-8"),
+            encoding="utf-8")
+
+        def cross_check(mutate):
+            doc = yaml.safe_load((SKILL / "rules" / "rules.yaml").read_text(encoding="utf-8"))
+            mutate(doc["rules"])
+            (mutant_dir / "rules.yaml").write_text(yaml.safe_dump(doc, sort_keys=False),
+                                                   encoding="utf-8")
+            return run([str(SKILL / "scripts" / "render_rules.py"), "--check-only",
+                        "--rules", str(mutant_dir / "rules.yaml"),
+                        "--sources", str(mutant_dir / "sources-index.yaml")])
+
+        def strip_sources(rules):            # empirical rule loses its citations
+            for x in rules:
+                if x["id"] == "R-01":
+                    x["sources"] = []
+        def fake_constraint(rules):          # empirical rule hides behind the exemption
+            for x in rules:
+                if x["id"] == "R-01":
+                    x["sources"] = []
+                    x["rationale_type"] = "constraint"
+
+        m1 = cross_check(strip_sources)
+        t("MUTATION: an empirical rule with no sources is still rejected",
+          m1.returncode != 0, (m1.stdout + m1.stderr).strip()[:70])
+        m2 = cross_check(fake_constraint)
+        t("MUTATION: G-12 exemption alone does not launder an uncited empirical rule",
+          m2.returncode != 0 or "not-applicable" in (m2.stdout + m2.stderr),
+          "cross-check tolerates it; validate_package C02 is the backstop that must reject it")
+
     # 4. validator on fixtures
     good = run([str(SKILL / "scripts" / "validate_report.py"),
                 str(SKILL / "tests" / "fixtures" / "report-good.md"),

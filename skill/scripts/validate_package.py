@@ -345,11 +345,27 @@ def check_rules(root, rep):
             violations.append(f"rule #{index}: not a mapping")
             continue
         rid = rule.get("id") or f"#{index}"
+        # G-12: a rule may declare itself a CONSTRAINT - a norm this project adopts rather than an
+        # empirical finding. Such a rule is allowed an empty `sources` list, because forcing it to
+        # name one makes the registry assert an evidential relationship that does not exist. It is
+        # NOT allowed to skip any other field, and it must say so explicitly.
+        is_constraint = rule.get("rationale_type") == "constraint"
         for field in RULE_FIELDS:
             if field not in rule:
                 violations.append(f"{rid}: missing field `{field}`")
             elif is_empty(rule[field]):
+                if field == "sources" and is_constraint:
+                    continue                        # declared constraint: no empirical source needed
                 violations.append(f"{rid}: empty field `{field}`")
+        if is_constraint and rule.get("evidence_confidence") != "not-applicable":
+            violations.append(
+                f"{rid}: rationale_type=constraint requires "
+                f"evidence_confidence: not-applicable, got "
+                f"{rule.get('evidence_confidence')!r}")
+        if not is_constraint and is_empty(rule.get("sources")):
+            violations.append(
+                f"{rid}: no sources and no `rationale_type: constraint` declaration - "
+                f"a rule must either cite evidence or say it is a norm")
         if rule.get("id") in seen:
             violations.append(f"{rid}: duplicate rule id")
         seen.add(rule.get("id"))
@@ -437,7 +453,11 @@ def check_citations(rules, sources_path, upstream_path, rep):
         rid = rule.get("id", "?")
         srcs = rule.get("sources")
         if not srcs:
-            cite_violations.append(f"{rid}: cites no sources")
+            # G-12: a declared constraint is a norm, not an empirical claim, so it has nothing to
+            # cite. C02 already enforces that such a rule sets evidence_confidence: not-applicable,
+            # so this branch cannot be used to smuggle an uncited empirical rule past the gate.
+            if rule.get("rationale_type") != "constraint":
+                cite_violations.append(f"{rid}: cites no sources and is not a declared constraint")
             continue
         if not isinstance(srcs, list):
             continue                                # shape already flagged by C02

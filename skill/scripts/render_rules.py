@@ -86,7 +86,21 @@ def main():
             if s not in src_ids:
                 errors.append(f"{rid}: source {s} not in sources.yaml")
         if not r.get("sources"):
-            errors.append(f"{rid}: no sources")
+            # G-12: a rule may declare itself a constraint - a norm rather than an empirical
+            # finding - and then it has nothing to cite.
+            #
+            # The exemption is enforced HERE as well as in validate_package C02, deliberately.
+            # A mutation test found that honouring `rationale_type: constraint` without also
+            # requiring `evidence_confidence: not-applicable` lets any empirical rule shed its
+            # citations by adding one line. Checking it in only one of the two places would have
+            # left that hole open wherever the other check was not run.
+            if r.get("rationale_type") != "constraint":
+                errors.append(f"{rid}: no sources and no `rationale_type: constraint`")
+            elif r.get("evidence_confidence") != "not-applicable":
+                errors.append(
+                    f"{rid}: declares rationale_type: constraint but still claims "
+                    f"evidence_confidence: {r.get('evidence_confidence')!r} - a norm cannot "
+                    f"carry an evidence grade")
 
     if errors:
         print(f"CROSS-CHECK FAIL ({len(errors)}):")
