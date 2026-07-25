@@ -18,6 +18,14 @@ three could not express):
   [behavior-dependent] realized only if the model/user actually takes the assumed
                        path (triggers the skill, reads the reference, stops early).
                        Depends on behavior we did not measure.
+  [reported]           a number a CITED SOURCE reports about ITS OWN experiment.
+                       Needs a source id, ideally with a locator. Added 2026-07-25
+                       because the other five labels are all claims about the target
+                       being optimized, and none of them can express "this paper
+                       measured 20x on GSM8K". The registry's old convention was to
+                       call such figures [projected], which collapses two different
+                       things: a third party's measurement (has an author, a venue,
+                       a sample) and our inference onto your skill (has neither).
 
 Reporting a cache-dependent or behavior-dependent figure as [measured] is the
 exact "estimates dressed as measurements" failure this gate exists to block.
@@ -43,8 +51,14 @@ KEYWORDS = re.compile(
     r"\d\s*(ms|sec(onds?)?)\b|calls\b|retr(y|ies)\b|per[- ]mtok)", re.I)
 # label may open on the claim line and close on a later line (long parentheticals)
 LABEL = re.compile(
-    r"[\[\(](measured|estimated|projected|cache-dependent|behavior-dependent|"
+    r"[\[\(](measured|estimated|projected|cache-dependent|behavior-dependent|reported|"
     r"not modeled|not measured)", re.I)
+# [reported] is a THIRD PARTY's number about THEIR experiment. Like [measured] it must be
+# traceable, but to a source and locator rather than to a data file - "S-R05 Fig. 1", not
+# "data: run.json". A [reported] claim with no source id is the same failure as a [measured]
+# claim with no data pointer: a number the reader cannot check.
+REPORTED = re.compile(r"[\[\(]reported\b[^\]\)]*[\]\)]", re.I)
+SOURCE_PTR = re.compile(r"\bS-[A-Z]\d{2}\b|\bsource:\s*\S+", re.I)
 # "cache-dependent"/"behaviour" must not be read as a bare [measured] claim, so
 # require the word to start the label rather than merely appear inside it.
 MEASURED = re.compile(r"[\[\(]measured\b[^\]\)]*[\]\)]", re.I)
@@ -93,6 +107,10 @@ def check(path, root):
                 violations.append((i, "[measured] claim without a data pointer "
                                    "(inline 'data: <path>' or a '## Harness "
                                    "data' section with an existing file)", s))
+        if REPORTED.search(s) and not SOURCE_PTR.search(s):
+            violations.append((i, "[reported] claim without a source id "
+                               "(needs an S-xxx id, ideally with a locator - it is "
+                               "someone else's result and must be traceable to them)", s))
     return violations
 
 

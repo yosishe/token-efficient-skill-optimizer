@@ -216,6 +216,23 @@ def main():
                 str(SKILL / "tests" / "fixtures" / "report-good.md"),
                 "--root", str(SKILL)])
     t("validator passes good fixture", good.returncode == 0)
+
+    # L-1, the sixth label. [reported] is someone else's number about their own experiment, so it
+    # must be traceable to THEM. Both directions are exercised: an unsourced [reported] claim must
+    # fail, and a sourced one must pass -- otherwise the label is just a way to silence the gate.
+    unsourced = run([str(SKILL / "scripts" / "validate_report.py"),
+                     str(SKILL / "tests" / "fixtures" / "report-reported-unsourced.md"),
+                     "--root", str(SKILL)])
+    t("L-1: an unsourced [reported] claim is rejected",
+      unsourced.returncode != 0, unsourced.stdout.strip()[-70:])
+    with tempfile.TemporaryDirectory() as td:
+        ok_path = Path(td) / "reported-ok.md"
+        ok_path.write_text("The study shows a 94% cost reduction [reported] S-A02, abstract.\n",
+                           encoding="utf-8")
+        sourced = run([str(SKILL / "scripts" / "validate_report.py"), str(ok_path),
+                       "--root", str(SKILL)])
+    t("L-1: a [reported] claim carrying a source id passes",
+      sourced.returncode == 0, sourced.stdout.strip()[-70:])
     bad = run([str(SKILL / "scripts" / "validate_report.py"),
                str(SKILL / "tests" / "fixtures" / "report-bad.md"),
                "--root", str(SKILL)])
