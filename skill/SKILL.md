@@ -58,7 +58,8 @@ Pick the mode the user asked for; default to **Analyze** when unclear.
 1. Run `scripts/measure_tokens.py <target> --json <out>.json` (venv with tiktoken
    if available; the script labels its own method honestly).
 2. Read the flags, tier totals, and duplicate pairs; rank findings by the rule
-   registry's priority scores.
+   registry's priority scores. Read the `informational` list too — it states every
+   check the harness suppressed and why (never report a suppression as a finding).
 3. Emit an audit report (shape: `templates/audit-report.md`), validate it with
    `scripts/validate_report.py`. Read `references/measurement.md` only if you
    need the tier semantics or ladder details explained.

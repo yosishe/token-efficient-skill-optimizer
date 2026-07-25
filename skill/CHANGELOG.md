@@ -130,3 +130,55 @@ files and scripts are a separate tier — the practical consequence is identical
   one file and never mentioned `safety.jsonl` or `injection.jsonl`.
 - CHANGELOG 1.1.0 corrected: the suite went 44 -> 74 with 30 mutations, not 44 -> 68
   with 23. The entry had contradicted its own harness-fix bullet three lines below.
+
+## 1.1.2 — 2026-07-25
+
+Harness accuracy pass #2, driven by running the tool against three of the most-
+installed public Claude skills (vercel-labs/react-best-practices,
+anthropics/frontend-design, mattpocock/improve-codebase-architecture). It emitted
+**149 findings of which ~2 were actionable**. Five false-positive classes, all
+fixed, all mutation-verified.
+
+- **Convention-based reachability (69 of the 149).** A body that lists 70 rule
+  *stems* and documents the path shape once (`rules/async-parallel.md`) has told
+  the model how to open every one of them — and doing it that way costs fewer
+  tokens than 70 literal paths, so the old behavior penalised the better design. A
+  file is now reachable when its stem appears in the body as a whole token AND the
+  body shows a concrete `<dir>/<name>.<ext>` path for its directory. Both guards
+  survive: the depth guard (a bare `references/` is not a pointer) is untouched,
+  and `rules/_sections.md` / `rules/_template.md` — whose stems the body never
+  lists — are still flagged.
+- **Documented compiled bundles (72 pairs).** `AGENTS.md` overlaps every rule file
+  85–95% and the body says so ("## Full Compiled Document"). Those pairs move to
+  `compiled_bundle_pairs` (informational). Declaration requires the filename AND a
+  bundle marker in the same markdown section, with filenames masked first —
+  `bundle-barrel-imports.md` contains the literal word "bundle" and declared
+  itself a bundle on the first run of the check.
+- **`disable-model-invocation: true`.** The author turned auto-trigger off; the
+  trigger-phrasing and negative-boundary checks describe a surface that does not
+  exist. Both suppressed, reason stated in `informational`.
+- **Semantic trigger phrasing.** "…when building new UI or reshaping an existing
+  one" IS a trigger. `when <gerund>`, `when you/your` and `for <gerund>` now
+  count. A bare "when" does not, and a stop-list keeps "for anything" from
+  reading as a gerund.
+- **Runtime config misclassified as context.** `metadata.json` and config-format
+  files under `agents/` are shipped for another runtime and never loaded into
+  context. Now `artifact` tier. Markdown under `agents/` is a sub-agent prompt and
+  deliberately stays context — excusing the whole directory would trade one
+  false-positive class for a blind spot.
+- **New report keys**: `informational` (every suppression, with its reason — a
+  suppressed check is never silently dropped), `compiled_bundle_pairs`,
+  `declared_bundles`. Both printed by the CLI.
+- Adjacent fix: the frontmatter description terminator was `^\w+:`, which cannot
+  match a HYPHENATED next key, so `disable-model-invocation: true` was being
+  swallowed into the measured description. Now `^[\w-]+:`; indented YAML block
+  scalars are unaffected.
+- Result on the three targets: react-best-practices 144 → 3 findings,
+  frontend-design 2 → 1, improve-codebase-architecture 3 → 0. Every genuine
+  finding survives: both missing negative boundaries, and both unreferenced
+  scaffold files.
+- **13 new tests** over 5 new fixture packages, plus 17 mutations run (`M1`–`M17`,
+  all caught, including 2 that re-assert the pre-existing depth guard and
+  nested-package-root logic). One new test — "an undeclared overlapping pair is
+  still a duplication finding" — was **not** covered by the first 16 mutations and
+  had never been seen to fail; `M17` was added to break it. Suite 75 → 88.

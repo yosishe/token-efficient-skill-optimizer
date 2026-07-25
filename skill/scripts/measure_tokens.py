@@ -590,7 +590,15 @@ def measure(target, method, model):
             fm, body = parse_frontmatter(text)
             body_text = body
             fm_name = (re.search(r"^name:\s*(.+)$", fm, re.M) or [None, ""])[1].strip()
-            dm = re.search(r"^description:\s*(.+?)(?=^\w+:|\Z)", fm, re.M | re.DOTALL)
+            # `[\w-]+:` not `\w+:` - the next key is routinely HYPHENATED
+            # (disable-model-invocation, allowed-tools), and a `\w+`-only
+            # terminator swallowed it into the description: the measured
+            # description then carried "disable-model-invocation: true" as
+            # prose, inflating its length and offering marker words the author
+            # never wrote. Indented continuation lines of a YAML block scalar
+            # still do not match, so multi-line descriptions are unaffected.
+            dm = re.search(r"^description:\s*(.+?)(?=^[\w-]+:|\Z)", fm,
+                           re.M | re.DOTALL)
             fm_desc = re.sub(r"\s+", " ", dm.group(1)).strip() if dm else ""
             auto_invocation = not re.search(
                 r"^disable-model-invocation:\s*[\"']?(true|yes)[\"']?\s*$",

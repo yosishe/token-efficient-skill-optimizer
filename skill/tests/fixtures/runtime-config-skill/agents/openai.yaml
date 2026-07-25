@@ -1,0 +1,5 @@
+interface:
+  display_name: "Runtime config fixture"
+  short_description: "Registry entry for another runtime"
+policy:
+  allow_implicit_invocation: false
