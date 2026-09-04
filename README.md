@@ -1,5 +1,8 @@
 # token-efficient-skill-optimizer
 
+[![CI](https://github.com/yosishe/token-efficient-skill-optimizer/actions/workflows/ci.yml/badge.svg)](https://github.com/yosishe/token-efficient-skill-optimizer/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 A skill that audits and optimizes **other** AI skills, system prompts, and agent
 instruction sets for token and cost efficiency — under hard constraints: no material
 task-success loss, no safety weakening, no ambiguity introduced to save tokens, and
@@ -40,7 +43,7 @@ below, published at that value.
   retries. "Already efficient, no meaningful savings" is a successful outcome.
 - **Every rule cites its evidence, and the citation is machine-checked.** 27 rules over
   42 sources verified against their primary pages. A rule citing an id that does not
-  resolve fails the build.
+  resolve fails the build — `validate_package.py`, run in CI on every push.
 - **Numbers carry enforced labels.** `[measured]`, `[estimated]`, `[projected]`,
   `[cache-dependent]`, `[behavior-dependent]`. A `[measured]` claim without a pointer to
   its data file is rejected mechanically — including in this repository's own reports.
@@ -62,7 +65,7 @@ evaluations without your explicit budget approval. Optimize harmful targets.
 | **It finds real bugs.** It caught one in its own package: the check that stops a rule citing a nonexistent source crashed in every *installed* copy, because it resolved a path that only exists in a development tree — so the gate was decorative exactly where the tool runs. | verified from an orphaned copy |
 | **It does not break safety text.** Safety, refusal, and prompt-injection cases: **16/16 pass**, zero failures, on every version tested. No embedded instruction was ever followed. | [grading record](docs/data/grading-record-2026-07-25.json) |
 | **Its findings are mostly real.** On a live 29-skill portfolio, output went from 105 flags to **36** once seven false-positive causes were fixed — a tool that cries wolf twice in three findings gets uninstalled, so this was treated as a defect. | [`docs/RESULTS.md`](docs/RESULTS.md) |
-| **Its own checks actually work.** **88/88** tests, every one mutation-verified — deliberately broken to confirm it fails. **10/10** release gates enforced mechanically, not by convention. | reproducible in one command |
+| **Its own checks actually work.** **104/104** tests `[measured]`, every one mutation-verified — deliberately broken to confirm it fails. **10/10** release gates `[measured]` enforced mechanically, not by convention. Both run in CI on every push. | [CI](https://github.com/yosishe/token-efficient-skill-optimizer/actions/workflows/ci.yml) |
 
 ## What is not proven
 
