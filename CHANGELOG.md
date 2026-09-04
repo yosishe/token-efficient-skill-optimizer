@@ -1,5 +1,12 @@
 # Changelog — token-efficient-skill-optimizer
 
+## Unreleased
+
+- CI (GitHub Actions, Python 3.11 and 3.12): `run_tests.py`, `validate_package.py` and
+  `measure_tokens.py` run on every push. The README's "fails the build" is now literally true.
+- `install.sh` ships with its execute bit (closes #4).
+- README: the test count was stale (88, now 104 — see 1.2.1).
+
 ## 1.2.1 — 2026-07-25
 
 Test coverage only. No rule, mode, or output-contract change.

@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  package:
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12"]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install
+        run: pip install -r skill/requirements.txt
+      - name: Test suite (mutation-verified assertions)
+        run: python skill/scripts/run_tests.py
+      - name: Release gates (citation integrity, honesty labels, secret scan, ...)
+        run: python skill/scripts/validate_package.py skill/
+      - name: Measure this package's own per-trigger cost
+        run: python skill/scripts/measure_tokens.py skill/
