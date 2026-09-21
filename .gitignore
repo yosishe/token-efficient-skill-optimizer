@@ -8,3 +8,4 @@ __pycache__/
 # run artifacts - regenerate with the scripts, do not commit
 *.run.jsonl
 eval-run-*.jsonl
+.venv/

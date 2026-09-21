@@ -167,7 +167,7 @@ implementation could not be corroborated against a primary page. **None** was ca
 into the registry or the pricing model, and no rule cites them.
 
 **Why.** The alternative is a citation that looks like evidence and is not — which is
-worse than no citation, because it survives review. Every one of the 42 sources in
+worse than no citation, because it survives review. Every one of the 73 sources in
 [EVIDENCE.md](EVIDENCE.md) was checked against its primary page (arXiv abstract, DOI,
 or official provider documentation) before being recorded.
 

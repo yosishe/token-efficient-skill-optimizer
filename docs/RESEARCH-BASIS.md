@@ -1,6 +1,6 @@
 # Research basis — considerations taken, not commandments issued
 
-[EVIDENCE.md](EVIDENCE.md) lists all 42 sources and which rule cites each one. This file answers
+[EVIDENCE.md](EVIDENCE.md) lists all 73 sources and which rule cites each one. This file answers
 the question that list cannot: **what did the paper actually find, in what setting, and what
 consideration did we take from it?**
 
@@ -56,13 +56,13 @@ alone.
 retrieval infrastructure, and a finding that "more context hurts" is commercially convenient for
 them. Methodology, code, and tasks are published, which mitigates the conflict without erasing it.
 It is used because the direction replicates across four independent model families, which is
-harder to explain by vendor incentive than by mechanism. It is cited by 3 rules.
+harder to explain by vendor incentive than by mechanism. It is cited by three rules.
 
 **A larger disclosure, which this one led to.** An earlier draft of this file called Context Rot
 "the single most-cited source in the registry." That was wrong, and checking it surfaced something
 more worth knowing: the two most-cited sources are not papers at all. They are
-`S-D09` *Effective context engineering for AI agents* (7 rules) and `S-D10` *Equipping agents for
-the real world with Agent Skills* (6 rules) — both **Anthropic engineering reports**, classified in
+`S-D09` *Effective context engineering for AI agents* (five rules) and `S-D10` *Equipping agents for
+the real world with Agent Skills* (five rules) — both **Anthropic engineering reports**, classified in
 the catalog as `anecdotal` evidence.
 
 So the honest shape of this evidence base is: **the peer-reviewed literature supplies the

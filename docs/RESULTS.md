@@ -55,7 +55,7 @@ confirmed it is still flagged, so the fix removed noise and not the check.
 | Test suite | 88/88 |
 | Mutation verification | 47 mutations, 47 caught, 0 missed |
 | Package validator | 10/10 checks, 0 violations |
-| Citation cross-check | 27 rules, all evidence ids resolve |
+| Citation cross-check | 38 rules, all evidence ids resolve |
 | Clean standalone install, no parent project | all of the above pass |
 
 ### A real defect this process caught
