@@ -41,8 +41,8 @@ below, published at that value.
   keep a repetition that looks redundant but is load-bearing, keep a verbose instruction
   carrying a safety obligation, keep a longer prompt when the shorter one costs more in
   retries. "Already efficient, no meaningful savings" is a successful outcome.
-- **Every rule cites its evidence, and the citation is machine-checked.** 27 rules over
-  42 sources verified against their primary pages. A rule citing an id that does not
+- **Every rule cites its evidence, and the citation is machine-checked.** 38 rules over
+  73 sources verified against their primary pages. A rule citing an id that does not
   resolve fails the build — `validate_package.py`, run in CI on every push.
 - **Numbers carry enforced labels.** `[measured]`, `[estimated]`, `[projected]`,
   `[cache-dependent]`, `[behavior-dependent]`. A `[measured]` claim without a pointer to
@@ -155,7 +155,7 @@ open, and every design decision states what it rejected and why.
 | [`docs/RESULTS.md`](docs/RESULTS.md) | What was measured, what was estimated, what is unproven — with limitations beside the numbers, not in a footnote |
 | [`docs/DECISIONS.md`](docs/DECISIONS.md) | 11 design decisions, each with its reasoning and what was rejected |
 | [`docs/RESEARCH-BASIS.md`](docs/RESEARCH-BASIS.md) | Eight papers in depth — what each found, in what setting, the consideration taken from it, and what it explicitly does **not** license |
-| [`docs/EVIDENCE.md`](docs/EVIDENCE.md) | All 42 sources, and which rule each one supports |
+| [`docs/EVIDENCE.md`](docs/EVIDENCE.md) | All 73 sources, and which rule each one supports |
 | [`docs/RULES.md`](docs/RULES.md) | The registry, with per-rule risk scores |
 | [`research/`](research/) | The raw corpus — full records, the synthesis, and what the research could **not** establish |
 | [`examples/before-after/`](examples/before-after/) | A worked optimization, including the change that was correctly skipped |
